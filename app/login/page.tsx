@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3004/v1/auth/login', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
-      
+
       // Expected: { access_token: "...", user: { id, fullName, email, role } }
       if (data.access_token && data.user) {
         login(data.access_token, data.user);
@@ -59,7 +59,7 @@ export default function LoginPage() {
       {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-white/20 rounded-full blur-3xl" />
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-black/20 rounded-full blur-3xl" />
-      
+
       <div className="w-full max-w-md relative z-10 animate-fade-in-up">
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-8 md:p-10">
           <div className="text-center mb-10">
@@ -91,7 +91,7 @@ export default function LoginPage() {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-teal-100 mb-2">
                 Password
