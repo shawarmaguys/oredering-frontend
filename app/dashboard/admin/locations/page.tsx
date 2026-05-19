@@ -11,6 +11,8 @@ interface Location {
   address: string;
   phone: string;
   email: string;
+  slackBotToken?: string;
+  slackUserToken?: string;
   createdAt: string;
 }
 
@@ -24,6 +26,8 @@ export default function LocationsPage() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [slackBotToken, setSlackBotToken] = useState('');
+  const [slackUserToken, setSlackUserToken] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -33,6 +37,8 @@ export default function LocationsPage() {
   const [editAddress, setEditAddress] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editSlackBotToken, setEditSlackBotToken] = useState('');
+  const [editSlackUserToken, setEditSlackUserToken] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
@@ -58,11 +64,13 @@ export default function LocationsPage() {
     setError('');
 
     try {
-      await api.locations.create({ name, address, phone, email });
+      await api.locations.create({ name, address, phone, email, slackBotToken, slackUserToken });
       setName('');
       setAddress('');
       setPhone('');
       setEmail('');
+      setSlackBotToken('');
+      setSlackUserToken('');
       setShowModal(false);
       fetchLocations();
     } catch (err: any) {
@@ -84,6 +92,8 @@ export default function LocationsPage() {
         address: editAddress,
         phone: editPhone,
         email: editEmail,
+        slackBotToken: editSlackBotToken,
+        slackUserToken: editSlackUserToken,
       });
       setShowEditModal(false);
       setSelectedLocation(null);
@@ -234,6 +244,8 @@ export default function LocationsPage() {
                         setEditAddress(loc.address);
                         setEditPhone(loc.phone);
                         setEditEmail(loc.email);
+                        setEditSlackBotToken(loc.slackBotToken || '');
+                        setEditSlackUserToken(loc.slackUserToken || '');
                         setError('');
                         setShowEditModal(true);
                       }}
@@ -266,6 +278,18 @@ export default function LocationsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                         <span>✉️</span>
                         <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.email || 'N/A'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                        <span>💬</span>
+                        <span style={{ 
+                          color: loc.slackBotToken && loc.slackUserToken ? 'var(--accent)' : 'var(--text-tertiary)',
+                          fontWeight: loc.slackBotToken && loc.slackUserToken ? '500' : 'normal',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          Slack: {loc.slackBotToken && loc.slackUserToken ? 'Configured' : 'Not configured'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -371,6 +395,32 @@ export default function LocationsPage() {
                   />
                 </div>
 
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label className="label" htmlFor="loc-slack-bot">Slack Bot Token</label>
+                    <input
+                      id="loc-slack-bot"
+                      type="password"
+                      value={slackBotToken}
+                      onChange={(e) => setSlackBotToken(e.target.value)}
+                      className="input"
+                      placeholder="xoxb-..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="label" htmlFor="loc-slack-user">Slack User Token</label>
+                    <input
+                      id="loc-slack-user"
+                      type="password"
+                      value={slackUserToken}
+                      onChange={(e) => setSlackUserToken(e.target.value)}
+                      className="input"
+                      placeholder="xoxp-..."
+                    />
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
@@ -474,6 +524,32 @@ export default function LocationsPage() {
                     rows={3}
                     className="input"
                   />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label className="label" htmlFor="edit-loc-slack-bot">Slack Bot Token</label>
+                    <input
+                      id="edit-loc-slack-bot"
+                      type="password"
+                      value={editSlackBotToken}
+                      onChange={(e) => setEditSlackBotToken(e.target.value)}
+                      className="input"
+                      placeholder="xoxb-..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="label" htmlFor="edit-loc-slack-user">Slack User Token</label>
+                    <input
+                      id="edit-loc-slack-user"
+                      type="password"
+                      value={editSlackUserToken}
+                      onChange={(e) => setEditSlackUserToken(e.target.value)}
+                      className="input"
+                      placeholder="xoxp-..."
+                    />
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
