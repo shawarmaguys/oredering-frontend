@@ -120,7 +120,7 @@ export default function TranslationsPage() {
         {loading ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
             gap: '24px'
           }}>
             {[1, 2, 3].map((i) => (
@@ -152,7 +152,7 @@ export default function TranslationsPage() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
             gap: '24px'
           }} className="stagger">
             {translations.map((item) => (

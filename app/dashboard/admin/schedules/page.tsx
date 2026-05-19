@@ -182,7 +182,7 @@ export default function SchedulesPage() {
         {loading ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
             gap: '24px'
           }}>
             {[1, 2].map((i) => (
@@ -214,7 +214,7 @@ export default function SchedulesPage() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
             gap: '24px'
           }} className="stagger">
             {schedules.map((schedule) => (

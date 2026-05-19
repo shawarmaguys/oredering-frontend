@@ -15,52 +15,10 @@ export default function ManagerDashboard() {
         </div>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gap: '24px'
-      }} className="stagger">
+      <div className="split-layout stagger">
         
-        {/* Left Column - Actions */}
-        <div style={{ gridColumn: 'span 12', '@media (min-width: 1024px)': { gridColumn: 'span 4' } } as any} className="lg:col-span-4">
-          <div className="card" style={{
-            padding: '24px',
-            background: 'linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-sunken) 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent)'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                Create New PO
-              </h3>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                Manually draft a custom purchase order and generate vendor-ready CSV / Slack sheets.
-              </p>
-            </div>
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
-              Create Purchase Order
-            </button>
-          </div>
-        </div>
-
-        {/* Right Column - Pending Tasks */}
-        <div style={{ gridColumn: 'span 12', '@media (min-width: 1024px)': { gridColumn: 'span 8' } } as any} className="lg:col-span-8">
+        {/* Main Content - Pending Tasks (comes first in DOM for mobile top placement) */}
+        <div>
           <div className="card" style={{ padding: '24px' }}>
             <div style={{
               display: 'flex',
@@ -134,8 +92,45 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
+        {/* Sidebar - Create New PO (comes second in DOM for sidebar desktop placement) */}
+        <div>
+          <div className="card" style={{
+            padding: '24px',
+            background: 'linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-sunken) 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--accent-subtle)',
+              border: '1px solid var(--accent-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent)'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                Create New PO
+              </h3>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                Manually draft a custom purchase order and generate vendor-ready CSV / Slack sheets.
+              </p>
+            </div>
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+              Create Purchase Order
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 }
-

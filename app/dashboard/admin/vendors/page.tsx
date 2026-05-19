@@ -199,7 +199,7 @@ export default function VendorsPage() {
         {loading ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
             gap: '24px'
           }}>
             {[1, 2, 3].map((i) => (
@@ -237,7 +237,7 @@ export default function VendorsPage() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
             gap: '24px'
           }} className="stagger">
             {vendors.map((vendor) => (

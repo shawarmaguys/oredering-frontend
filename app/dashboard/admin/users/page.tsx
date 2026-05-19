@@ -170,7 +170,7 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="table-responsive">
+            <div className="table-responsive-wrap">
               <table className="data-table">
                 <thead>
                   <tr>

@@ -209,10 +209,9 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Reports Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' }}>
+        <div className="split-layout">
           {/* Main List */}
-          <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {loading ? (
               <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="skeleton" style={{ height: '40px', width: '100%' }} />
@@ -345,7 +344,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Details / Actions Sidebar */}
-          <div style={{ gridColumn: 'span 4' }}>
+          <div>
             {activeTab === 'pos' && selectedPO ? (
               <div className="card animate-fade-up" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{
