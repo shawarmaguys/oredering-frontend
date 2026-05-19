@@ -60,6 +60,25 @@ export default function SchedulesPage() {
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+  // Triggering State
+  const [triggeringId, setTriggeringId] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleTriggerSchedule = async (id: string) => {
+    setTriggeringId(id);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await api.schedules.trigger(id);
+      setSuccessMessage('Schedule manually triggered! Stock audit generated & Slack notification sent successfully.');
+      setTimeout(() => setSuccessMessage(''), 6000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to trigger schedule.');
+    } finally {
+      setTriggeringId(null);
+    }
+  };
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -169,6 +188,15 @@ export default function SchedulesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="alert alert-success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {successMessage}
           </div>
         )}
 
@@ -313,11 +341,36 @@ export default function SchedulesPage() {
                 <div style={{
                   paddingTop: '12px',
                   borderTop: '1px solid var(--border-subtle)',
-                  fontSize: '0.6875rem',
-                  color: 'var(--text-tertiary)',
-                  marginTop: '4px'
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '8px'
                 }}>
-                  <span className="mono">ID: {schedule.id.substring(0, 8)}</span>
+                  <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                    ID: {schedule.id.substring(0, 8)}
+                  </span>
+                  
+                  <button
+                    onClick={() => handleTriggerSchedule(schedule.id)}
+                    disabled={triggeringId === schedule.id}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'var(--accent-subtle)',
+                      border: '1px solid var(--accent-border)',
+                      color: 'var(--accent)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                    </svg>
+                    {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
+                  </button>
                 </div>
               </div>
             ))}

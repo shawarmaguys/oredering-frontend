@@ -65,6 +65,7 @@ export const api = {
   schedules: {
     list: () => request<any[]>('/schedules'),
     create: (data: any) => request<any>('/schedules', { method: 'POST', body: JSON.stringify(data) }),
+    trigger: (id: string) => request<any>(`/schedules/${id}/trigger`, { method: 'POST' }),
   },
   translations: {
     list: () => request<any[]>('/translations'),
@@ -74,6 +75,7 @@ export const api = {
     list: () => request<any[]>('/stock-records'),
     get: (id: string) => request<any>(`/stock-records/${id}`),
     create: (data: any) => request<any>('/stock-records', { method: 'POST', body: JSON.stringify(data) }),
+    complete: (id: string, data: any) => request<any>(`/stock-records/${id}/complete`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
   purchaseOrders: {
     list: (status?: string) => {
