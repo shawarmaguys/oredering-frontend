@@ -20,7 +20,7 @@ export default function LocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Create Form State
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -167,7 +167,7 @@ export default function LocationsPage() {
 
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {/* Navigation Breadcrumbs */}
         <div className="breadcrumb">
           <Link href="/dashboard">Dashboard</Link>
@@ -296,7 +296,7 @@ export default function LocationsPage() {
                         {loc.name}
                       </h3>
                     </div>
-                    
+
                     <button
                       onClick={() => {
                         setSelectedLocation(loc);
@@ -316,12 +316,12 @@ export default function LocationsPage() {
                       Edit
                     </button>
                   </div>
-                  
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: '36px' }} className="line-clamp-2">
                       {loc.address || 'No address provided'}
                     </p>
-                    
+
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -341,7 +341,7 @@ export default function LocationsPage() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                         <span>💬</span>
-                        <span style={{ 
+                        <span style={{
                           color: loc.slackBotToken && loc.slackUserToken ? 'var(--accent)' : 'var(--text-tertiary)',
                           fontWeight: loc.slackBotToken && loc.slackUserToken ? '500' : 'normal',
                           whiteSpace: 'nowrap',

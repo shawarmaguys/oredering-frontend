@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isLoading || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)' }}>
       {/* Navbar */}
       <nav className="navbar">
         <div className="navbar-inner">
@@ -58,8 +58,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Page Body */}
-      <main style={{ flex: 1, width: '100%' }}>
-        <div className="container-page page-body animate-fade-up">
+      <main style={{ flex: 1, overflow: 'auto', width: '100%' }}>
+        <div className="dashboard-body animate-fade-up">
           {children}
         </div>
       </main>

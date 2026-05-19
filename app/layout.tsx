@@ -26,9 +26,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      style={{ height: '100dvh', overflow: 'hidden' }}
     >
-      <body className="min-h-full flex flex-col bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100">
+      <body style={{ height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0 }}>
         <Providers>{children}</Providers>
       </body>
     </html>
