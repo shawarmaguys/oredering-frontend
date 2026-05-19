@@ -502,7 +502,6 @@ export default function ItemsPage() {
               <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Edit Product Item</h2>
               <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify registered SKU settings and multipliers.</p>
 
-
               {error && (
                 <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
                   {error}
