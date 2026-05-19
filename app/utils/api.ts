@@ -43,6 +43,7 @@ export const api = {
   locations: {
     list: () => request<any[]>('/locations'),
     create: (data: any) => request<any>('/locations', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/locations/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
   vendors: {
     list: (departmentId?: string) => {
