@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../utils/api';
 
 interface StockRecordItem {
@@ -34,11 +35,7 @@ export default function WorkerDashboard() {
   const [records, setRecords] = useState<StockRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  // Active submission states
-  const [activeRecord, setActiveRecord] = useState<StockRecord | null>(null);
-  const [formItems, setFormItems] = useState<{ itemId: string; enteredQuantity: number; enteredUnit: string; displayName: string }[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     fetchRecords();
@@ -57,61 +54,8 @@ export default function WorkerDashboard() {
     }
   };
 
-  const handleStartSubmission = async (recordId: string) => {
-    setError('');
-    try {
-      const detailedRecord = await api.stockRecords.get(recordId);
-      setActiveRecord(detailedRecord);
-      
-      // Initialize form items from the stock record's items (which are seeded with 0 by trigger)
-      const initialItems = (detailedRecord.items || []).map((ri: any) => ({
-        itemId: ri.itemId,
-        enteredQuantity: Number(ri.enteredQuantity) || 0,
-        enteredUnit: ri.enteredUnit || ri.item?.baseUnitName || 'pcs',
-        displayName: ri.item?.displayName || 'Unknown Item'
-      }));
-      setFormItems(initialItems);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load stock record details.');
-    }
-  };
-
-  const handleQuantityChange = (itemId: string, val: string) => {
-    const numVal = parseFloat(val);
-    setFormItems(prev => prev.map(item => 
-      item.itemId === itemId ? { ...item, enteredQuantity: isNaN(numVal) ? 0 : numVal } : item
-    ));
-  };
-
-  const handleUnitChange = (itemId: string, unit: string) => {
-    setFormItems(prev => prev.map(item => 
-      item.itemId === itemId ? { ...item, enteredUnit: unit } : item
-    ));
-  };
-
-  const handleSubmitComplete = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeRecord) return;
-    setSubmitting(true);
-    setError('');
-
-    try {
-      await api.stockRecords.complete(activeRecord.id, {
-        items: formItems.map(item => ({
-          itemId: item.itemId,
-          enteredQuantity: item.enteredQuantity,
-          enteredUnit: item.enteredUnit
-        }))
-      });
-
-      setActiveRecord(null);
-      setFormItems([]);
-      fetchRecords();
-    } catch (err: any) {
-      setError(err.message || 'Failed to complete stock recording.');
-    } finally {
-      setSubmitting(false);
-    }
+  const handleStartSubmission = (recordId: string) => {
+    router.push(`/dashboard?recordId=${recordId}`);
   };
 
   const drafts = records.filter(r => !r.isCompleted);
@@ -126,7 +70,7 @@ export default function WorkerDashboard() {
         </div>
       </div>
 
-      {error && !activeRecord && (
+      {error && (
         <div className="alert alert-error">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -264,117 +208,6 @@ export default function WorkerDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Audit Form Modal */}
-      {activeRecord && (
-        <div className="modal-backdrop" style={{ zIndex: 100 }}>
-          <div className="modal-panel modal-panel-md">
-            <button
-              onClick={() => setActiveRecord(null)}
-              className="modal-close"
-              aria-label="Close modal"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <div className="modal-header">
-              <h2>Record Inventory Audit</h2>
-              <p>Count and input current physical stocks for <strong>{activeRecord.location?.name || 'Store'}</strong>.</p>
-            </div>
-
-            {error && (
-              <div className="alert alert-error" style={{ marginBottom: '16px' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitComplete} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{
-                maxHeight: '350px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-                paddingRight: '6px'
-              }}>
-                {formItems.map((item) => (
-                  <div
-                    key={item.itemId}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 18px',
-                      backgroundColor: 'var(--bg-sunken)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-lg)',
-                      gap: '12px',
-                      flexWrap: 'wrap'
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: '150px' }}>
-                      <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                        {item.displayName}
-                      </strong>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        required
-                        value={item.enteredQuantity || ''}
-                        onChange={(e) => handleQuantityChange(item.itemId, e.target.value)}
-                        className="input"
-                        placeholder="Quantity"
-                        style={{ width: '90px', padding: '6px 10px', fontSize: '0.875rem', textAlign: 'right' }}
-                      />
-                      
-                      <select
-                        value={item.enteredUnit}
-                        onChange={(e) => handleUnitChange(item.itemId, e.target.value)}
-                        className="input"
-                        style={{ width: '85px', padding: '6px 8px', fontSize: '0.8125rem' }}
-                      >
-                        <option value={item.enteredUnit}>{item.enteredUnit}</option>
-                        {item.enteredUnit !== 'pcs' && <option value="pcs">pcs</option>}
-                        {item.enteredUnit !== 'lbs' && item.enteredUnit !== 'kg' && item.enteredUnit !== 'pcs' && (
-                          <option value="lbs">lbs</option>
-                        )}
-                      </select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setActiveRecord(null)}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="btn btn-primary"
-                  style={{ flex: 1, justifyContent: 'center' }}
-                >
-                  {submitting ? 'Submitting count...' : 'Submit Stock Check'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
