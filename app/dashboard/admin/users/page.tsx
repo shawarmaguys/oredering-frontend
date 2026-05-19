@@ -44,7 +44,6 @@ export default function UsersPage() {
     try {
       const data = await api.users.list();
       
-      // Map API response fields to matches interface fields if casing differs
       const mapped = data.map((u: any) => ({
         id: u.id,
         fullName: u.full_name || u.fullName,
@@ -125,30 +124,28 @@ export default function UsersPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Users</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Users</span>
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">User Accounts</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mt-1">Manage staff roles, permissions, and status.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>User Accounts</h1>
+            <p>Manage employee dashboard roles, system access credentials, and portal activity.</p>
           </div>
           <button
             onClick={() => {
               setError('');
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)]"
+            className="btn btn-primary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
             </svg>
             Register Account
@@ -156,84 +153,82 @@ export default function UsersPage() {
         </div>
 
         {error && !showModal && !showEditModal && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
-        {/* Users list / grid */}
+        {/* Users list / table */}
         {loading ? (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
-            <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
-            <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
+          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="skeleton" style={{ height: '40px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
           </div>
         ) : (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+          <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-responsive">
+              <table className="data-table">
                 <thead>
-                  <tr className="bg-gray-55/50 dark:bg-zinc-800/40 text-gray-500 dark:text-zinc-400 font-semibold text-sm border-b border-gray-200 dark:border-zinc-800">
-                    <th className="p-4 pl-6">Full Name</th>
-                    <th className="p-4">Email Address</th>
-                    <th className="p-4">Assigned Role</th>
-                    <th className="p-4">Account Status</th>
-                    <th className="p-4 text-right pr-6">Actions</th>
+                  <tr>
+                    <th style={{ paddingLeft: '24px' }}>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Assigned Role</th>
+                    <th>Account Status</th>
+                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-150 dark:divide-zinc-800/50">
+                <tbody>
                   {users.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-gray-50 dark:hover:bg-zinc-800/20 transition-colors text-sm text-gray-700 dark:text-zinc-300"
-                    >
-                      <td className="p-4 pl-6 font-bold text-gray-900 dark:text-white">
+                    <tr key={item.id}>
+                      <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
                         {item.fullName}
                       </td>
-                      <td className="p-4 font-mono text-xs">
+                      <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                         {item.email}
                       </td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                          item.role === 'ADMIN' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-400' :
-                          item.role === 'SUPER_MANAGER' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400' :
-                          item.role === 'MANAGER' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400' :
-                          'bg-zinc-500/10 text-zinc-700 dark:text-zinc-400'
+                      <td>
+                        <span className={`badge ${
+                          item.role === 'ADMIN' ? 'badge-teal' :
+                          item.role === 'SUPER_MANAGER' ? 'badge-amber' :
+                          item.role === 'MANAGER' ? 'badge-teal' :
+                          'badge-neutral'
                         }`}>
-                          {item.role}
+                          {item.role === 'SUPER_MANAGER' ? 'SUPER MGR' : item.role}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          item.isActive
-                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                            : 'bg-red-500/10 text-red-700 dark:text-red-400'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? 'bg-green-500' : 'bg-red-550'}`} />
+                      <td>
+                        <span className={`badge ${item.isActive ? 'badge-green' : 'badge-neutral'}`}>
+                          <span className="badge-dot" style={{ backgroundColor: item.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
                           {item.isActive ? 'Active' : 'Deactivated'}
                         </span>
                       </td>
-                      <td className="p-4 text-right pr-6 space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedUser(item);
-                            setEditFullName(item.fullName);
-                            setEditRole(item.role);
-                            setError('');
-                            setShowEditModal(true);
-                          }}
-                          className="px-3 py-1.5 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 dark:hover:border-teal-500 text-gray-600 dark:text-gray-300 font-bold rounded-lg text-xs transition-all"
-                        >
-                          Edit
-                        </button>
-                        {item.isActive && (
+                      <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                           <button
-                            onClick={() => handleDeactivate(item.id)}
-                            className="px-3 py-1.5 bg-red-500/10 hover:bg-red-550 text-red-600 dark:text-red-400 hover:text-white dark:hover:text-teal-950 font-bold rounded-lg text-xs transition-all"
+                            onClick={() => {
+                              setSelectedUser(item);
+                              setEditFullName(item.fullName);
+                              setEditRole(item.role);
+                              setError('');
+                              setShowEditModal(true);
+                            }}
+                            className="btn btn-secondary btn-sm"
                           >
-                            Deactivate
+                            Edit
                           </button>
-                        )}
+                          {item.isActive && (
+                            <button
+                              onClick={() => handleDeactivate(item.id)}
+                              className="btn btn-danger btn-sm"
+                            >
+                              Deactivate
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -245,77 +240,79 @@ export default function UsersPage() {
 
         {/* Modal Register Form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Register Account</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Create a login account for restaurant employees.</p>
+              <div className="modal-header">
+                <h2>Register Account</h2>
+                <p>Register a secure dashboard login for new personnel and assign operations clearance.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Full Name *
-                  </label>
+                  <label className="label" htmlFor="user-name">Full Name *</label>
                   <input
+                    id="user-name"
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="e.g. John Doe"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Email Address *
-                  </label>
+                  <label className="label" htmlFor="user-email">Email Address *</label>
                   <input
+                    id="user-email"
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="johndoe@shawarmaguys.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Password *
-                  </label>
+                  <label className="label" htmlFor="user-pass">Password *</label>
                   <input
+                    id="user-pass"
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="••••••••"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Access Permission Role *
-                  </label>
+                  <label className="label" htmlFor="user-role">Operations Role *</label>
                   <select
+                    id="user-role"
                     value={role}
                     onChange={(e) => setRole(e.target.value as any)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   >
                     <option value="WORKER">Worker (Perform Stock Takes)</option>
                     <option value="MANAGER">Manager (Approve Orders)</option>
@@ -324,18 +321,20 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Registering...' : 'Register User'}
                   </button>
@@ -347,63 +346,67 @@ export default function UsersPage() {
 
         {/* Modal Edit Form */}
         {showEditModal && selectedUser && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedUser(null);
                 }}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Edit Account</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify user profile fields or permission level.</p>
+              <div className="modal-header">
+                <h2>Edit Account Settings</h2>
+                <p>Modify staff profile name or change operations portal privilege levels.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleUpdate} className="space-y-4">
+              <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Full Name *
-                  </label>
+                  <label className="label" htmlFor="edit-user-name">Full Name *</label>
                   <input
+                    id="edit-user-name"
                     type="text"
                     required
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Email Address (Read-only)
-                  </label>
+                  <label className="label" htmlFor="edit-user-email">Email Address (Read-only)</label>
                   <input
+                    id="edit-user-email"
                     type="text"
                     disabled
                     value={selectedUser.email}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-100 dark:bg-zinc-800/30 text-gray-400 dark:text-zinc-500 cursor-not-allowed font-mono text-xs focus:outline-none"
+                    className="input font-mono"
+                    style={{ opacity: 0.6, cursor: 'not-allowed' }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Access Permission Role *
-                  </label>
+                  <label className="label" htmlFor="edit-user-role">Operations Role *</label>
                   <select
+                    id="edit-user-role"
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value as any)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   >
                     <option value="WORKER">Worker (Perform Stock Takes)</option>
                     <option value="MANAGER">Manager (Approve Orders)</option>
@@ -412,23 +415,25 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedUser(null);
                     }}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
-                    {formSubmitting ? 'Updating...' : 'Save Changes'}
+                    {formSubmitting ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>

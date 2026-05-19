@@ -97,30 +97,28 @@ export default function LocationsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Locations</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Locations</span>
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Store Locations</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mt-1">Register and manage active store locations.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Store Locations</h1>
+            <p>Onboard and manage franchise store branches, contact credentials, and delivery directions.</p>
           </div>
           <button
             onClick={() => {
               setError('');
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)]"
+            className="btn btn-primary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Add Location
@@ -128,55 +126,105 @@ export default function LocationsPage() {
         </div>
 
         {error && !showModal && !showEditModal && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
         {/* Locations List */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-                <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-2/3" />
-                <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-5/6" />
-                <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+              <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '200px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="skeleton" style={{ height: '24px', width: '50%' }} />
+                <div className="skeleton" style={{ height: '14px', width: '80%' }} />
+                <div className="skeleton" style={{ height: '14px', width: '40%' }} />
               </div>
             ))}
           </div>
         ) : locations.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-            <span className="text-4xl mb-4 block">📍</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Locations Yet</h3>
-            <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto mb-6">
-              Get started by adding your first store location to the system.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold rounded-xl transition-all"
-            >
-              Add First Location
-            </button>
+          <div className="card" style={{ padding: '48px 24px' }}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+              </div>
+              <h3>No store locations yet</h3>
+              <p>Onboard your franchise storefront branches to organize inventory sheets and audits.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary"
+              >
+                Add First Location
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }} className="stagger">
             {locations.map((loc) => (
               <div
                 key={loc.id}
-                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden flex flex-col justify-between"
+                className="card card-hover"
+                style={{
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '20px',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
-                
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center space-x-3 truncate">
-                      <div className="p-2.5 bg-teal-50 dark:bg-teal-950/30 rounded-xl text-teal-600 dark:text-teal-400 shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                {/* Accent element */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '80px',
+                  height: '80px',
+                  background: 'var(--accent-subtle)',
+                  borderRadius: '50%',
+                  filter: 'blur(30px)',
+                  marginRight: '-20px',
+                  marginTop: '-20px',
+                  pointerEvents: 'none'
+                }} />
+
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'var(--bg-sunken)',
+                        border: '1px solid var(--border-subtle)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--accent)'
+                      }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                         </svg>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate">{loc.name}</h3>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {loc.name}
+                      </h3>
                     </div>
                     
                     <button
@@ -189,36 +237,50 @@ export default function LocationsPage() {
                         setError('');
                         setShowEditModal(true);
                       }}
-                      className="relative z-10 p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold shrink-0 flex items-center gap-1"
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
                       title="Edit Location"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                      </svg>
                       Edit
                     </button>
                   </div>
                   
-                  <div className="space-y-3 mb-6">
-                    <p className="text-sm text-gray-500 dark:text-zinc-400 min-h-[40px] line-clamp-2">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: '36px' }} className="line-clamp-2">
                       {loc.address || 'No address provided'}
                     </p>
                     
-                    <div className="flex flex-col gap-1.5 text-xs text-gray-400 dark:text-zinc-500 pt-3 border-t border-gray-100 dark:border-zinc-800/80">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-500">📞 Phone:</span>
-                        <span className="text-gray-700 dark:text-zinc-300 font-medium">{loc.phone || 'N/A'}</span>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-tertiary)',
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--border-subtle)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>📞</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{loc.phone || 'N/A'}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-500">✉️ Email:</span>
-                        <span className="text-gray-700 dark:text-zinc-300 font-medium truncate">{loc.email || 'N/A'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                        <span>✉️</span>
+                        <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.email || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 text-[10px] text-gray-400 flex justify-between items-center">
-                  <span>ID: {loc.id.substring(0, 8)}...</span>
+                <div style={{
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '0.6875rem',
+                  color: 'var(--text-tertiary)'
+                }}>
+                  <span className="mono">ID: {loc.id.substring(0, 8)}</span>
                   {loc.createdAt && <span>Added {new Date(loc.createdAt).toLocaleDateString()}</span>}
                 </div>
               </div>
@@ -228,97 +290,101 @@ export default function LocationsPage() {
 
         {/* Modal Add form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Add Store Location</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Enter details for the new store franchise.</p>
+              <div className="modal-header">
+                <h2>Add Store Location</h2>
+                <p>Register a storefront franchise to organize regional inventories and audit reports.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Location Name *
-                  </label>
+                  <label className="label" htmlFor="loc-name">Location Name *</label>
                   <input
+                    id="loc-name"
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="e.g. San Diego Downtown"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Phone Number *
-                    </label>
+                    <label className="label" htmlFor="loc-phone">Phone Number *</label>
                     <input
+                      id="loc-phone"
                       type="text"
                       required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. +1 619-555-0100"
+                      className="input"
+                      placeholder="e.g. +1 (619) 555-0100"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Email Address *
-                    </label>
+                    <label className="label" htmlFor="loc-email">Email Address *</label>
                     <input
+                      id="loc-email"
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. downtown@shawarmaguys.com"
+                      className="input"
+                      placeholder="downtown@shawarmaguys.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Full Address *
-                  </label>
+                  <label className="label" htmlFor="loc-address">Full Address *</label>
                   <textarea
+                    id="loc-address"
                     required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="e.g. 555 Broadway, San Diego, CA 92101"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Creating...' : 'Save Location'}
                   </button>
@@ -330,99 +396,103 @@ export default function LocationsPage() {
 
         {/* Modal Edit form */}
         {showEditModal && selectedLocation && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedLocation(null);
                 }}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Edit Store Location</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify store profile details.</p>
+              <div className="modal-header">
+                <h2>Edit Store Location</h2>
+                <p>Modify franchise storefront coordinates and branch contact credentials.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleEditSubmit} className="space-y-4">
+              <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Location Name *
-                  </label>
+                  <label className="label" htmlFor="edit-loc-name">Location Name *</label>
                   <input
+                    id="edit-loc-name"
                     type="text"
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Phone Number *
-                    </label>
+                    <label className="label" htmlFor="edit-loc-phone">Phone Number *</label>
                     <input
+                      id="edit-loc-phone"
                       type="text"
                       required
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Email Address *
-                    </label>
+                    <label className="label" htmlFor="edit-loc-email">Email Address *</label>
                     <input
+                      id="edit-loc-email"
                       type="email"
                       required
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Full Address *
-                  </label>
+                  <label className="label" htmlFor="edit-loc-address">Full Address *</label>
                   <textarea
+                    id="edit-loc-address"
                     required
                     value={editAddress}
                     onChange={(e) => setEditAddress(e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedLocation(null);
                     }}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Saving...' : 'Save Changes'}
                   </button>

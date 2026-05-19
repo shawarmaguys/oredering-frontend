@@ -165,30 +165,28 @@ export default function ItemsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Products</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Products</span>
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Product Items</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mt-1">Manage global inventory catalog items and units.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Product Catalog</h1>
+            <p>Manage product items, SKU codes, supplier correlations, and conversion multipliers.</p>
           </div>
           <button
             onClick={() => {
               setError('');
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)]"
+            className="btn btn-primary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Add Product
@@ -196,93 +194,100 @@ export default function ItemsPage() {
         </div>
 
         {error && !showModal && !showEditModal && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
         {/* Items list / table */}
         {loading ? (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
-            <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
-            <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
+          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="skeleton" style={{ height: '40px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-            <span className="text-4xl mb-4 block">📦</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Products Catalogued</h3>
-            <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto mb-6">
-              Start by cataloguing products and assigning them to onboarded wholesale vendors.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold rounded-xl transition-all"
-            >
-              Add First Product
-            </button>
+          <div className="card" style={{ padding: '48px 24px' }}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+              </div>
+              <h3>No products catalogued</h3>
+              <p>Add products to your operational catalog to start monitoring stock and generating purchase orders.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary"
+              >
+                Add First Product
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+          <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-responsive">
+              <table className="data-table">
                 <thead>
-                  <tr className="bg-gray-55/50 dark:bg-zinc-800/40 text-gray-500 dark:text-zinc-400 font-semibold text-sm border-b border-gray-200 dark:border-zinc-800">
-                    <th className="p-4 pl-6">Product Display Name</th>
-                    <th className="p-4">Assigned Vendor</th>
-                    <th className="p-4">Product Code</th>
-                    <th className="p-4">Notes</th>
-                    <th className="p-4">Secondary Unit</th>
-                    <th className="p-4">Base Unit</th>
-                    <th className="p-4 text-center">Multiplier</th>
-                    <th className="p-4 text-center">Status</th>
-                    <th className="p-4 text-right pr-6">Actions</th>
+                  <tr>
+                    <th style={{ paddingLeft: '24px' }}>Display Name</th>
+                    <th>Assigned Vendor</th>
+                    <th>Product Code</th>
+                    <th>Notes</th>
+                    <th>Secondary Unit</th>
+                    <th>Base Unit</th>
+                    <th style={{ textAlign: 'center' }}>Multiplier</th>
+                    <th style={{ textAlign: 'center' }}>Status</th>
+                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-150 dark:divide-zinc-800/50">
+                <tbody>
                   {items.map((item) => {
                     const isSecondaryConfigured = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
                     return (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-gray-50 dark:hover:bg-zinc-800/20 transition-colors text-sm text-gray-700 dark:text-zinc-300"
-                      >
-                        <td className="p-4 pl-6 font-bold text-gray-900 dark:text-white">
+                      <tr key={item.id}>
+                        <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {item.displayName}
                         </td>
-                        <td className="p-4">
-                          {item.vendor?.displayName || 'Unknown Vendor'}
+                        <td>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {item.vendor?.displayName || 'Unknown Vendor'}
+                          </span>
                         </td>
-                        <td className="p-4 font-mono text-xs text-gray-500 dark:text-zinc-400">
-                          {item.productCode || '-'}
+                        <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                          {item.productCode || '—'}
                         </td>
-                        <td className="p-4 font-mono text-xs text-gray-500 dark:text-zinc-400">
-                          {item.note || '-'}
+                        <td style={{ color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.note || '—'}
                         </td>
-                        <td className="p-4">
+                        <td>
                           {isSecondaryConfigured ? (
-                            <span className="px-2 py-1 rounded bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 text-xs font-semibold">
+                            <span className="badge badge-teal">
                               {item.displayUnitName}
                             </span>
                           ) : (
-                            <span className="text-gray-400 dark:text-zinc-500 font-mono">-</span>
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>—</span>
                           )}
                         </td>
-                        <td className="p-4">
-                          <span className="px-2 py-1 rounded bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 text-xs">
+                        <td>
+                          <span className="badge badge-neutral">
                             {item.baseUnitName}
                           </span>
                         </td>
-                        <td className="p-4 text-center font-mono">
+                        <td className="mono" style={{ textAlign: 'center', fontSize: '0.8125rem' }}>
                           {isSecondaryConfigured ? item.multiplier : '1'}
                         </td>
-                        <td className="p-4 text-center">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        <td style={{ textAlign: 'center' }}>
+                          <span className="badge badge-green">
+                            <span className="badge-dot" />
                             Active
                           </span>
                         </td>
-                        <td className="p-4 text-right pr-6">
+                        <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                           <button
                             onClick={() => {
                               setSelectedItem(item);
@@ -296,9 +301,9 @@ export default function ItemsPage() {
                               setError('');
                               setShowEditModal(true);
                             }}
-                            className="p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold inline-flex items-center gap-1"
+                            className="btn btn-secondary btn-sm"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
                             </svg>
                             Edit
@@ -315,61 +320,62 @@ export default function ItemsPage() {
 
         {/* Modal Create Form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-md">
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Create Product Item</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Register inventory SKU items and multiplier rules.</p>
+              <div className="modal-header">
+                <h2>Catalog New Product</h2>
+                <p>Register product SKUs, baseline operational measurements, and procurement units.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
               {vendors.length === 0 ? (
-                <div className="text-center py-4 space-y-3">
-                  <p className="text-sm text-red-500">You must onboard at least one vendor before creating products.</p>
-                  <Link
-                    href="/dashboard/admin/vendors"
-                    className="inline-block px-4 py-2 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl text-xs"
-                  >
+                <div style={{ textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>You must onboard at least one vendor before adding products.</p>
+                  <Link href="/dashboard/admin/vendors" className="btn btn-primary">
                     Go Onboard Vendor
                   </Link>
                 </div>
               ) : (
-                <form onSubmit={handleCreateSubmit} className="space-y-4">
+                <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Product Name *
-                    </label>
+                    <label className="label" htmlFor="item-name">Product Name *</label>
                     <input
+                      id="item-name"
                       type="text"
                       required
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                       placeholder="e.g. Chicken Shawarma Cone (30lb)"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Assigned Vendor *
-                      </label>
+                      <label className="label" htmlFor="item-vendor">Assigned Vendor *</label>
                       <select
+                        id="item-vendor"
                         value={vendorId}
                         onChange={(e) => setVendorId(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="input"
                       >
                         {vendors.map((v) => (
                           <option key={v.id} value={v.id}>
@@ -380,101 +386,95 @@ export default function ItemsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Product Code <span className="text-xs text-gray-400 font-normal">(Optional)</span>
-                      </label>
+                      <label className="label" htmlFor="item-code">Product Code (SKU)</label>
                       <input
+                        id="item-code"
                         type="text"
                         value={productCode}
                         onChange={(e) => setProductCode(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="input"
                         placeholder="e.g. SH-KIT-010"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Notes <span className="text-xs text-gray-400 font-normal">(Optional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="e.g. Chicken Breast"
-                      />
-                    </div>
-                  </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Base Unit *
-                    </label>
+                    <label className="label" htmlFor="item-note">Notes</label>
                     <input
+                      id="item-note"
                       type="text"
-                      required
-                      value={baseUnitName}
-                      onChange={(e) => setBaseUnitName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. lbs, oz, each"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      className="input"
+                      placeholder="e.g. Premium Breast / Thigh Mix"
                     />
                   </div>
 
-                  <div className={`grid gap-4 transition-all duration-300 ${displayUnitName && displayUnitName.trim() !== '' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Secondary Unit <span className="text-xs text-gray-400 font-normal">(Optional)</span>
-                      </label>
+                      <label className="label" htmlFor="item-base">Base Stock Unit *</label>
                       <input
+                        id="item-base"
                         type="text"
-                        value={displayUnitName}
-                        onChange={(e) => setDisplayUnitName(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="e.g. case, box, cone"
+                        required
+                        value={baseUnitName}
+                        onChange={(e) => setBaseUnitName(e.target.value)}
+                        className="input"
+                        placeholder="e.g. lbs, oz, each"
                       />
                     </div>
 
-                    {displayUnitName && displayUnitName.trim() !== '' && (
-                      <div className="animate-fade-in-up">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                          Multiplier *
-                        </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label className="label" htmlFor="item-secondary">Secondary Order Unit</label>
                         <input
-                          type="number"
-                          required
-                          step="any"
-                          min="0.0001"
-                          value={multiplier}
-                          onChange={(e) => setMultiplier(e.target.value === '' ? '' : Number(e.target.value))}
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
-                          placeholder="e.g. 30 (1 case = 30 lbs)"
+                          id="item-secondary"
+                          type="text"
+                          value={displayUnitName}
+                          onChange={(e) => setDisplayUnitName(e.target.value)}
+                          className="input"
+                          placeholder="e.g. case, box, cone"
                         />
                       </div>
+
+                      <div>
+                        <label className="label" htmlFor="item-multiplier">Multiplier *</label>
+                        <input
+                          id="item-multiplier"
+                          type="number"
+                          step="any"
+                          min="0.0001"
+                          disabled={!displayUnitName}
+                          value={multiplier}
+                          onChange={(e) => setMultiplier(e.target.value === '' ? '' : Number(e.target.value))}
+                          className="input mono"
+                          placeholder="e.g. 30"
+                        />
+                      </div>
+                    </div>
+                    {displayUnitName && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '-8px' }}>
+                        Conversion: 1 {displayUnitName} = {multiplier || 'X'} {baseUnitName}
+                      </p>
                     )}
                   </div>
 
-                  {displayUnitName && displayUnitName.trim() !== '' && (
-                    <p className="text-[11px] text-gray-400">
-                      Defines how many base units ({baseUnitName || 'e.g. lbs'}) make up one secondary unit ({displayUnitName}).
-                    </p>
-                  )}
-
-                  <div className="flex gap-3 pt-4">
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                      className="btn btn-secondary"
+                      style={{ flex: 1 }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={formSubmitting}
-                      className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
                     >
-                      {formSubmitting ? 'Cataloguing...' : 'Save Product'}
+                      {formSubmitting ? 'Saving...' : 'Save Product'}
                     </button>
                   </div>
                 </form>
@@ -485,52 +485,56 @@ export default function ItemsPage() {
 
         {/* Modal Edit Form */}
         {showEditModal && selectedItem && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-md">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedItem(null);
                 }}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Edit Product Item</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify registered SKU settings and multipliers.</p>
+              <div className="modal-header">
+                <h2>Edit Product Item</h2>
+                <p>Modify catalog options, procurement vendor matching, and conversion rules.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleEditSubmit} className="space-y-4">
+              <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Product Name *
-                  </label>
+                  <label className="label" htmlFor="edit-item-name">Product Name *</label>
                   <input
+                    id="edit-item-name"
                     type="text"
                     required
                     value={editDisplayName}
                     onChange={(e) => setEditDisplayName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Assigned Vendor *
-                    </label>
+                    <label className="label" htmlFor="edit-item-vendor">Assigned Vendor *</label>
                     <select
+                      id="edit-item-vendor"
                       value={editVendorId}
                       onChange={(e) => setEditVendorId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     >
                       {vendors.map((v) => (
                         <option key={v.id} value={v.id}>
@@ -541,102 +545,91 @@ export default function ItemsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Product Code <span className="text-xs text-gray-400 font-normal">(Optional)</span>
-                    </label>
+                    <label className="label" htmlFor="edit-item-code">Product Code (SKU)</label>
                     <input
+                      id="edit-item-code"
                       type="text"
                       value={editProductCode}
                       onChange={(e) => setEditProductCode(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. SH-KIT-010"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Notes <span className="text-xs text-gray-400 font-normal">(Optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editNote}
-                      onChange={(e) => setEditNote(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. Chicken Breast"
+                      className="input"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Base Unit *
-                  </label>
+                  <label className="label" htmlFor="edit-item-note">Notes</label>
                   <input
+                    id="edit-item-note"
                     type="text"
-                    required
-                    value={editBaseUnitName}
-                    onChange={(e) => setEditBaseUnitName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="e.g. lbs, oz, each"
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                    className="input"
                   />
                 </div>
 
-                <div className={`grid gap-4 transition-all duration-300 ${editDisplayUnitName && editDisplayUnitName.trim() !== '' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Secondary Unit <span className="text-xs text-gray-400 font-normal">(Optional)</span>
-                    </label>
+                    <label className="label" htmlFor="edit-item-base">Base Stock Unit *</label>
                     <input
+                      id="edit-item-base"
                       type="text"
-                      value={editDisplayUnitName}
-                      onChange={(e) => setEditDisplayUnitName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. case, box, cone"
+                      required
+                      value={editBaseUnitName}
+                      onChange={(e) => setEditBaseUnitName(e.target.value)}
+                      className="input"
                     />
                   </div>
 
-                  {editDisplayUnitName && editDisplayUnitName.trim() !== '' && (
-                    <div className="animate-fade-in-up">
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Multiplier *
-                      </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label className="label" htmlFor="edit-item-secondary">Secondary Order Unit</label>
                       <input
-                        type="number"
-                        required
-                        step="any"
-                        min="0.0001"
-                        value={editMultiplier}
-                        onChange={(e) => setEditMultiplier(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
-                        placeholder="e.g. 30 (1 case = 30 lbs)"
+                        id="edit-item-secondary"
+                        type="text"
+                        value={editDisplayUnitName}
+                        onChange={(e) => setEditDisplayUnitName(e.target.value)}
+                        className="input"
                       />
                     </div>
+
+                    <div>
+                      <label className="label" htmlFor="edit-item-multiplier">Multiplier *</label>
+                      <input
+                        id="edit-item-multiplier"
+                        type="number"
+                        step="any"
+                        min="0.0001"
+                        disabled={!editDisplayUnitName}
+                        value={editMultiplier}
+                        onChange={(e) => setEditMultiplier(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="input mono"
+                      />
+                    </div>
+                  </div>
+                  {editDisplayUnitName && (
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '-8px' }}>
+                      Conversion: 1 {editDisplayUnitName} = {editMultiplier || 'X'} {editBaseUnitName}
+                    </p>
                   )}
                 </div>
 
-                {editDisplayUnitName && editDisplayUnitName.trim() !== '' && (
-                  <p className="text-[11px] text-gray-400">
-                    Defines how many base units ({editBaseUnitName || 'e.g. lbs'}) make up one secondary unit ({editDisplayUnitName}).
-                  </p>
-                )}
-
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedItem(null);
                     }}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Saving...' : 'Save Changes'}
                   </button>

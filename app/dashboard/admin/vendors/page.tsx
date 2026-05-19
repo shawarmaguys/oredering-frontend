@@ -158,30 +158,28 @@ export default function VendorsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Vendors</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Vendors</span>
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Vendors & Suppliers</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mt-1">Manage wholesale vendors, channels, and contacts.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Vendors & Suppliers</h1>
+            <p>Manage wholesale vendor accounts, Slack channels, and contact information.</p>
           </div>
           <button
             onClick={() => {
               setError('');
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)]"
+            className="btn btn-primary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Onboard Vendor
@@ -189,58 +187,84 @@ export default function VendorsPage() {
         </div>
 
         {error && !showModal && !showEditModal && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
         {/* Vendors Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-                <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-5/6" />
-                  <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-2/3" />
+              <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '220px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                    <div className="skeleton" style={{ height: '16px', width: '60%' }} />
+                    <div className="skeleton" style={{ height: '12px', width: '40%' }} />
+                  </div>
                 </div>
+                <div className="skeleton" style={{ height: '12px', width: '80%' }} />
+                <div className="skeleton" style={{ height: '12px', width: '50%' }} />
               </div>
             ))}
           </div>
         ) : vendors.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-            <span className="text-4xl mb-4 block">🚚</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Vendors Onboarded</h3>
-            <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto mb-6">
-              Onboard your food, beverage, and packaging wholesale vendors to configure purchase order channels.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold rounded-xl transition-all"
-            >
-              Onboard First Supplier
-            </button>
+          <div className="card" style={{ padding: '48px 24px' }}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.317-5.11a2.25 2.25 0 00-2.247-2.112H18M18 10.5V4.5A2.25 2.25 0 0015.75 2.25H12M8.25 10.5h11.25M8.25 10.5v1.5a2.25 2.25 0 002.25 2.25h1.5a2.25 2.25 0 002.25-2.25v-1.5M3 10.5h.008v.008H3v-.008zm3 0h.008v.008H6v-.008z" />
+                </svg>
+              </div>
+              <h3>No vendors onboarded</h3>
+              <p>Onboard your food, beverage, and packaging wholesale vendors to configure purchase order channels.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary"
+              >
+                Onboard First Supplier
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }} className="stagger">
             {vendors.map((vendor) => (
               <div
                 key={vendor.id}
-                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden flex flex-col justify-between"
+                className="card card-hover"
+                style={{
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '20px',
+                  position: 'relative'
+                }}
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
-
-                <div>
-                  <div className="flex justify-between items-start gap-2 mb-4">
-                    <div className="truncate">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{vendor.displayName}</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {vendor.displayName}
+                      </h3>
                       {vendor.department && (
-                        <span className="inline-block mt-1 px-2.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded-md bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 border border-teal-500/10">
+                        <span className="badge badge-teal" style={{ marginTop: '6px' }}>
                           {vendor.department.code}
                         </span>
                       )}
                     </div>
-
                     <button
                       onClick={() => {
                         setSelectedVendor(vendor);
@@ -255,47 +279,55 @@ export default function VendorsPage() {
                         setError('');
                         setShowEditModal(true);
                       }}
-                      className="relative z-10 p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold shrink-0 flex items-center gap-1"
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
                       title="Edit Vendor"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
                       </svg>
                       Edit
                     </button>
                   </div>
 
-                  <div className="space-y-2.5 text-xs text-gray-500 dark:text-zinc-400 mb-6">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8125rem' }}>
                     {vendor.department && (
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-400">Dept:</span>
-                        <span>{vendor.department.fullName}</span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Dept:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{vendor.department.fullName}</span>
                       </div>
                     )}
                     {vendor.channelName && (
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-400">Slack:</span>
-                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 font-mono rounded">
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Slack:</span>
+                        <span className="mono" style={{
+                          color: 'var(--accent)',
+                          backgroundColor: 'var(--accent-subtle)',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          border: '1px solid var(--accent-border)',
+                          fontSize: '0.75rem'
+                        }}>
                           #{vendor.channelName}
                         </span>
                       </div>
                     )}
                     {vendor.email && (
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-400">Email:</span>
-                        <span className="truncate">{vendor.email}</span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Email:</span>
+                        <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vendor.email}</span>
                       </div>
                     )}
                     {vendor.phone && (
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-400">Phone:</span>
-                        <span>{vendor.phone}</span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Phone:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{vendor.phone}</span>
                       </div>
                     )}
                     {vendor.address1 && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-semibold text-gray-400">Addr:</span>
-                        <span className="line-clamp-2">
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Addr:</span>
+                        <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }} className="line-clamp-2">
                           {[vendor.address1, vendor.address2, vendor.address3].filter(Boolean).join(', ')}
                         </span>
                       </div>
@@ -303,9 +335,17 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 text-[10px] text-gray-400 flex justify-between items-center">
-                  <span>ID: {vendor.id.substring(0, 8)}...</span>
-                  {vendor.createdAt && <span>Onboarded {new Date(vendor.createdAt).toLocaleDateString()}</span>}
+                <div style={{
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '0.6875rem',
+                  color: 'var(--text-tertiary)'
+                }}>
+                  <span className="mono">ID: {vendor.id.substring(0, 8)}</span>
+                  {vendor.createdAt && <span>Added {new Date(vendor.createdAt).toLocaleDateString()}</span>}
                 </div>
               </div>
             ))}
@@ -314,50 +354,54 @@ export default function VendorsPage() {
 
         {/* Modal Onboarding Form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-lg">
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Onboard New Vendor</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Add a wholesale vendor and supplier details.</p>
+              <div className="modal-header">
+                <h2>Onboard New Vendor</h2>
+                <p>Register a wholesale distributor to configure automatic purchase order dispatch channels.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Display Name *
-                    </label>
+                    <label className="label" htmlFor="vendor-name">Display Name *</label>
                     <input
+                      id="vendor-name"
                       type="text"
                       required
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                       placeholder="e.g. Sysco Wholesale"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Department Type *
-                    </label>
+                    <label className="label" htmlFor="vendor-dept">Department Type *</label>
                     <select
+                      id="vendor-dept"
                       value={departmentId}
                       onChange={(e) => setDepartmentId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     >
                       {departments.length === 0 ? (
                         <option value="">No departments available</option>
@@ -372,103 +416,99 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Slack Channel Name
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">#</span>
+                    <label className="label" htmlFor="vendor-slack">Slack Channel Name</label>
+                    <div className="input-prefix-wrap">
+                      <span className="input-prefix">#</span>
                       <input
+                        id="vendor-slack"
                         type="text"
                         value={channelName}
                         onChange={(e) => setChannelName(e.target.value)}
-                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="input"
                         placeholder="sysco-orders"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Contact Phone
-                    </label>
+                    <label className="label" htmlFor="vendor-phone">Contact Phone</label>
                     <input
+                      id="vendor-phone"
                       type="text"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. +1 619-555-0199"
+                      className="input"
+                      placeholder="+1 (619) 555-0199"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Contact Email Address
-                  </label>
+                  <label className="label" htmlFor="vendor-email">Contact Email Address</label>
                   <input
-                    type="text"
+                    id="vendor-email"
+                    type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="orders@syscowholesale.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Supplier Street Address (Line 1)
-                  </label>
+                  <label className="label" htmlFor="vendor-address-1">Supplier Street Address (Line 1)</label>
                   <input
+                    id="vendor-address-1"
                     type="text"
                     value={address1}
                     onChange={(e) => setAddress1(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="e.g. 100 Supply Chain Way"
+                    className="input"
+                    placeholder="100 Supply Chain Way"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Suite/Bldg (Line 2)
-                    </label>
+                    <label className="label" htmlFor="vendor-address-2">Suite/Bldg (Line 2)</label>
                     <input
+                      id="vendor-address-2"
                       type="text"
                       value={address2}
                       onChange={(e) => setAddress2(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. Suite 400"
+                      className="input"
+                      placeholder="Suite 400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      City, State, Zip (Line 3)
-                    </label>
+                    <label className="label" htmlFor="vendor-address-3">City, State, Zip (Line 3)</label>
                     <input
+                      id="vendor-address-3"
                       type="text"
                       value={address3}
                       onChange={(e) => setAddress3(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. San Diego, CA 92121"
+                      className="input"
+                      placeholder="San Diego, CA 92121"
                     />
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Onboarding...' : 'Onboard Supplier'}
                   </button>
@@ -480,52 +520,56 @@ export default function VendorsPage() {
 
         {/* Modal Edit Form */}
         {showEditModal && selectedVendor && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-lg">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedVendor(null);
                 }}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Edit Onboarded Vendor</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify supplier profile details and departments.</p>
+              <div className="modal-header">
+                <h2>Edit Onboarded Vendor</h2>
+                <p>Modify supplier contact channels, dispatch endpoints, and departments.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Display Name *
-                    </label>
+                    <label className="label" htmlFor="edit-vendor-name">Display Name *</label>
                     <input
+                      id="edit-vendor-name"
                       type="text"
                       required
                       value={editDisplayName}
                       onChange={(e) => setEditDisplayName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Department Type *
-                    </label>
+                    <label className="label" htmlFor="edit-vendor-dept">Department Type *</label>
                     <select
+                      id="edit-vendor-dept"
                       value={editDepartmentId}
                       onChange={(e) => setEditDepartmentId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     >
                       {departments.map((dept) => (
                         <option key={dept.id} value={dept.id}>
@@ -536,100 +580,96 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Slack Channel Name
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">#</span>
+                    <label className="label" htmlFor="edit-vendor-slack">Slack Channel Name</label>
+                    <div className="input-prefix-wrap">
+                      <span className="input-prefix">#</span>
                       <input
+                        id="edit-vendor-slack"
                         type="text"
                         value={editChannelName}
                         onChange={(e) => setEditChannelName(e.target.value)}
-                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="input"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Contact Phone
-                    </label>
+                    <label className="label" htmlFor="edit-vendor-phone">Contact Phone</label>
                     <input
+                      id="edit-vendor-phone"
                       type="text"
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Contact Email Address
-                  </label>
+                  <label className="label" htmlFor="edit-vendor-email">Contact Email Address</label>
                   <input
-                    type="text"
+                    id="edit-vendor-email"
+                    type="email"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Supplier Street Address (Line 1)
-                  </label>
+                  <label className="label" htmlFor="edit-vendor-address-1">Supplier Street Address (Line 1)</label>
                   <input
+                    id="edit-vendor-address-1"
                     type="text"
                     value={editAddress1}
                     onChange={(e) => setEditAddress1(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Suite/Bldg (Line 2)
-                    </label>
+                    <label className="label" htmlFor="edit-vendor-address-2">Suite/Bldg (Line 2)</label>
                     <input
+                      id="edit-vendor-address-2"
                       type="text"
                       value={editAddress2}
                       onChange={(e) => setEditAddress2(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      City, State, Zip (Line 3)
-                    </label>
+                    <label className="label" htmlFor="edit-vendor-address-3">City, State, Zip (Line 3)</label>
                     <input
+                      id="edit-vendor-address-3"
                       type="text"
                       value={editAddress3}
                       onChange={(e) => setEditAddress3(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     />
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowEditModal(false);
                       setSelectedVendor(null);
                     }}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Saving...' : 'Save Changes'}
                   </button>

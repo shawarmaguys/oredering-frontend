@@ -79,30 +79,28 @@ export default function TranslationsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Translations</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Translations</span>
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Localization Dictionary</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mt-1">Manage food and item translations for multilingual workers.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Localization Dictionary</h1>
+            <p>Configure translation dictionaries to help multilingual store workers conduct stock audits fluently.</p>
           </div>
           <button
             onClick={() => {
               setError('');
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)]"
+            className="btn btn-primary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138A48.25 48.25 0 0010.5 9.75M9 19.5a42.993 42.993 0 01-2.185-11.4" />
             </svg>
             Add Translation
@@ -110,69 +108,115 @@ export default function TranslationsPage() {
         </div>
 
         {error && !showModal && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
         {/* Translations Grid / Cards */}
         {loading ? (
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-            <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
-            <div className="h-8 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
-            <div className="h-8 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: '24px'
+          }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '180px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="skeleton" style={{ height: '16px', width: '25%' }} />
+                <div className="skeleton" style={{ height: '24px', width: '80%' }} />
+                <div className="skeleton" style={{ height: '24px', width: '60%' }} />
+              </div>
+            ))}
           </div>
         ) : translations.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-            <span className="text-4xl mb-4 block">🗣️</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Translations Registered</h3>
-            <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto mb-6">
-              Translate English items or unit names into Arabic, Spanish, or other languages for staff convenience.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold rounded-xl transition-all"
-            >
-              Register Translation
-            </button>
+          <div className="card" style={{ padding: '48px 24px' }}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3" />
+                </svg>
+              </div>
+              <h3>No translations registered</h3>
+              <p>Map core product descriptions to Spanish or Arabic to help workers accurately record inventory levels.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary"
+              >
+                Register Translation
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: '24px'
+          }} className="stagger">
             {translations.map((item) => (
               <div
                 key={item.id}
-                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden"
+                className="card card-hover"
+                style={{
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-teal-500/5 rounded-full blur-xl" />
-                
+                {/* Accent element */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '60px',
+                  height: '60px',
+                  background: 'var(--accent-subtle)',
+                  borderRadius: '50%',
+                  filter: 'blur(20px)',
+                  marginRight: '-15px',
+                  marginTop: '-15px',
+                  pointerEvents: 'none'
+                }} />
+
                 {/* Language Pair Tag */}
-                <div className="flex items-center gap-1.5 mb-4">
-                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 font-mono">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 6px', textTransform: 'uppercase' }}>
                     {item.sourceLanguage}
                   </span>
-                  <span className="text-gray-400">→</span>
-                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 font-mono">
+                  <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>→</span>
+                  <span className="badge badge-teal" style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 6px', textTransform: 'uppercase' }}>
                     {item.targetLanguage}
                   </span>
                 </div>
 
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div>
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold">Original Text</span>
-                    <p className="text-base text-gray-500 dark:text-zinc-400 line-clamp-1 italic">
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>Original Text</span>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '2px' }}>
                       "{item.sourceText}"
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold">Translated Text</span>
-                    <p className="text-lg font-extrabold text-gray-900 dark:text-white line-clamp-1">
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>Translated Text</span>
+                    <p style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                       {item.translatedText}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-gray-50 dark:border-zinc-800/80 text-[10px] font-mono text-gray-400">
-                  ID: {item.id.substring(0, 8)}...
+                <div style={{
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle)',
+                  fontSize: '0.6875rem',
+                  color: 'var(--text-tertiary)',
+                  marginTop: '4px'
+                }}>
+                  <span className="mono">ID: {item.id.substring(0, 8)}</span>
                 </div>
               </div>
             ))}
@@ -181,36 +225,42 @@ export default function TranslationsPage() {
 
         {/* Modal form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Create Translation</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Map original text fields to target locale languages.</p>
+              <div className="modal-header">
+                <h2>Create Translation</h2>
+                <p>Register standard descriptions mapped into regional dialects for worker inventory audits.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Source Language
-                    </label>
+                    <label className="label" htmlFor="trans-src-lang">Source Language</label>
                     <select
+                      id="trans-src-lang"
                       value={sourceLanguage}
                       onChange={(e) => setSourceLanguage(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-sm"
+                      className="input mono"
+                      style={{ fontSize: '0.8125rem' }}
                     >
                       <option value="en">English (en)</option>
                       <option value="es">Spanish (es)</option>
@@ -220,13 +270,13 @@ export default function TranslationsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Target Language
-                    </label>
+                    <label className="label" htmlFor="trans-tgt-lang">Target Language</label>
                     <select
+                      id="trans-tgt-lang"
                       value={targetLanguage}
                       onChange={(e) => setTargetLanguage(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-sm"
+                      className="input mono"
+                      style={{ fontSize: '0.8125rem' }}
                     >
                       <option value="es">Spanish (es)</option>
                       <option value="ar">Arabic (ar)</option>
@@ -237,45 +287,45 @@ export default function TranslationsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Source Text (English) *
-                  </label>
+                  <label className="label" htmlFor="trans-src-txt">Source Text (English) *</label>
                   <input
+                    id="trans-src-txt"
                     type="text"
                     required
                     value={sourceText}
                     onChange={(e) => setSourceText(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="e.g. Chicken Shawarma Cone"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Translated Text *
-                  </label>
+                  <label className="label" htmlFor="trans-tgt-txt">Translated Text *</label>
                   <input
+                    id="trans-tgt-txt"
                     type="text"
                     required
                     value={translatedText}
                     onChange={(e) => setTranslatedText(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="input"
                     placeholder="e.g. مخروط شاورما دجاج"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formSubmitting}
-                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
                   >
                     {formSubmitting ? 'Registering...' : 'Save Translation'}
                   </button>

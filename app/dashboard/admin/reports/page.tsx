@@ -114,7 +114,6 @@ export default function ReportsPage() {
     setPoItems([]);
     try {
       const details = await api.purchaseOrders.get(po.id);
-      // Expected items list: [{ id, itemId, item: { displayName }, quantity, unitName }]
       setPoItems(details.items || []);
     } catch (err: any) {
       console.error('Failed to load PO details', err);
@@ -141,34 +140,41 @@ export default function ReportsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Reports</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Reports</span>
         </div>
 
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Reports & Purchase Orders</h1>
-          <p className="text-gray-500 dark:text-zinc-400 mt-1">Verify kitchen stock records and authorize wholesale purchase orders.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Reports & Purchase Orders</h1>
+            <p>Verify kitchen stock sheets and authorize supplier purchase orders.</p>
+          </div>
         </div>
 
-        {/* Tabs System */}
-        <div className="flex border-b border-gray-200 dark:border-zinc-800">
+        {/* Tab System Controls */}
+        <div className="tabs-container" style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', gap: '8px' }}>
           <button
             onClick={() => {
               setSelectedPO(null);
               setActiveTab('pos');
             }}
-            className={`py-4 px-6 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'pos'
-                ? 'border-teal-500 text-teal-600 dark:text-teal-400 font-extrabold'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-300'
-            }`}
+            className="tabs-btn"
+            style={{
+              padding: '12px 16px',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'pos' ? '2px solid var(--accent)' : '2px solid transparent',
+              color: activeTab === 'pos' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
           >
             📋 Purchase Orders
           </button>
@@ -177,115 +183,157 @@ export default function ReportsPage() {
               setSelectedPO(null);
               setActiveTab('stock');
             }}
-            className={`py-4 px-6 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'stock'
-                ? 'border-teal-500 text-teal-600 dark:text-teal-400 font-extrabold'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-300'
-            }`}
+            className="tabs-btn"
+            style={{
+              padding: '12px 16px',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'stock' ? '2px solid var(--accent)' : '2px solid transparent',
+              color: activeTab === 'stock' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
           >
             📊 Submitted Stock Records
           </button>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm animate-fade-in-up">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
         {/* Reports Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' }}>
           {/* Main List */}
-          <div className="lg:col-span-2 space-y-4">
+          <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {loading ? (
-              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-                <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-                <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-                <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="skeleton" style={{ height: '40px', width: '100%' }} />
+                <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+                <div className="skeleton" style={{ height: '32px', width: '100%' }} />
               </div>
             ) : activeTab === 'pos' ? (
               pos.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-                  <span className="text-4xl mb-4 block">📋</span>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Purchase Orders</h3>
-                  <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto">
-                    Purchase orders generated from stock records will appear here for management approval.
-                  </p>
+                <div className="card" style={{ padding: '48px 24px' }}>
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                    </div>
+                    <h3>No purchase orders found</h3>
+                    <p>Purchase orders automatically generated from worker stock records will appear here for manager review.</p>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {pos.map((po) => (
-                    <button
-                      key={po.id}
-                      onClick={() => handlePOSelect(po)}
-                      className={`w-full text-left p-5 rounded-2xl border transition-all flex justify-between items-center gap-4 bg-white dark:bg-zinc-900 relative overflow-hidden group ${
-                        selectedPO?.id === po.id
-                          ? 'border-teal-500 ring-2 ring-teal-500/20 dark:border-teal-500'
-                          : 'border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 shadow-sm hover:shadow-md'
-                      }`}
-                    >
-                      <div className="space-y-1 truncate">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            po.status === 'GENERATED' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/20' :
-                            po.status === 'SENT' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20' :
-                            po.status === 'ACKNOWLEDGED' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' :
-                            'bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 border border-zinc-550/20'
-                          }`}>
-                            {po.status}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} className="stagger">
+                  {pos.map((po) => {
+                    const isSelected = selectedPO?.id === po.id;
+                    return (
+                      <button
+                        key={po.id}
+                        onClick={() => handlePOSelect(po)}
+                        className="card card-hover"
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '20px 24px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '16px',
+                          border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                          boxShadow: isSelected ? 'var(--shadow-md), 0 0 0 2px var(--accent-subtle)' : 'var(--shadow-sm)',
+                          backgroundColor: isSelected ? 'var(--bg-sunken)' : 'var(--bg-card)',
+                          cursor: 'pointer',
+                          transition: 'all var(--transition-fast)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className={`badge ${
+                              po.status === 'GENERATED' ? 'badge-amber' :
+                              po.status === 'SENT' ? 'badge-teal' :
+                              po.status === 'ACKNOWLEDGED' ? 'badge-green' :
+                              'badge-neutral'
+                            }`}>
+                              {po.status}
+                            </span>
+                            <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                              ID: {po.id.substring(0, 8)}
+                            </span>
+                          </div>
+                          
+                          <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                            {po.vendor?.displayName || 'Unknown Supplier'}
+                          </h4>
+                          
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                            Store: <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{po.location?.name || 'Main Kitchen'}</strong>
                           </span>
-                          <span className="text-xs text-gray-400">ID: {po.id.substring(0, 8)}...</span>
                         </div>
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                          {po.vendor?.displayName || 'Unknown Supplier'}
-                        </h4>
-                        <p className="text-xs text-gray-500 dark:text-zinc-400">
-                          Location: <span className="font-semibold text-gray-700 dark:text-zinc-300">{po.location?.name || 'Main Location'}</span>
-                        </p>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="text-xs text-gray-400 block mb-1">Generated</span>
-                        <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
-                          {new Date(po.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Generated</span>
+                          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            {new Date(po.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )
             ) : (
               stockRecords.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-                  <span className="text-4xl mb-4 block">📊</span>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Stock Records</h3>
-                  <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto">
-                    Kitchen stock counts performed by workers in the field will be catalogued here.
-                  </p>
+                <div className="card" style={{ padding: '48px 24px' }}>
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
+                      </svg>
+                    </div>
+                    <h3>No stock records</h3>
+                    <p>Stock counts submitted by kitchen workers will be logged here chronologically.</p>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} className="stagger">
                   {stockRecords.map((sr) => (
                     <div
                       key={sr.id}
-                      className="p-5 rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm flex justify-between items-center gap-4 hover:border-teal-500/30 transition-all"
+                      className="card"
+                      style={{
+                        padding: '20px 24px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '16px'
+                      }}
                     >
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-gray-400 block">ID: {sr.id.substring(0, 8)}...</span>
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>ID: {sr.id.substring(0, 8)}...</span>
+                        <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                           {sr.location?.name || 'Store Location'}
                         </h4>
-                        <p className="text-xs text-gray-500 dark:text-zinc-400">
-                          Submitted by: <span className="font-semibold text-gray-700 dark:text-zinc-300">{sr.submittedByUser?.fullName || 'Worker'}</span>
-                        </p>
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                          Submitted by: <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{sr.submittedByUser?.fullName || 'Worker'}</strong>
+                        </span>
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="text-xs text-gray-400 block mb-1">Timestamp</span>
-                        <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 block">
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Timestamp</span>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}>
                           {new Date(sr.submittedAt).toLocaleDateString()}
                         </span>
-                        <span className="text-xs text-gray-400 block font-mono">
+                        <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                           {new Date(sr.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -297,47 +345,68 @@ export default function ReportsPage() {
           </div>
 
           {/* Details / Actions Sidebar */}
-          <div className="lg:col-span-1">
+          <div style={{ gridColumn: 'span 4' }}>
             {activeTab === 'pos' && selectedPO ? (
-              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 shadow-md space-y-6 relative overflow-hidden animate-fade-in-up">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-600" />
+              <div className="card animate-fade-up" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '3px',
+                  background: 'linear-gradient(90deg, var(--accent) 0%, var(--green) 100%)'
+                }} />
                 
-                <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-xl font-extrabold text-gray-900 dark:text-white truncate">PO Details</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>PO Details</h3>
                   <button
                     onClick={() => setSelectedPO(null)}
-                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
+                    style={{
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-tertiary)',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      padding: '4px'
+                    }}
                   >
                     ✕
                   </button>
                 </div>
 
-                <div className="space-y-4 text-sm border-b border-gray-100 dark:border-zinc-800/80 pb-4">
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  fontSize: '0.8125rem',
+                  paddingBottom: '16px',
+                  borderBottom: '1px solid var(--border-subtle)'
+                }}>
                   <div>
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold block">Vendor / Supplier</span>
-                    <span className="font-bold text-base text-teal-600 dark:text-teal-400">
+                    <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Supplier</span>
+                    <strong style={{ color: 'var(--accent)', fontSize: '0.9375rem' }}>
                       {selectedPO.vendor?.displayName || 'Wholesaler'}
-                    </span>
+                    </strong>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold block">Store Location</span>
-                    <span className="font-bold text-gray-800 dark:text-zinc-200">
+                    <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Store Location</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>
                       {selectedPO.location?.name || 'Store'}
-                    </span>
+                    </strong>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-gray-400 uppercase font-semibold block">Status</span>
-                    <span className="font-mono text-xs font-bold text-gray-700 dark:text-zinc-300">
+                    <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Status</span>
+                    <span className="mono" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       {selectedPO.status}
                     </span>
                   </div>
 
                   {selectedPO.notes && (
                     <div>
-                      <span className="text-[10px] text-gray-400 uppercase font-semibold block">Order Notes</span>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 italic">
+                      <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Notes</span>
+                      <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.75rem' }}>
                         "{selectedPO.notes}"
                       </p>
                     </div>
@@ -345,26 +414,45 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Items Breakdown */}
-                <div className="space-y-3">
-                  <span className="text-[10px] text-gray-400 uppercase font-semibold block">Ordered Items</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Ordered Items</span>
                   {poDetailsLoading ? (
-                    <div className="space-y-2 animate-pulse py-4">
-                      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
-                      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-2/3" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0' }}>
+                      <div className="skeleton" style={{ height: '16px', width: '100%' }} />
+                      <div className="skeleton" style={{ height: '16px', width: '80%' }} />
                     </div>
                   ) : poItems.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic py-2">No items listed in this purchase order.</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic', margin: '4px 0' }}>
+                      No items listed in this purchase order.
+                    </p>
                   ) : (
-                    <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2.5">
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {poItems.map((item: any) => (
                         <div
                           key={item.id}
-                          className="flex justify-between items-center text-xs p-2 bg-gray-50 dark:bg-zinc-850 border border-gray-100 dark:border-zinc-800/80 rounded-xl"
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '8px 12px',
+                            backgroundColor: 'var(--bg-sunken)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: 'var(--radius-sm)'
+                          }}
                         >
-                          <span className="font-bold text-gray-800 dark:text-zinc-200 truncate pr-2">
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {item.item?.displayName || 'Item'}
                           </span>
-                          <span className="shrink-0 font-mono font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded">
+                          <span className="mono" style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            backgroundColor: 'var(--accent-subtle)',
+                            color: 'var(--accent)',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--accent-border)'
+                          }}>
                             {item.quantity} {item.unitName}
                           </span>
                         </div>
@@ -378,10 +466,11 @@ export default function ReportsPage() {
                   <button
                     onClick={() => handleApprovePO(selectedPO.id)}
                     disabled={actionLoading}
-                    className="w-full py-3.5 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)] flex items-center justify-center gap-2"
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '12px', justifyContent: 'center' }}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
                     </svg>
                     {actionLoading ? 'Approving...' : 'Approve Purchase Order'}
                   </button>
@@ -392,19 +481,26 @@ export default function ReportsPage() {
                     href={selectedPO.pdfUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full py-3.5 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm text-center"
+                    className="btn btn-secondary"
+                    style={{ width: '100%', padding: '12px', justifyContent: 'center', textDecoration: 'none' }}
                   >
                     📄 View Order PDF
                   </a>
                 )}
               </div>
             ) : (
-              <div className="bg-gray-50 dark:bg-zinc-900/40 border border-dashed border-gray-200 dark:border-zinc-800 rounded-3xl p-8 text-center text-gray-400 dark:text-zinc-550">
-                <span className="text-3xl mb-3 block">👈</span>
-                <p className="text-sm">
+              <div style={{
+                border: '1px dashed var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '32px 24px',
+                textAlign: 'center',
+                color: 'var(--text-tertiary)'
+              }}>
+                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '12px' }}>👈</span>
+                <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.5 }}>
                   {activeTab === 'pos'
-                    ? 'Select a Purchase Order from the list to view items and perform manager approvals.'
-                    : 'Stock records are read-only audits log generated directly by kitchen workers.'}
+                    ? 'Select a purchase order from the list to review specific line items and authorize procurement approval.'
+                    : 'Submitted stock sheets are immutable audit records generated directly by kitchen employees.'}
                 </p>
               </div>
             )}

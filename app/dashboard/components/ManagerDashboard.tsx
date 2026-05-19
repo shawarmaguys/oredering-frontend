@@ -7,58 +7,127 @@ export default function ManagerDashboard() {
   ];
 
   return (
-    <div className="space-y-8">
-      <header className="mb-6">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Manager Portal</h1>
-        <p className="text-gray-500 dark:text-zinc-400 mt-2">Review stock submissions and manage Purchase Orders.</p>
-      </header>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div className="page-header">
+        <div className="page-header-text">
+          <h1>Manager Portal</h1>
+          <p>Review worker inventory submissions, fix anomalies, and authorize purchase orders for distribution.</p>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(12, 1fr)',
+        gap: '24px'
+      }} className="stagger">
         
-        {/* Left Column - Actions & Alerts */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-teal-500 to-emerald-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl -mr-10 -mt-10" />
-            <h2 className="text-xl font-bold mb-2">Create New PO</h2>
-            <p className="text-teal-100 text-sm mb-6">Manually generate a Purchase Order and dispatch emails to vendors.</p>
-            <button className="w-full bg-white text-teal-900 font-bold py-3 px-4 rounded-xl shadow hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+        {/* Left Column - Actions */}
+        <div style={{ gridColumn: 'span 12', '@media (min-width: 1024px)': { gridColumn: 'span 4' } } as any} className="lg:col-span-4">
+          <div className="card" style={{
+            padding: '24px',
+            background: 'linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-sunken) 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--accent-subtle)',
+              border: '1px solid var(--accent-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent)'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                Create New PO
+              </h3>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                Manually draft a custom purchase order and generate vendor-ready CSV / Slack sheets.
+              </p>
+            </div>
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
               Create Purchase Order
             </button>
           </div>
         </div>
 
         {/* Right Column - Pending Tasks */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-gray-200 dark:border-zinc-800 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pending Stock Reviews</h2>
-              <span className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-bold px-3 py-1 rounded-full">
-                {pendingReviews.length} Requires Action
+        <div style={{ gridColumn: 'span 12', '@media (min-width: 1024px)': { gridColumn: 'span 8' } } as any} className="lg:col-span-8">
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Pending Stock Reviews
+                </h2>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                  Audits awaiting approval before supplier dispatches.
+                </p>
+              </div>
+              <span className="badge badge-amber">
+                <span className="badge-dot" />
+                {pendingReviews.length} Action Needed
               </span>
             </div>
 
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {pendingReviews.map((review) => (
-                <div key={review.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl border border-gray-100 dark:border-zinc-800">
-                  <div className="mb-4 sm:mb-0">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-gray-900 dark:text-white">{review.id}</span>
-                      <span className="text-gray-400 dark:text-zinc-500 text-sm">• {review.time}</span>
+                <div
+                  key={review.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px',
+                    backgroundColor: 'var(--bg-sunken)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-subtle)',
+                    gap: '16px',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                        {review.id}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        • {review.time}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-zinc-400 mt-1">
-                      {review.location} - Submitted by {review.submittedBy}
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                      {review.location} <span style={{ color: 'var(--text-tertiary)' }}>submitted by</span> {review.submittedBy}
                     </p>
                   </div>
-                  <button className="bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-500/20 font-semibold py-2 px-5 rounded-xl transition-colors">
-                    Review & Fix Values
+                  <button className="btn btn-secondary btn-sm">
+                    Review values
                   </button>
                 </div>
               ))}
 
               {pendingReviews.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <span className="text-4xl mb-3 block">🎉</span>
-                  <p>All caught up! No pending reviews.</p>
+                <div className="empty-state">
+                  <div className="empty-state-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3>No pending reviews</h3>
+                  <p>All store counts are approved and synchronized.</p>
                 </div>
               )}
             </div>
@@ -69,3 +138,4 @@ export default function ManagerDashboard() {
     </div>
   );
 }
+

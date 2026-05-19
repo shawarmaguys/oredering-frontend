@@ -112,7 +112,6 @@ export default function SchedulesPage() {
     setError('');
 
     try {
-      // Append :00 to triggerTime if it's just HH:MM
       const formattedTime = triggerTime.length === 5 ? `${triggerTime}:00` : triggerTime;
 
       await api.schedules.create({
@@ -142,30 +141,28 @@ export default function SchedulesPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 animate-fade-in-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumbs */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-zinc-400">
-          <Link href="/dashboard" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
-            Dashboard
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white font-medium">Schedules</span>
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Schedules</span>
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Ordering Schedules</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mt-1">Configure automated Slack notifications for stock takes.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Ordering Schedules</h1>
+            <p>Configure automated Slack notification schedules for routine storefront stock audits.</p>
           </div>
           <button
             onClick={() => {
               setError('');
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-teal-500 hover:bg-teal-400 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.25)]"
+            className="btn btn-primary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Create Schedule
@@ -173,98 +170,160 @@ export default function SchedulesPage() {
         </div>
 
         {error && !showModal && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
             {error}
           </div>
         )}
 
         {/* Schedules list */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }}>
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
-                <div className="h-6 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-                <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-                <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+              <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '220px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="skeleton" style={{ height: '20px', width: '30%' }} />
+                <div className="skeleton" style={{ height: '24px', width: '70%' }} />
+                <div className="skeleton" style={{ height: '14px', width: '50%' }} />
               </div>
             ))}
           </div>
         ) : schedules.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-            <span className="text-4xl mb-4 block">📅</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Active Schedules</h3>
-            <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto mb-6">
-              Establish schedules to ping Slack channels and automatically coordinate worker counts.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold rounded-xl transition-all"
-            >
-              Add First Schedule
-            </button>
+          <div className="card" style={{ padding: '48px 24px' }}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+              </div>
+              <h3>No active schedules</h3>
+              <p>Establish automated schedules to trigger kitchen stock counts and push Slack reminders.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary"
+              >
+                Add First Schedule
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }} className="stagger">
             {schedules.map((schedule) => (
               <div
                 key={schedule.id}
-                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden"
+                className="card card-hover"
+                style={{
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl" />
-                
-                {/* Status and Type Tag */}
-                <div className="flex justify-between items-center mb-4">
-                  <span className={`px-2.5 py-1 text-xs font-bold uppercase rounded-lg ${
-                    schedule.scheduleType === 'DAILY' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400' : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400'
-                  }`}>
+                {/* Accent element */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '80px',
+                  height: '80px',
+                  background: 'var(--accent-subtle)',
+                  borderRadius: '50%',
+                  filter: 'blur(30px)',
+                  marginRight: '-20px',
+                  marginTop: '-20px',
+                  pointerEvents: 'none'
+                }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
                     {schedule.scheduleType}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <span className="badge badge-green">
+                    <span className="badge-dot" />
                     Active
                   </span>
                 </div>
 
-                <div className="space-y-3 mb-6">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
-                    <p className="text-xs text-gray-400 uppercase font-semibold">Store Location</p>
-                    <p className="text-base font-bold text-gray-900 dark:text-white">
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STORE LOCATION</span>
+                    <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
                       {schedule.location?.name || 'Unknown Location'}
-                    </p>
+                    </h3>
                   </div>
                   
                   <div>
-                    <p className="text-xs text-gray-400 uppercase font-semibold">Wholesale Vendor</p>
-                    <p className="text-base font-bold text-teal-600 dark:text-teal-400">
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>WHOLESALE VENDOR</span>
+                    <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--accent)', marginTop: '2px' }}>
                       {schedule.vendor?.displayName || 'Unknown Vendor'}
-                    </p>
+                    </h3>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-50 dark:border-zinc-800/80">
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px',
+                    paddingTop: '12px',
+                    borderTop: '1px solid var(--border-subtle)'
+                  }}>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase font-semibold">Trigger Time</p>
-                      <p className="text-sm font-mono text-gray-900 dark:text-white font-bold">{schedule.triggerTime.substring(0, 5)}</p>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Time</span>
+                      <p className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
+                        {schedule.triggerTime.substring(0, 5)}
+                      </p>
                     </div>
                     {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
                       <div>
-                        <p className="text-xs text-gray-400 uppercase font-semibold">Trigger Day</p>
-                        <p className="text-sm text-gray-900 dark:text-white font-bold">{DAYS_OF_WEEK[schedule.dayOfWeek]}</p>
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Day</span>
+                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
+                          {DAYS_OF_WEEK[schedule.dayOfWeek]}
+                        </p>
                       </div>
                     )}
                   </div>
 
                   {schedule.slackChannel && (
-                    <div className="pt-2 border-t border-gray-50 dark:border-zinc-800/80">
-                      <p className="text-xs text-gray-400 uppercase font-semibold">Slack Target</p>
-                      <p className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+                    <div style={{
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Slack:</span>
+                      <span className="mono" style={{
+                        color: 'var(--accent)',
+                        backgroundColor: 'var(--accent-subtle)',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--accent-border)',
+                        fontSize: '0.75rem'
+                      }}>
                         #{schedule.slackChannel}
-                      </p>
+                      </span>
                     </div>
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 text-xs text-gray-400">
-                  <span>ID: {schedule.id.substring(0, 8)}...</span>
+                <div style={{
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-subtle)',
+                  fontSize: '0.6875rem',
+                  color: 'var(--text-tertiary)',
+                  marginTop: '4px'
+                }}>
+                  <span className="mono">ID: {schedule.id.substring(0, 8)}</span>
                 </div>
               </div>
             ))}
@@ -273,40 +332,45 @@ export default function SchedulesPage() {
 
         {/* Modal Form */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+                className="modal-close"
+                aria-label="Close modal"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Create Schedule</h2>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Schedule routine stock takes for locations and suppliers.</p>
+              <div className="modal-header">
+                <h2>Create Schedule</h2>
+                <p>Configure automated pings to coordinate storefront employee inventory tasks.</p>
+              </div>
 
               {error && (
-                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
                   {error}
                 </div>
               )}
 
               {locations.length === 0 || vendors.length === 0 ? (
-                <div className="text-center py-4 text-sm text-red-500">
+                <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-secondary)' }}>
                   Please ensure you have created both Locations and Vendors before configuring schedules.
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Store Location *
-                    </label>
+                    <label className="label" htmlFor="sched-loc">Store Location *</label>
                     <select
+                      id="sched-loc"
                       value={locationId}
                       onChange={(e) => setLocationId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     >
                       {locations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
@@ -317,13 +381,12 @@ export default function SchedulesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Supplier/Vendor *
-                    </label>
+                    <label className="label" htmlFor="sched-vendor">Supplier/Vendor *</label>
                     <select
+                      id="sched-vendor"
                       value={vendorId}
                       onChange={(e) => setVendorId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="input"
                     >
                       {vendors.map((v) => (
                         <option key={v.id} value={v.id}>
@@ -333,15 +396,14 @@ export default function SchedulesPage() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Schedule Type *
-                      </label>
+                      <label className="label" htmlFor="sched-type">Schedule Type *</label>
                       <select
+                        id="sched-type"
                         value={scheduleType}
                         onChange={(e) => setScheduleType(e.target.value as any)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="input"
                       >
                         <option value="DAILY">Daily</option>
                         <option value="WEEKLY">Weekly</option>
@@ -349,28 +411,26 @@ export default function SchedulesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Trigger Time *
-                      </label>
+                      <label className="label" htmlFor="sched-time">Trigger Time *</label>
                       <input
+                        id="sched-time"
                         type="time"
                         required
                         value={triggerTime}
                         onChange={(e) => setTriggerTime(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                        className="input mono"
                       />
                     </div>
                   </div>
 
                   {scheduleType === 'WEEKLY' && (
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Day of Week *
-                      </label>
+                      <label className="label" htmlFor="sched-day">Day of Week *</label>
                       <select
+                        id="sched-day"
                         value={dayOfWeek}
                         onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        className="input"
                       >
                         {DAYS_OF_WEEK.map((day, idx) => (
                           <option key={idx} value={idx}>
@@ -382,30 +442,34 @@ export default function SchedulesPage() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Target Slack Channel
-                    </label>
-                    <input
-                      type="text"
-                      value={slackChannel}
-                      onChange={(e) => setSlackChannel(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g. orders-kitchen"
-                    />
+                    <label className="label" htmlFor="sched-slack">Target Slack Channel</label>
+                    <div className="input-prefix-wrap">
+                      <span className="input-prefix">#</span>
+                      <input
+                        id="sched-slack"
+                        type="text"
+                        value={slackChannel}
+                        onChange={(e) => setSlackChannel(e.target.value)}
+                        className="input"
+                        placeholder="orders-kitchen"
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex gap-3 pt-4">
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                      className="btn btn-secondary"
+                      style={{ flex: 1 }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={formSubmitting}
-                      className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
                     >
                       {formSubmitting ? 'Scheduling...' : 'Set Schedule'}
                     </button>
