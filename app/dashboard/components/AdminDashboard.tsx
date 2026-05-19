@@ -4,48 +4,48 @@ import Link from 'next/link';
 
 export default function AdminDashboard() {
   const actions = [
-    { 
-      title: 'Store Locations', 
-      icon: '📍', 
+    {
+      title: 'Store Locations',
+      icon: '📍',
       description: 'Register and manage active store franchises.',
       href: '/dashboard/admin/locations'
     },
-    { 
-      title: 'Vendors & Suppliers', 
-      icon: '🏢', 
+    {
+      title: 'Vendors & Suppliers',
+      icon: '🏢',
       description: 'Onboard wholesale vendor contact and channels.',
       href: '/dashboard/admin/vendors'
     },
-    { 
-      title: 'Product Catalog', 
-      icon: '📦', 
+    {
+      title: 'Product Catalog',
+      icon: '📦',
       description: 'Catalog products, base units, and multipliers.',
       href: '/dashboard/admin/items'
     },
-    { 
-      title: 'Staff Accounts', 
-      icon: '👤', 
+    {
+      title: 'Staff Accounts',
+      icon: '👤',
       description: 'Register employee accounts and manage roles.',
       href: '/dashboard/admin/users'
     },
-    { 
-      title: 'Ordering Schedules', 
-      icon: '📅', 
+    {
+      title: 'Ordering Schedules',
+      icon: '📅',
       description: 'Configure automated Slack pings for stock takes.',
       href: '/dashboard/admin/schedules'
     },
-    { 
-      title: 'Localization Dictionary', 
-      icon: '🗣️', 
-      description: 'Translate inventory sheet items for multilingual staff.',
-      href: '/dashboard/admin/translations'
-    },
-    { 
-      title: 'Reports & POs', 
-      icon: '📊', 
-      description: 'Verify kitchen audits and authorize purchase orders.',
-      href: '/dashboard/admin/reports'
-    },
+    // { 
+    //   title: 'Localization Dictionary', 
+    //   icon: '🗣️', 
+    //   description: 'Translate inventory sheet items for multilingual staff.',
+    //   href: '/dashboard/admin/translations'
+    // },
+    // { 
+    //   title: 'Reports & POs', 
+    //   icon: '📊', 
+    //   description: 'Verify kitchen audits and authorize purchase orders.',
+    //   href: '/dashboard/admin/reports'
+    // },
   ];
 
   return (
