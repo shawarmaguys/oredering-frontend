@@ -60,6 +60,7 @@ export const api = {
       return request<any[]>(`/items${query}`);
     },
     create: (data: any) => request<any>('/items', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/items/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
   schedules: {
     list: () => request<any[]>('/schedules'),

@@ -16,6 +16,7 @@ interface Item {
   baseUnitName: string;
   displayUnitName: string;
   multiplier: number;
+  productCode?: string;
   isActive: boolean;
   vendorId: string;
   vendor?: {
@@ -30,15 +31,26 @@ export default function ItemsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Form State
+  // Create Form State
   const [displayName, setDisplayName] = useState('');
   const [vendorId, setVendorId] = useState('');
   const [baseUnitName, setBaseUnitName] = useState('');
   const [displayUnitName, setDisplayUnitName] = useState('');
   const [multiplier, setMultiplier] = useState(1);
+  const [productCode, setProductCode] = useState('');
   
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
+
+  // Edit Form State
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editVendorId, setEditVendorId] = useState('');
+  const [editBaseUnitName, setEditBaseUnitName] = useState('');
+  const [editDisplayUnitName, setEditDisplayUnitName] = useState('');
+  const [editMultiplier, setEditMultiplier] = useState(1);
+  const [editProductCode, setEditProductCode] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -64,7 +76,7 @@ export default function ItemsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorId) {
       setError('Please select a vendor first.');
@@ -80,6 +92,7 @@ export default function ItemsPage() {
         baseUnitName,
         displayUnitName,
         multiplier: Number(multiplier),
+        productCode: productCode || undefined,
       });
 
       // Reset
@@ -87,11 +100,42 @@ export default function ItemsPage() {
       setBaseUnitName('');
       setDisplayUnitName('');
       setMultiplier(1);
+      setProductCode('');
       
       setShowModal(false);
       fetchInitialData();
     } catch (err: any) {
       setError(err.message || 'Failed to create product item.');
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
+    if (!editVendorId) {
+      setError('Please select a vendor first.');
+      return;
+    }
+    setFormSubmitting(true);
+    setError('');
+
+    try {
+      await api.items.update(selectedItem.id, {
+        displayName: editDisplayName,
+        vendorId: editVendorId,
+        baseUnitName: editBaseUnitName,
+        displayUnitName: editDisplayUnitName,
+        multiplier: Number(editMultiplier),
+        productCode: editProductCode || null,
+      });
+
+      setShowEditModal(false);
+      setSelectedItem(null);
+      fetchInitialData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update product item.');
     } finally {
       setFormSubmitting(false);
     }
@@ -129,7 +173,7 @@ export default function ItemsPage() {
           </button>
         </div>
 
-        {error && !showModal && (
+        {error && !showModal && !showEditModal && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
             {error}
           </div>
@@ -164,10 +208,12 @@ export default function ItemsPage() {
                   <tr className="bg-gray-55/50 dark:bg-zinc-800/40 text-gray-500 dark:text-zinc-400 font-semibold text-sm border-b border-gray-200 dark:border-zinc-800">
                     <th className="p-4 pl-6">Product Display Name</th>
                     <th className="p-4">Assigned Vendor</th>
+                    <th className="p-4">Product Code</th>
                     <th className="p-4">Display Unit</th>
                     <th className="p-4">Base Unit</th>
                     <th className="p-4 text-center">Multiplier</th>
-                    <th className="p-4 text-right pr-6">Status</th>
+                    <th className="p-4 text-center">Status</th>
+                    <th className="p-4 text-right pr-6">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-150 dark:divide-zinc-800/50">
@@ -182,6 +228,9 @@ export default function ItemsPage() {
                       <td className="p-4">
                         {item.vendor?.displayName || 'Unknown Vendor'}
                       </td>
+                      <td className="p-4 font-mono text-xs text-gray-500 dark:text-zinc-400">
+                        {item.productCode || '-'}
+                      </td>
                       <td className="p-4">
                         <span className="px-2 py-1 rounded bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 text-xs font-semibold">
                           {item.displayUnitName}
@@ -195,11 +244,32 @@ export default function ItemsPage() {
                       <td className="p-4 text-center font-mono">
                         {item.multiplier}
                       </td>
-                      <td className="p-4 text-right pr-6">
+                      <td className="p-4 text-center">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                           Active
                         </span>
+                      </td>
+                      <td className="p-4 text-right pr-6">
+                        <button
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setEditDisplayName(item.displayName);
+                            setEditVendorId(item.vendorId);
+                            setEditBaseUnitName(item.baseUnitName);
+                            setEditDisplayUnitName(item.displayUnitName);
+                            setEditMultiplier(item.multiplier);
+                            setEditProductCode(item.productCode || '');
+                            setError('');
+                            setShowEditModal(true);
+                          }}
+                          className="p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold inline-flex items-center gap-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                          </svg>
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -209,10 +279,10 @@ export default function ItemsPage() {
           </div>
         )}
 
-        {/* Modal Form */}
+        {/* Modal Create Form */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
               <button
                 onClick={() => setShowModal(false)}
                 className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
@@ -242,7 +312,7 @@ export default function ItemsPage() {
                   </Link>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleCreateSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
                       Product Name *
@@ -257,21 +327,36 @@ export default function ItemsPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Assigned Vendor *
-                    </label>
-                    <select
-                      value={vendorId}
-                      onChange={(e) => setVendorId(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                      {vendors.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.displayName}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                        Assigned Vendor *
+                      </label>
+                      <select
+                        value={vendorId}
+                        onChange={(e) => setVendorId(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      >
+                        {vendors.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                        Product Code <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={productCode}
+                        onChange={(e) => setProductCode(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="e.g. SH-KIT-010"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -341,6 +426,147 @@ export default function ItemsPage() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal Edit Form */}
+        {showEditModal && selectedItem && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedItem(null);
+                }}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Edit Product Item</h2>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify registered SKU settings and multipliers.</p>
+
+              {error && (
+                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                    Product Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editDisplayName}
+                    onChange={(e) => setEditDisplayName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Assigned Vendor *
+                    </label>
+                    <select
+                      value={editVendorId}
+                      onChange={(e) => setEditVendorId(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Product Code <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editProductCode}
+                      onChange={(e) => setEditProductCode(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="e.g. SH-KIT-010"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Display Unit *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editDisplayUnitName}
+                      onChange={(e) => setEditDisplayUnitName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Base Unit *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editBaseUnitName}
+                      onChange={(e) => setEditBaseUnitName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                    Multiplier (Display Unit to Base Unit) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    step="any"
+                    min="0.0001"
+                    value={editMultiplier}
+                    onChange={(e) => setEditMultiplier(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Defines how many base units make up one display unit.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setSelectedItem(null);
+                    }}
+                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={formSubmitting}
+                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                  >
+                    {formSubmitting ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
