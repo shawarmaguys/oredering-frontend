@@ -44,6 +44,9 @@ export const api = {
     list: () => request<any[]>('/locations'),
     create: (data: any) => request<any>('/locations', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/locations/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    getItems: (locationId: string) => request<any[]>(`/locations/${locationId}/items`),
+    addOrUpdateItem: (locationId: string, data: any) => request<any>(`/locations/${locationId}/items`, { method: 'POST', body: JSON.stringify(data) }),
+    removeItem: (locationId: string, itemId: string) => request<any>(`/locations/${locationId}/items/${itemId}`, { method: 'DELETE' }),
   },
   vendors: {
     list: (departmentId?: string) => {
@@ -52,6 +55,7 @@ export const api = {
     },
     create: (data: any) => request<any>('/vendors', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/vendors/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request<any>(`/vendors/${id}`, { method: 'DELETE' }),
     departments: () => request<any[]>('/vendors/departments'),
   },
   items: {
@@ -61,6 +65,7 @@ export const api = {
     },
     create: (data: any) => request<any>('/items', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/items/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request<any>(`/items/${id}`, { method: 'DELETE' }),
   },
   schedules: {
     list: () => request<any[]>('/schedules'),
