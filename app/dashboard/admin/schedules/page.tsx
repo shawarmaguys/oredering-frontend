@@ -56,7 +56,6 @@ export default function SchedulesPage() {
   const [scheduleType, setScheduleType] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [dayOfWeek, setDayOfWeek] = useState(1); // Monday
   const [triggerTime, setTriggerTime] = useState('09:00');
-  const [slackChannel, setSlackChannel] = useState('');
   
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -112,23 +111,18 @@ export default function SchedulesPage() {
     setError('');
 
     try {
-      const formattedTime = triggerTime.length === 5 ? `${triggerTime}:00` : triggerTime;
-
       await api.schedules.create({
-        location_id: locationId,
-        vendor_id: vendorId,
-        schedule_type: scheduleType,
-        day_of_week: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
-        trigger_time: formattedTime,
-        slack_channel: slackChannel || undefined,
-        is_active: true,
+        locationId,
+        vendorId,
+        scheduleType,
+        dayOfWeek: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
+        triggerTime,
       });
 
       // Reset
       setScheduleType('DAILY');
       setDayOfWeek(1);
       setTriggerTime('09:00');
-      setSlackChannel('');
       
       setShowModal(false);
       fetchInitialData();
@@ -441,20 +435,7 @@ export default function SchedulesPage() {
                     </div>
                   )}
 
-                  <div>
-                    <label className="label" htmlFor="sched-slack">Target Slack Channel</label>
-                    <div className="input-prefix-wrap">
-                      <span className="input-prefix">#</span>
-                      <input
-                        id="sched-slack"
-                        type="text"
-                        value={slackChannel}
-                        onChange={(e) => setSlackChannel(e.target.value)}
-                        className="input"
-                        placeholder="orders-kitchen"
-                      />
-                    </div>
-                  </div>
+
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                     <button
