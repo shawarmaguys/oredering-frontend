@@ -44,7 +44,7 @@ export default function VendorsPage() {
   const [address2, setAddress2] = useState('');
   const [address3, setAddress3] = useState('');
   const [departmentId, setDepartmentId] = useState('');
-  
+
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -100,7 +100,7 @@ export default function VendorsPage() {
         address3: address3 || undefined,
         departmentId,
       });
-      
+
       // Reset
       setDisplayName('');
       setChannelName('');
@@ -112,9 +112,9 @@ export default function VendorsPage() {
       if (departments.length > 0) {
         setDepartmentId(departments[0].id);
       }
-      
+
       setShowModal(false);
-      
+
       // Re-fetch list
       const vendorsData = await api.vendors.list();
       setVendors(vendorsData);
@@ -142,10 +142,10 @@ export default function VendorsPage() {
         address3: editAddress3 || null,
         departmentId: editDepartmentId,
       });
-      
+
       setShowEditModal(false);
       setSelectedVendor(null);
-      
+
       // Re-fetch list
       const vendorsData = await api.vendors.list();
       setVendors(vendorsData);
@@ -229,7 +229,7 @@ export default function VendorsPage() {
                 className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden flex flex-col justify-between"
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
-                
+
                 <div>
                   <div className="flex justify-between items-start gap-2 mb-4">
                     <div className="truncate">
@@ -240,7 +240,7 @@ export default function VendorsPage() {
                         </span>
                       )}
                     </div>
-                    
+
                     <button
                       onClick={() => {
                         setSelectedVendor(vendor);
@@ -408,7 +408,7 @@ export default function VendorsPage() {
                     Contact Email Address
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -570,7 +570,7 @@ export default function VendorsPage() {
                     Contact Email Address
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"

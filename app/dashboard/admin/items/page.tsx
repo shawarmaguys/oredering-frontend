@@ -23,6 +23,7 @@ interface Item {
     displayName: string;
   };
   createdAt: string;
+  note?: string;
 }
 
 export default function ItemsPage() {
@@ -36,9 +37,9 @@ export default function ItemsPage() {
   const [vendorId, setVendorId] = useState('');
   const [baseUnitName, setBaseUnitName] = useState('');
   const [displayUnitName, setDisplayUnitName] = useState('');
-  const [multiplier, setMultiplier] = useState(1);
+  const [multiplier, setMultiplier] = useState<number | ''>('');
   const [productCode, setProductCode] = useState('');
-  
+  const [note, setNote] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -48,8 +49,9 @@ export default function ItemsPage() {
   const [editVendorId, setEditVendorId] = useState('');
   const [editBaseUnitName, setEditBaseUnitName] = useState('');
   const [editDisplayUnitName, setEditDisplayUnitName] = useState('');
-  const [editMultiplier, setEditMultiplier] = useState(1);
+  const [editMultiplier, setEditMultiplier] = useState<number | ''>('');
   const [editProductCode, setEditProductCode] = useState('');
+  const [editNote, setEditNote] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
@@ -82,6 +84,15 @@ export default function ItemsPage() {
       setError('Please select a vendor first.');
       return;
     }
+
+    const hasSecondaryUnit = displayUnitName && displayUnitName.trim() !== '';
+    if (hasSecondaryUnit) {
+      if (multiplier === '' || Number(multiplier) <= 0) {
+        setError('Please enter a valid multiplier for the secondary unit.');
+        return;
+      }
+    }
+
     setFormSubmitting(true);
     setError('');
 
@@ -90,18 +101,19 @@ export default function ItemsPage() {
         displayName,
         vendorId,
         baseUnitName,
-        displayUnitName,
-        multiplier: Number(multiplier),
+        displayUnitName: hasSecondaryUnit ? displayUnitName : undefined,
+        multiplier: hasSecondaryUnit ? Number(multiplier) : 1,
         productCode: productCode || undefined,
+        note: note || undefined,
       });
 
       // Reset
       setDisplayName('');
       setBaseUnitName('');
       setDisplayUnitName('');
-      setMultiplier(1);
+      setMultiplier('');
       setProductCode('');
-      
+      setNote('');
       setShowModal(false);
       fetchInitialData();
     } catch (err: any) {
@@ -118,6 +130,15 @@ export default function ItemsPage() {
       setError('Please select a vendor first.');
       return;
     }
+
+    const hasSecondaryUnit = editDisplayUnitName && editDisplayUnitName.trim() !== '';
+    if (hasSecondaryUnit) {
+      if (editMultiplier === '' || Number(editMultiplier) <= 0) {
+        setError('Please enter a valid multiplier for the secondary unit.');
+        return;
+      }
+    }
+
     setFormSubmitting(true);
     setError('');
 
@@ -126,9 +147,10 @@ export default function ItemsPage() {
         displayName: editDisplayName,
         vendorId: editVendorId,
         baseUnitName: editBaseUnitName,
-        displayUnitName: editDisplayUnitName,
-        multiplier: Number(editMultiplier),
-        productCode: editProductCode || null,
+        displayUnitName: editDisplayUnitName || '',
+        multiplier: hasSecondaryUnit ? Number(editMultiplier) : 1,
+        productCode: editProductCode || undefined,
+        note: editNote || undefined,
       });
 
       setShowEditModal(false);
@@ -209,7 +231,8 @@ export default function ItemsPage() {
                     <th className="p-4 pl-6">Product Display Name</th>
                     <th className="p-4">Assigned Vendor</th>
                     <th className="p-4">Product Code</th>
-                    <th className="p-4">Display Unit</th>
+                    <th className="p-4">Notes</th>
+                    <th className="p-4">Secondary Unit</th>
                     <th className="p-4">Base Unit</th>
                     <th className="p-4 text-center">Multiplier</th>
                     <th className="p-4 text-center">Status</th>
@@ -217,62 +240,73 @@ export default function ItemsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-150 dark:divide-zinc-800/50">
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-gray-50 dark:hover:bg-zinc-800/20 transition-colors text-sm text-gray-700 dark:text-zinc-300"
-                    >
-                      <td className="p-4 pl-6 font-bold text-gray-900 dark:text-white">
-                        {item.displayName}
-                      </td>
-                      <td className="p-4">
-                        {item.vendor?.displayName || 'Unknown Vendor'}
-                      </td>
-                      <td className="p-4 font-mono text-xs text-gray-500 dark:text-zinc-400">
-                        {item.productCode || '-'}
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2 py-1 rounded bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 text-xs font-semibold">
-                          {item.displayUnitName}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2 py-1 rounded bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 text-xs">
-                          {item.baseUnitName}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center font-mono">
-                        {item.multiplier}
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          Active
-                        </span>
-                      </td>
-                      <td className="p-4 text-right pr-6">
-                        <button
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setEditDisplayName(item.displayName);
-                            setEditVendorId(item.vendorId);
-                            setEditBaseUnitName(item.baseUnitName);
-                            setEditDisplayUnitName(item.displayUnitName);
-                            setEditMultiplier(item.multiplier);
-                            setEditProductCode(item.productCode || '');
-                            setError('');
-                            setShowEditModal(true);
-                          }}
-                          className="p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold inline-flex items-center gap-1"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                          </svg>
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((item) => {
+                    const isSecondaryConfigured = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
+                    return (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-gray-50 dark:hover:bg-zinc-800/20 transition-colors text-sm text-gray-700 dark:text-zinc-300"
+                      >
+                        <td className="p-4 pl-6 font-bold text-gray-900 dark:text-white">
+                          {item.displayName}
+                        </td>
+                        <td className="p-4">
+                          {item.vendor?.displayName || 'Unknown Vendor'}
+                        </td>
+                        <td className="p-4 font-mono text-xs text-gray-500 dark:text-zinc-400">
+                          {item.productCode || '-'}
+                        </td>
+                        <td className="p-4 font-mono text-xs text-gray-500 dark:text-zinc-400">
+                          {item.note || '-'}
+                        </td>
+                        <td className="p-4">
+                          {isSecondaryConfigured ? (
+                            <span className="px-2 py-1 rounded bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400 text-xs font-semibold">
+                              {item.displayUnitName}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-zinc-500 font-mono">-</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 rounded bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 text-xs">
+                            {item.baseUnitName}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center font-mono">
+                          {isSecondaryConfigured ? item.multiplier : '1'}
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            Active
+                          </span>
+                        </td>
+                        <td className="p-4 text-right pr-6">
+                          <button
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setEditDisplayName(item.displayName);
+                              setEditVendorId(item.vendorId);
+                              setEditBaseUnitName(item.baseUnitName);
+                              setEditDisplayUnitName(isSecondaryConfigured ? item.displayUnitName : '');
+                              setEditMultiplier(isSecondaryConfigured ? item.multiplier : '');
+                              setEditProductCode(item.productCode || '');
+                              setEditNote(item.note || '');
+                              setError('');
+                              setShowEditModal(true);
+                            }}
+                            className="p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold inline-flex items-center gap-1"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                            </svg>
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -359,14 +393,42 @@ export default function ItemsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Display Unit *
+                        Notes <span className="text-xs text-gray-400 font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
-                        required
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="e.g. Chicken Breast"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Base Unit *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={baseUnitName}
+                      onChange={(e) => setBaseUnitName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="e.g. lbs, oz, each"
+                    />
+                  </div>
+
+                  <div className={`grid gap-4 transition-all duration-300 ${displayUnitName && displayUnitName.trim() !== '' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                        Secondary Unit <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
                         value={displayUnitName}
                         onChange={(e) => setDisplayUnitName(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -374,39 +436,30 @@ export default function ItemsPage() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                        Base Unit *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={baseUnitName}
-                        onChange={(e) => setBaseUnitName(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="e.g. lbs, oz, each"
-                      />
-                    </div>
+                    {displayUnitName && displayUnitName.trim() !== '' && (
+                      <div className="animate-fade-in-up">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                          Multiplier *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          step="any"
+                          min="0.0001"
+                          value={multiplier}
+                          onChange={(e) => setMultiplier(e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                          placeholder="e.g. 30 (1 case = 30 lbs)"
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Multiplier (Display Unit to Base Unit) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      step="any"
-                      min="0.0001"
-                      value={multiplier}
-                      onChange={(e) => setMultiplier(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
-                      placeholder="e.g. 30 (1 case = 30 lbs)"
-                    />
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      Defines how many base units (e.g. lbs) make up one display unit (e.g. case).
+                  {displayUnitName && displayUnitName.trim() !== '' && (
+                    <p className="text-[11px] text-gray-400">
+                      Defines how many base units ({baseUnitName || 'e.g. lbs'}) make up one secondary unit ({displayUnitName}).
                     </p>
-                  </div>
+                  )}
 
                   <div className="flex gap-3 pt-4">
                     <button
@@ -501,51 +554,73 @@ export default function ItemsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Display Unit *
+                      Notes <span className="text-xs text-gray-400 font-normal">(Optional)</span>
                     </label>
                     <input
                       type="text"
-                      required
-                      value={editDisplayUnitName}
-                      onChange={(e) => setEditDisplayUnitName(e.target.value)}
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Base Unit *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={editBaseUnitName}
-                      onChange={(e) => setEditBaseUnitName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="e.g. Chicken Breast"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Multiplier (Display Unit to Base Unit) *
+                    Base Unit *
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    step="any"
-                    min="0.0001"
-                    value={editMultiplier}
-                    onChange={(e) => setEditMultiplier(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                    value={editBaseUnitName}
+                    onChange={(e) => setEditBaseUnitName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g. lbs, oz, each"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Defines how many base units make up one display unit.
-                  </p>
                 </div>
+
+                <div className={`grid gap-4 transition-all duration-300 ${editDisplayUnitName && editDisplayUnitName.trim() !== '' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Secondary Unit <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editDisplayUnitName}
+                      onChange={(e) => setEditDisplayUnitName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="e.g. case, box, cone"
+                    />
+                  </div>
+
+                  {editDisplayUnitName && editDisplayUnitName.trim() !== '' && (
+                    <div className="animate-fade-in-up">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                        Multiplier *
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        step="any"
+                        min="0.0001"
+                        value={editMultiplier}
+                        onChange={(e) => setEditMultiplier(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+                        placeholder="e.g. 30 (1 case = 30 lbs)"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {editDisplayUnitName && editDisplayUnitName.trim() !== '' && (
+                  <p className="text-[11px] text-gray-400">
+                    Defines how many base units ({editBaseUnitName || 'e.g. lbs'}) make up one secondary unit ({editDisplayUnitName}).
+                  </p>
+                )}
 
                 <div className="flex gap-3 pt-4">
                   <button
