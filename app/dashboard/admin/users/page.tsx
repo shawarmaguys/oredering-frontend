@@ -69,7 +69,7 @@ export default function UsersPage() {
 
     try {
       await api.users.create({
-        full_name: fullName,
+        fullName: fullName,
         email,
         password,
         role,
@@ -98,7 +98,7 @@ export default function UsersPage() {
 
     try {
       await api.users.update(selectedUser.id, {
-        full_name: editFullName,
+        fullName: editFullName,
         role: editRole,
       });
       
