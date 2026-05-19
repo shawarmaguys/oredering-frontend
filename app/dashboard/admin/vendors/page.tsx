@@ -23,19 +23,19 @@ interface Vendor {
   createdAt: string;
 }
 
-const DEPARTMENTS = [
-  { id: 'd3b07384-d113-4ec8-a5b6-7bbbcda20e6a', code: 'KIT', name: 'Kitchen & Foods' },
-  { id: 'a2b07384-d113-4ec8-a5b6-7bbbcda20e6b', code: 'BEV', name: 'Beverages & Soft Drinks' },
-  { id: 'b2b07384-d113-4ec8-a5b6-7bbbcda20e6c', code: 'PKG', name: 'Packaging & Janitorial' },
-  { id: 'c2b07384-d113-4ec8-a5b6-7bbbcda20e6d', code: 'GEN', name: 'General Supply' },
-];
+interface Department {
+  id: string;
+  code: string;
+  fullName: string;
+}
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Form State
+  // Onboard (Create) Form State
   const [displayName, setDisplayName] = useState('');
   const [channelName, setChannelName] = useState('');
   const [email, setEmail] = useState('');
@@ -43,29 +43,48 @@ export default function VendorsPage() {
   const [address1, setAddress1] = useState('');
   const [address2, setAddress2] = useState('');
   const [address3, setAddress3] = useState('');
-  const [departmentId, setDepartmentId] = useState(DEPARTMENTS[0].id);
+  const [departmentId, setDepartmentId] = useState('');
   
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+  // Edit Form State
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editChannelName, setEditChannelName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress1, setEditAddress1] = useState('');
+  const [editAddress2, setEditAddress2] = useState('');
+  const [editAddress3, setEditAddress3] = useState('');
+  const [editDepartmentId, setEditDepartmentId] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+
   useEffect(() => {
-    fetchVendors();
+    fetchInitialData();
   }, []);
 
-  const fetchVendors = async () => {
+  const fetchInitialData = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await api.vendors.list();
-      setVendors(data);
+      const [vendorsData, deptsData] = await Promise.all([
+        api.vendors.list(),
+        api.vendors.departments(),
+      ]);
+      setVendors(vendorsData);
+      setDepartments(deptsData);
+      if (deptsData.length > 0) {
+        setDepartmentId(deptsData[0].id);
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to load vendors.');
+      setError(err.message || 'Failed to load initial vendor data.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormSubmitting(true);
     setError('');
@@ -90,12 +109,48 @@ export default function VendorsPage() {
       setAddress1('');
       setAddress2('');
       setAddress3('');
-      setDepartmentId(DEPARTMENTS[0].id);
+      if (departments.length > 0) {
+        setDepartmentId(departments[0].id);
+      }
       
       setShowModal(false);
-      fetchVendors();
+      
+      // Re-fetch list
+      const vendorsData = await api.vendors.list();
+      setVendors(vendorsData);
     } catch (err: any) {
-      setError(err.message || 'Failed to create vendor.');
+      setError(err.message || 'Failed to onboard vendor.');
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVendor) return;
+    setFormSubmitting(true);
+    setError('');
+
+    try {
+      await api.vendors.update(selectedVendor.id, {
+        displayName: editDisplayName,
+        channelName: editChannelName || null,
+        email: editEmail || null,
+        phone: editPhone || null,
+        address1: editAddress1 || null,
+        address2: editAddress2 || null,
+        address3: editAddress3 || null,
+        departmentId: editDepartmentId,
+      });
+      
+      setShowEditModal(false);
+      setSelectedVendor(null);
+      
+      // Re-fetch list
+      const vendorsData = await api.vendors.list();
+      setVendors(vendorsData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update vendor.');
     } finally {
       setFormSubmitting(false);
     }
@@ -133,7 +188,7 @@ export default function VendorsPage() {
           </button>
         </div>
 
-        {error && !showModal && (
+        {error && !showModal && !showEditModal && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
             {error}
           </div>
@@ -154,16 +209,16 @@ export default function VendorsPage() {
           </div>
         ) : vendors.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl">
-            <span className="text-4xl mb-4 block">🏢</span>
+            <span className="text-4xl mb-4 block">🚚</span>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No Vendors Onboarded</h3>
             <p className="text-gray-500 dark:text-zinc-400 max-w-sm mx-auto mb-6">
-              You haven't onboarded any food or package vendors yet.
+              Onboard your food, beverage, and packaging wholesale vendors to configure purchase order channels.
             </p>
             <button
               onClick={() => setShowModal(true)}
               className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold rounded-xl transition-all"
             >
-              Onboard First Vendor
+              Onboard First Supplier
             </button>
           </div>
         ) : (
@@ -171,51 +226,84 @@ export default function VendorsPage() {
             {vendors.map((vendor) => (
               <div
                 key={vendor.id}
-                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden"
+                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-teal-500/30 dark:hover:border-teal-500/30 transition-all relative overflow-hidden flex flex-col justify-between"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
                 
-                {/* Department Tag */}
-                <div className="mb-4">
-                  <span className="px-2.5 py-1 text-xs font-bold uppercase rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 border border-teal-200/30 dark:border-teal-500/20">
-                    {vendor.department?.fullName || 'General'}
-                  </span>
+                <div>
+                  <div className="flex justify-between items-start gap-2 mb-4">
+                    <div className="truncate">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{vendor.displayName}</h3>
+                      {vendor.department && (
+                        <span className="inline-block mt-1 px-2.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded-md bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 border border-teal-500/10">
+                          {vendor.department.code}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedVendor(vendor);
+                        setEditDisplayName(vendor.displayName);
+                        setEditChannelName(vendor.channelName || '');
+                        setEditEmail(vendor.email || '');
+                        setEditPhone(vendor.phone || '');
+                        setEditAddress1(vendor.address1 || '');
+                        setEditAddress2(vendor.address2 || '');
+                        setEditAddress3(vendor.address3 || '');
+                        setEditDepartmentId(vendor.departmentId);
+                        setError('');
+                        setShowEditModal(true);
+                      }}
+                      className="relative z-10 p-2 border border-gray-200 dark:border-zinc-800 hover:border-teal-500 hover:bg-teal-500/5 text-gray-500 hover:text-teal-600 dark:text-zinc-400 dark:hover:text-teal-400 rounded-xl transition-all text-xs font-bold shrink-0 flex items-center gap-1"
+                      title="Edit Vendor"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                      </svg>
+                      Edit
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-gray-500 dark:text-zinc-400 mb-6">
+                    {vendor.department && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-400">Dept:</span>
+                        <span>{vendor.department.fullName}</span>
+                      </div>
+                    )}
+                    {vendor.channelName && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-400">Slack:</span>
+                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 font-mono rounded">
+                          #{vendor.channelName}
+                        </span>
+                      </div>
+                    )}
+                    {vendor.email && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-400">Email:</span>
+                        <span className="truncate">{vendor.email}</span>
+                      </div>
+                    )}
+                    {vendor.phone && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-400">Phone:</span>
+                        <span>{vendor.phone}</span>
+                      </div>
+                    )}
+                    {vendor.address1 && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-400">Addr:</span>
+                        <span className="line-clamp-2">
+                          {[vendor.address1, vendor.address2, vendor.address3].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 truncate">
-                  {vendor.displayName}
-                </h3>
-
-                <div className="space-y-2 text-sm text-gray-500 dark:text-zinc-400 mb-6">
-                  {vendor.channelName && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-400">Slack:</span>
-                      <span>#{vendor.channelName}</span>
-                    </div>
-                  )}
-                  {vendor.email && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-400">Email:</span>
-                      <span className="truncate">{vendor.email}</span>
-                    </div>
-                  )}
-                  {vendor.phone && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-400">Phone:</span>
-                      <span>{vendor.phone}</span>
-                    </div>
-                  )}
-                  {vendor.address1 && (
-                    <div className="flex items-start gap-2">
-                      <span className="font-semibold text-gray-400">Addr:</span>
-                      <span className="line-clamp-2">
-                        {[vendor.address1, vendor.address2, vendor.address3].filter(Boolean).join(', ')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 text-xs text-gray-400 flex justify-between items-center">
+                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 text-[10px] text-gray-400 flex justify-between items-center">
                   <span>ID: {vendor.id.substring(0, 8)}...</span>
                   {vendor.createdAt && <span>Onboarded {new Date(vendor.createdAt).toLocaleDateString()}</span>}
                 </div>
@@ -246,7 +334,7 @@ export default function VendorsPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleCreateSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
@@ -271,11 +359,15 @@ export default function VendorsPage() {
                       onChange={(e) => setDepartmentId(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
-                      {DEPARTMENTS.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name} ({dept.code})
-                        </option>
-                      ))}
+                      {departments.length === 0 ? (
+                        <option value="">No departments available</option>
+                      ) : (
+                        departments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.fullName} ({dept.code})
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
@@ -379,6 +471,167 @@ export default function VendorsPage() {
                     className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
                   >
                     {formSubmitting ? 'Onboarding...' : 'Onboard Supplier'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Edit Form */}
+        {showEditModal && selectedVendor && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in-up">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedVendor(null);
+                }}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-400 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">Edit Onboarded Vendor</h2>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">Modify supplier profile details and departments.</p>
+
+              {error && (
+                <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Display Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editDisplayName}
+                      onChange={(e) => setEditDisplayName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Department Type *
+                    </label>
+                    <select
+                      value={editDepartmentId}
+                      onChange={(e) => setEditDepartmentId(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.fullName} ({dept.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Slack Channel Name
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">#</span>
+                      <input
+                        type="text"
+                        value={editChannelName}
+                        onChange={(e) => setEditChannelName(e.target.value)}
+                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Contact Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                    Contact Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                    Supplier Street Address (Line 1)
+                  </label>
+                  <input
+                    type="text"
+                    value={editAddress1}
+                    onChange={(e) => setEditAddress1(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      Suite/Bldg (Line 2)
+                    </label>
+                    <input
+                      type="text"
+                      value={editAddress2}
+                      onChange={(e) => setEditAddress2(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-1.5">
+                      City, State, Zip (Line 3)
+                    </label>
+                    <input
+                      type="text"
+                      value={editAddress3}
+                      onChange={(e) => setEditAddress3(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setSelectedVendor(null);
+                    }}
+                    className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={formSubmitting}
+                    className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-teal-950 font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                  >
+                    {formSubmitting ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>

@@ -51,6 +51,8 @@ export const api = {
       return request<any[]>(`/vendors${query}`);
     },
     create: (data: any) => request<any>('/vendors', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/vendors/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    departments: () => request<any[]>('/vendors/departments'),
   },
   items: {
     list: (vendorId?: string) => {
