@@ -68,6 +68,49 @@ export default function ReportsPage() {
     fetchInitialData();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const poId = params.get('poId');
+      if (poId) {
+        setActiveTab('pos');
+        fetchSinglePO(poId);
+      }
+    }
+  }, []);
+
+  const fetchSinglePO = async (poId: string) => {
+    setPoDetailsLoading(true);
+    setSelectedPO(null);
+    setPoItems([]);
+    try {
+      const details = await api.purchaseOrders.get(poId);
+      const mappedPO: PurchaseOrder = {
+        id: details.id,
+        vendorId: details.vendorId || details.vendor_id,
+        vendor: details.vendor,
+        locationId: details.locationId || details.location_id,
+        location: details.location,
+        stockRecordId: details.stockRecordId || details.stock_record_id,
+        createdBy: details.createdBy || details.created_by,
+        createdByUser: details.createdByUser || details.createdBy_user || { fullName: 'Worker Portal' },
+        approvedBy: details.approvedBy || details.approved_by,
+        approvedByUser: details.approvedByUser || details.approvedBy_user,
+        status: details.status,
+        pdfUrl: details.pdfUrl || details.pdf_url,
+        notes: details.notes,
+        createdAt: details.createdAt || details.created_at,
+        approvedAt: details.approvedAt || details.approved_at,
+      };
+      setSelectedPO(mappedPO);
+      setPoItems(details.items || []);
+    } catch (err: any) {
+      console.error('Failed to auto-load single PO details', err);
+    } finally {
+      setPoDetailsLoading(false);
+    }
+  };
+
   const fetchInitialData = async () => {
     setLoading(true);
     setError('');

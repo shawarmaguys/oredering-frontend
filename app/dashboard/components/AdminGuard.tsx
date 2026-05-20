@@ -33,7 +33,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_MANAGER' && user.role !== 'MANAGER')) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
         <div className="card" style={{
@@ -62,7 +62,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
             Access Restricted
           </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: 24, lineHeight: 1.6 }}>
-            You don't have admin privileges to access this section. Contact your system administrator for access.
+            You do not have the required role privileges to access this section.
           </p>
 
           <Link href="/dashboard" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
