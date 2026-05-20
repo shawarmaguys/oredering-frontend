@@ -11,8 +11,9 @@ export default function ManagerDashboard() {
   useEffect(() => {
     async function loadPendingReviews() {
       try {
-        const data = await api.purchaseOrders.list('DRAFT');
-        setPendingReviews(data);
+        const data = await api.purchaseOrders.list();
+        const filtered = data.filter((po: any) => po.status === 'DRAFT' || po.status === 'GENERATED');
+        setPendingReviews(filtered);
       } catch (err) {
         console.error('Failed to load pending reviews:', err);
       } finally {
@@ -81,9 +82,13 @@ export default function ManagerDashboard() {
                     }}
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
                           PO: {po.id.substring(0, 8)}
+                        </span>
+                        <span className={`badge ${po.status === 'GENERATED' ? 'badge-teal' : 'badge-amber'}`} style={{ fontSize: '0.6875rem', padding: '1px 6px' }}>
+                          <span className="badge-dot" style={{ backgroundColor: po.status === 'GENERATED' ? 'var(--teal)' : 'var(--amber)' }} />
+                          {po.status === 'GENERATED' ? 'Approved (Not Sent)' : 'Pending Review'}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                           • {new Date(po.createdAt).toLocaleDateString()} {new Date(po.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -93,8 +98,12 @@ export default function ManagerDashboard() {
                         <strong>{po.vendor?.displayName || 'Supplier'}</strong> at {po.location?.name || 'Store'}
                       </p>
                     </div>
-                    <Link href={`/dashboard/admin/reports/po/${po.id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
-                      Review values
+                    <Link
+                      href={`/dashboard/admin/reports/po/${po.id}`}
+                      className={`btn btn-sm ${po.status === 'GENERATED' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ textDecoration: 'none' }}
+                    >
+                      {po.status === 'GENERATED' ? 'Send PO' : 'Review values'}
                     </Link>
                   </div>
                 ))
