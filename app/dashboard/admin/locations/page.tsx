@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 
 interface Location {
   id: string;
@@ -62,6 +63,10 @@ export default function LocationsPage() {
   const [deptCode, setDeptCode] = useState('');
   const [deptFullName, setDeptFullName] = useState('');
   const [deptSlackChannel, setDeptSlackChannel] = useState('');
+
+  // Delete department confirmation state
+  const [deleteDeptConfirmOpen, setDeleteDeptConfirmOpen] = useState(false);
+  const [deptToDelete, setDeptToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const fetchLocationItems = async (locationId: string) => {
     setProductsLoading(true);
@@ -195,10 +200,17 @@ export default function LocationsPage() {
     }
   };
 
-  const handleDeleteDept = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this department? Any linked vendors or location mappings will be affected.')) {
-      return;
-    }
+  const handleDeleteDeptClick = (id: string, name: string) => {
+    setDeptToDelete({ id, name });
+    setDeleteDeptConfirmOpen(true);
+  };
+
+  const handleConfirmDeleteDept = async () => {
+    if (!deptToDelete) return;
+    const { id } = deptToDelete;
+    setDeleteDeptConfirmOpen(false);
+    setDeptToDelete(null);
+
     try {
       await api.departments.delete(id);
       fetchGlobalDepts();
@@ -494,21 +506,6 @@ export default function LocationsPage() {
                     Manage Products
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setSelectedLocation(loc);
-                      setError('');
-                      setShowDeptsModal(true);
-                      fetchLocationDepts(loc.id);
-                    }}
-                    className="btn btn-secondary btn-sm"
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 2 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                    </svg>
-                    Manage Departments
-                  </button>
                 </div>
 
                 <div style={{
@@ -977,118 +974,6 @@ export default function LocationsPage() {
           </div>
         )}
 
-        {/* Modal Manage Location Departments */}
-        {showDeptsModal && selectedLocation && (
-          <div className="modal-backdrop">
-            <div className="modal-panel modal-panel-sm">
-              <button
-                onClick={() => {
-                  setShowDeptsModal(false);
-                  setSelectedLocation(null);
-                }}
-                className="modal-close"
-                aria-label="Close modal"
-              >
-                &times;
-              </button>
-
-              <div style={{ marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  Manage Departments
-                </h2>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
-                  Assign or remove departments active at <strong>{selectedLocation.name}</strong>.
-                </p>
-              </div>
-
-              <div style={{ maxHeight: '350px', overflowY: 'auto', marginBottom: '24px' }}>
-                {deptsLoading ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)' }}>
-                    Loading departments...
-                  </div>
-                ) : locationDepts.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)' }}>
-                    No global departments configured. Use "Manage Departments" in the header to create one.
-                  </div>
-                ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
-                        <th style={{ padding: '8px', fontSize: '0.75rem', color: 'var(--text-tertiary)', width: '60px' }}>Active</th>
-                        <th style={{ padding: '8px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Code</th>
-                        <th style={{ padding: '8px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Name</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {locationDepts.map((dept) => {
-                        const isSaving = savingDeptId === dept.id;
-                        return (
-                          <tr key={dept.id} style={{ borderBottom: '1px solid var(--border-subtle)', opacity: isSaving ? 0.6 : 1 }}>
-                            <td style={{ padding: '12px' }}>
-                              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={dept.assigned}
-                                  disabled={isSaving}
-                                  onChange={() => handleToggleDept(dept)}
-                                  style={{ opacity: 0, width: 0, height: 0 }}
-                                />
-                                <span style={{
-                                  position: 'absolute',
-                                  cursor: 'pointer',
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  backgroundColor: dept.assigned ? 'var(--accent)' : 'var(--bg-sunken)',
-                                  border: '1px solid var(--border-subtle)',
-                                  transition: '0.2s',
-                                  borderRadius: '10px'
-                                }}>
-                                  <span style={{
-                                    position: 'absolute',
-                                    content: '""',
-                                    height: '14px',
-                                    width: '14px',
-                                    left: dept.assigned ? '23px' : '2px',
-                                    bottom: '2px',
-                                    backgroundColor: 'white',
-                                    transition: '0.2s',
-                                    borderRadius: '50%',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                                  }} />
-                                </span>
-                              </label>
-                            </td>
-                            <td style={{ padding: '12px', fontSize: '0.875rem' }}>
-                              <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{dept.code}</span>
-                            </td>
-                            <td style={{ padding: '12px', fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                              {dept.fullName}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => {
-                    setShowDeptsModal(false);
-                    setSelectedLocation(null);
-                  }}
-                  className="btn btn-primary"
-                  style={{ minWidth: '100px' }}
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Modal Manage Global Departments */}
         {showGlobalDeptsModal && (
@@ -1232,7 +1117,7 @@ export default function LocationsPage() {
                                 Edit
                               </button>
                               <button
-                                onClick={() => handleDeleteDept(dept.id)}
+                                onClick={() => handleDeleteDeptClick(dept.id, dept.fullName)}
                                 className="btn btn-secondary btn-sm"
                                 style={{ padding: '2px 6px', fontSize: '0.6875rem', color: 'var(--error)' }}
                               >
@@ -1265,6 +1150,17 @@ export default function LocationsPage() {
             </div>
           </div>
         )}
+
+        <ConfirmDialog
+          isOpen={deleteDeptConfirmOpen}
+          title="Delete Department?"
+          message={`Are you sure you want to delete the department "${deptToDelete?.name}"? Any linked vendors or location mappings will be affected.`}
+          onConfirm={handleConfirmDeleteDept}
+          onCancel={() => {
+            setDeleteDeptConfirmOpen(false);
+            setDeptToDelete(null);
+          }}
+        />
       </div>
     </AdminGuard>
   );

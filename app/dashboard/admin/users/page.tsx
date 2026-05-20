@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 
 interface User {
   id: string;
@@ -33,6 +34,10 @@ export default function UsersPage() {
   // Edit State
   const [editRole, setEditRole] = useState<'WORKER' | 'MANAGER' | 'ADMIN' | 'SUPER_MANAGER'>('WORKER');
   const [editFullName, setEditFullName] = useState('');
+
+  // Deactivate confirmation state
+  const [deactivateConfirmOpen, setDeactivateConfirmOpen] = useState(false);
+  const [userToDeactivate, setUserToDeactivate] = useState<{ id: string; fullName: string } | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -111,8 +116,17 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeactivate = async (id: string) => {
-    if (!confirm('Are you sure you want to deactivate this user account?')) return;
+  const handleDeactivateClick = (id: string, fullName: string) => {
+    setUserToDeactivate({ id, fullName });
+    setDeactivateConfirmOpen(true);
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!userToDeactivate) return;
+    const { id } = userToDeactivate;
+    setDeactivateConfirmOpen(false);
+    setUserToDeactivate(null);
+
     setError('');
     try {
       await api.users.delete(id);
@@ -222,7 +236,7 @@ export default function UsersPage() {
                           </button>
                           {item.isActive && (
                             <button
-                              onClick={() => handleDeactivate(item.id)}
+                              onClick={() => handleDeactivateClick(item.id, item.fullName)}
                               className="btn btn-danger btn-sm"
                             >
                               Deactivate
@@ -440,6 +454,17 @@ export default function UsersPage() {
             </div>
           </div>
         )}
+
+        <ConfirmDialog
+          isOpen={deactivateConfirmOpen}
+          title="Deactivate Account?"
+          message={`Are you sure you want to deactivate ${userToDeactivate?.fullName}'s user account?`}
+          onConfirm={handleConfirmDeactivate}
+          onCancel={() => {
+            setDeactivateConfirmOpen(false);
+            setUserToDeactivate(null);
+          }}
+        />
       </div>
     </AdminGuard>
   );

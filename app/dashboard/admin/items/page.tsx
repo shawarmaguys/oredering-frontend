@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 
 interface Vendor {
   id: string;
@@ -53,6 +54,10 @@ export default function ItemsPage() {
   const [editProductCode, setEditProductCode] = useState('');
   const [editNote, setEditNote] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -163,10 +168,17 @@ export default function ItemsPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"? This will remove this product from all locations, stock records, and purchase orders.`)) {
-      return;
-    }
+  const handleDeleteClick = (id: string, name: string) => {
+    setItemToDelete({ id, name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    const { id } = itemToDelete;
+    setDeleteConfirmOpen(false);
+    setItemToDelete(null);
+
     setLoading(true);
     setError('');
     try {
@@ -325,7 +337,7 @@ export default function ItemsPage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(item.id, item.displayName)}
+                              onClick={() => handleDeleteClick(item.id, item.displayName)}
                               className="btn btn-secondary btn-sm"
                               style={{ color: '#ef4444', borderColor: '#fca5a5' }}
                             >
@@ -665,6 +677,17 @@ export default function ItemsPage() {
             </div>
           </div>
         )}
+
+        <ConfirmDialog
+          isOpen={deleteConfirmOpen}
+          title="Delete Product?"
+          message={`Are you sure you want to delete "${itemToDelete?.name}"? This will remove this product from all locations, stock records, and purchase orders.`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setDeleteConfirmOpen(false);
+            setItemToDelete(null);
+          }}
+        />
       </div>
     </AdminGuard>
   );

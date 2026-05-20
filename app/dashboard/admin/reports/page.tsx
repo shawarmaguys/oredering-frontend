@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 
 interface StockRecord {
   id: string;
@@ -58,6 +59,10 @@ export default function ReportsPage() {
   const [poDetailsLoading, setPoDetailsLoading] = useState(false);
   const [poItems, setPoItems] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Approve confirmation state
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [poToApprove, setPoToApprove] = useState<{ id: string; vendorName: string } | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -122,8 +127,17 @@ export default function ReportsPage() {
     }
   };
 
-  const handleApprovePO = async (id: string) => {
-    if (!confirm('Are you sure you want to approve this purchase order?')) return;
+  const handleApprovePOClick = (id: string, vendorName: string) => {
+    setPoToApprove({ id, vendorName });
+    setApproveConfirmOpen(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!poToApprove) return;
+    const { id } = poToApprove;
+    setApproveConfirmOpen(false);
+    setPoToApprove(null);
+
     setActionLoading(true);
     setError('');
 
@@ -463,7 +477,7 @@ export default function ReportsPage() {
                 {/* Approval Action */}
                 {selectedPO.status === 'GENERATED' && (
                   <button
-                    onClick={() => handleApprovePO(selectedPO.id)}
+                    onClick={() => handleApprovePOClick(selectedPO.id, selectedPO.vendor?.displayName || 'Unknown Supplier')}
                     disabled={actionLoading}
                     className="btn btn-primary"
                     style={{ width: '100%', padding: '12px', justifyContent: 'center' }}
@@ -505,6 +519,16 @@ export default function ReportsPage() {
             )}
           </div>
         </div>
+        <ConfirmDialog
+          isOpen={approveConfirmOpen}
+          title="Approve Purchase Order?"
+          message={`Are you sure you want to approve this purchase order for ${approveConfirmOpen ? poToApprove?.vendorName : ''}?`}
+          onConfirm={handleConfirmApprove}
+          onCancel={() => {
+            setApproveConfirmOpen(false);
+            setPoToApprove(null);
+          }}
+        />
       </div>
     </AdminGuard>
   );

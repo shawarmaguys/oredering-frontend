@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 
 interface Vendor {
   id: string;
@@ -59,6 +60,10 @@ export default function VendorsPage() {
   const [editAddress3, setEditAddress3] = useState('');
   const [editDepartmentId, setEditDepartmentId] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -156,10 +161,17 @@ export default function VendorsPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"? This will delete all products, schedules, stock records, and purchase orders associated with this vendor.`)) {
-      return;
-    }
+  const handleDeleteClick = (id: string, name: string) => {
+    setVendorToDelete({ id, name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!vendorToDelete) return;
+    const { id } = vendorToDelete;
+    setDeleteConfirmOpen(false);
+    setVendorToDelete(null);
+
     setLoading(true);
     setError('');
     try {
@@ -305,7 +317,7 @@ export default function VendorsPage() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(vendor.id, vendor.displayName)}
+                        onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}
                         className="btn btn-secondary btn-sm"
                         style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }}
                         title="Delete Vendor"
@@ -706,6 +718,17 @@ export default function VendorsPage() {
             </div>
           </div>
         )}
+
+        <ConfirmDialog
+          isOpen={deleteConfirmOpen}
+          title="Delete Vendor?"
+          message={`Are you sure you want to delete "${vendorToDelete?.name}"? This will delete all products, schedules, stock records, and purchase orders associated with this vendor.`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setDeleteConfirmOpen(false);
+            setVendorToDelete(null);
+          }}
+        />
       </div>
     </AdminGuard>
   );
