@@ -100,7 +100,7 @@ export const api = {
     create: (data: any) => request<any>('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/purchase-orders/${id}`, { method: 'POST', body: JSON.stringify(data) }),
     approve: (id: string) => request<any>(`/purchase-orders/${id}/approve`, { method: 'POST' }),
-    send: (id: string, data: { emails: string[]; subject?: string; body?: string }) => 
+    send: (id: string, data: { emails: string[]; subject?: string; body?: string; notes?: string }) => 
       request<any>(`/purchase-orders/${id}/send`, { method: 'POST', body: JSON.stringify(data) }),
   },
 };

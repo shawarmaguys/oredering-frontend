@@ -159,43 +159,6 @@ export default function ManagerDashboard() {
               View Reports & Audits
             </Link>
           </div>
-
-          {/* Create New PO Card */}
-          <div className="card" style={{
-            padding: '24px',
-            background: 'var(--bg-card)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            border: '1px solid var(--border-subtle)'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--accent-subtle)',
-              border: '1px solid var(--accent-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent)'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                Create New PO
-              </h3>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                Manually draft a custom purchase order and generate vendor-ready CSV / Slack sheets.
-              </p>
-            </div>
-            <button className="btn btn-secondary" style={{ width: '100%', marginTop: '8px', justifyContent: 'center' }}>
-              Create Purchase Order
-            </button>
-          </div>
         </div>
 
       </div>

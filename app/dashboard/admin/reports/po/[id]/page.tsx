@@ -40,6 +40,10 @@ interface PurchaseOrder {
   notes?: string;
   pdfUrl?: string;
   items: POItem[];
+  approver?: {
+    fullName: string;
+    email: string;
+  };
 }
 
 export default function PODetailsPage() {
@@ -54,7 +58,7 @@ export default function PODetailsPage() {
 
   // Editable purchase order quantities state
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
-  
+
   // Modals state
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [postApprovalPO, setPostApprovalPO] = useState<{ id: string; vendorName: string; vendorEmail: string; locationName: string } | null>(null);
@@ -65,6 +69,7 @@ export default function PODetailsPage() {
     emails: string;
     subject: string;
     body: string;
+    notes: string;
   } | null>(null);
 
   const fetchPODetails = async () => {
@@ -73,7 +78,7 @@ export default function PODetailsPage() {
     try {
       const res = await api.purchaseOrders.get(id);
       setPo(res);
-      
+
       // Initialize edit form inputs
       const qties: Record<string, number> = {};
       res.items?.forEach((item: POItem) => {
@@ -136,7 +141,7 @@ export default function PODetailsPage() {
 
     try {
       const approved = await api.purchaseOrders.approve(po.id);
-      
+
       // Set post approval state
       setPostApprovalPO({
         id: approved.id,
@@ -144,7 +149,7 @@ export default function PODetailsPage() {
         vendorEmail: approved.vendor?.email || '',
         locationName: approved.location?.name || 'Store'
       });
-      
+
       // Reload details
       await fetchPODetails();
     } catch (err: any) {
@@ -167,7 +172,8 @@ export default function PODetailsPage() {
       vendorName: postApprovalPO.vendorName,
       emails: postApprovalPO.vendorEmail,
       subject: `Purchase Order #${poIdShort} - Shawarma Guys (${postApprovalPO.locationName})`,
-      body: ''
+      body: '',
+      notes: po?.notes || ''
     });
     setPostApprovalPO(null);
   };
@@ -182,35 +188,35 @@ export default function PODetailsPage() {
       vendorName: po.vendor?.displayName || 'Supplier',
       emails: po.vendor?.email || '',
       subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
-      body: ''
+      body: '',
+      notes: po.notes || ''
     });
   };
 
   const handleSendEmail = async () => {
     if (!sendEmailState) return;
-    const { poId, emails, subject, body } = sendEmailState;
-    
+    const { poId, emails, notes } = sendEmailState;
+
     setActionLoading(true);
     setError('');
-    
+
     const emailsArray = emails
       .split(',')
       .map(e => e.trim())
       .filter(e => e.length > 0);
-      
+
     if (emailsArray.length === 0) {
       setError('Please provide at least one recipient email address.');
       setActionLoading(false);
       return;
     }
-    
+
     try {
       await api.purchaseOrders.send(poId, {
         emails: emailsArray,
-        subject: subject || undefined,
-        body: body || undefined
+        notes: notes || undefined
       });
-      
+
       setSendEmailState(null);
       await fetchPODetails();
     } catch (err: any) {
@@ -258,7 +264,7 @@ export default function PODetailsPage() {
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0 8px 0' }}>
                   {po.vendor?.displayName || 'Supplier Wholesaler'}
                 </h1>
-                
+
                 <div style={{ display: 'flex', gap: '24px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                   <div>
                     <span style={{ color: 'var(--text-tertiary)' }}>Location: </span>
@@ -273,12 +279,11 @@ export default function PODetailsPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Stage / Status</span>
-                <span className={`badge ${
-                  po.status === 'SENT' ? 'badge-success' :
+                <span className={`badge ${po.status === 'SENT' ? 'badge-success' :
                   po.status === 'GENERATED' ? 'badge-success' :
-                  po.status === 'APPROVED' ? 'badge-success' :
-                  'badge-amber'
-                }`} style={{ fontSize: '0.875rem', padding: '6px 12px' }}>
+                    po.status === 'APPROVED' ? 'badge-success' :
+                      'badge-amber'
+                  }`} style={{ fontSize: '0.875rem', padding: '6px 12px' }}>
                   <span className="badge-dot" />
                   {po.status}
                 </span>
@@ -408,7 +413,7 @@ export default function PODetailsPage() {
                   </button>
                 )}
 
-                {(po.status === 'DRAFT' || po.status === 'GENERATED') && (
+                {po.status === 'DRAFT' && (
                   <button
                     onClick={handleApproveClick}
                     disabled={actionLoading || isModified}
@@ -420,6 +425,26 @@ export default function PODetailsPage() {
                     </svg>
                     {actionLoading ? 'Approving...' : 'Approve Purchase Order'}
                   </button>
+                )}
+
+                {po.status !== 'DRAFT' && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.8125rem',
+                    color: '#047857',
+                    backgroundColor: '#ecfdf5',
+                    border: '1px solid #10b981',
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: 600
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 16, height: 16, color: '#10b981' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
+                    </svg>
+                    <span>Already approved by: <strong>{po.approver?.fullName || 'Manager'}</strong></span>
+                  </div>
                 )}
 
                 {po.status !== 'DRAFT' && (
@@ -594,38 +619,23 @@ export default function PODetailsPage() {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Email Subject</label>
-                  <input
-                    type="text"
-                    value={sendEmailState.subject}
-                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, subject: e.target.value } : null)}
-                    placeholder="Enter email subject"
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      fontSize: '0.8125rem',
-                      backgroundColor: 'var(--bg-sunken)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
 
+
+                {/* PDF Custom Note */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Optional Custom Message (HTML / Text)</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Purchase Order Note / Dispatch Instructions
+                  </label>
                   <textarea
-                    rows={4}
-                    value={sendEmailState.body}
-                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, body: e.target.value } : null)}
-                    placeholder="Add custom notes or instructions for the supplier..."
+                    rows={3}
+                    value={sendEmailState.notes}
+                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                    placeholder="Enter dispatch times, delivery notes, or instructions. This note will appear inside the generated PDF purchase order."
                     style={{
                       width: '100%',
                       padding: '8px 12px',
                       fontSize: '0.8125rem',
-                      backgroundColor: 'var(--bg-sunken)',
+                      backgroundColor: 'var(--bg-elevated)',
                       color: 'var(--text-primary)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: 'var(--radius-md)',
@@ -634,9 +644,7 @@ export default function PODetailsPage() {
                       fontFamily: 'inherit'
                     }}
                   />
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
-                    Leave blank to send standard automated vendor procurement message.
-                  </span>
+
                 </div>
               </div>
 
