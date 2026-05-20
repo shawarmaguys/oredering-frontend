@@ -53,17 +53,8 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         const multiplier = Number(ri.item?.multiplier) || 1;
         const isSameUnit = baseUnit.toLowerCase() === displayUnit.toLowerCase() || multiplier === 1;
 
-        const defaultQuantity = Number(ri.enteredQuantity) || 0;
-        let secondaryVal = 0;
-        let baseVal = 0;
-
-        if (isSameUnit) {
-          secondaryVal = defaultQuantity;
-        } else {
-          // Split decimal values into whole cases (secondary) and loose items (base)
-          secondaryVal = Math.floor(defaultQuantity);
-          baseVal = Math.round((defaultQuantity - secondaryVal) * multiplier * 10000) / 10000;
-        }
+        const secondaryVal = Number(ri.secondaryQuantity) || 0;
+        const baseVal = Number(ri.basicQuantity) || 0;
 
         return {
           itemId: ri.itemId,
@@ -105,18 +96,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
     try {
       const payloadItems = formItems.map(item => {
-        let finalQuantity = 0;
-        if (item.isSameUnit) {
-          finalQuantity = item.secondaryInput;
-        } else {
-          // Total quantity = Whole secondary unit + (loose base units / multiplier)
-          finalQuantity = item.secondaryInput + (item.baseInput / item.multiplier);
-        }
-
         return {
           itemId: item.itemId,
-          enteredQuantity: finalQuantity,
-          enteredUnit: item.displayUnitName // Always submit in display/secondary unit
+          basicQuantity: item.baseInput,
+          secondaryQuantity: item.secondaryInput
         };
       });
 
