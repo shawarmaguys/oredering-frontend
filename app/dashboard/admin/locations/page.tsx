@@ -48,6 +48,21 @@ export default function LocationsPage() {
   const [productsSearch, setProductsSearch] = useState('');
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
 
+  // Departments Management State (Location specific)
+  const [showDeptsModal, setShowDeptsModal] = useState(false);
+  const [deptsLoading, setDeptsLoading] = useState(false);
+  const [locationDepts, setLocationDepts] = useState<any[]>([]);
+  const [savingDeptId, setSavingDeptId] = useState<string | null>(null);
+
+  // Global Departments State
+  const [showGlobalDeptsModal, setShowGlobalDeptsModal] = useState(false);
+  const [globalDepts, setGlobalDepts] = useState<any[]>([]);
+  const [globalDeptsLoading, setGlobalDeptsLoading] = useState(false);
+  const [editingDept, setEditingDept] = useState<any | null>(null);
+  const [deptCode, setDeptCode] = useState('');
+  const [deptFullName, setDeptFullName] = useState('');
+  const [deptSlackChannel, setDeptSlackChannel] = useState('');
+
   const fetchLocationItems = async (locationId: string) => {
     setProductsLoading(true);
     try {
@@ -98,6 +113,97 @@ export default function LocationsPage() {
       alert(err.message || 'Failed to update item details.');
     } finally {
       setSavingItemId(null);
+    }
+  };
+
+  const fetchLocationDepts = async (locationId: string) => {
+    setDeptsLoading(true);
+    try {
+      const data = await api.locations.getDepartments(locationId);
+      setLocationDepts(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch departments for location.');
+    } finally {
+      setDeptsLoading(false);
+    }
+  };
+
+  const handleToggleDept = async (dept: any) => {
+    if (!selectedLocation) return;
+    setSavingDeptId(dept.id);
+    try {
+      if (dept.assigned) {
+        // Toggle OFF (unassign)
+        await api.locations.removeDepartment(selectedLocation.id, dept.id);
+        setLocationDepts(prev => prev.map(x => x.id === dept.id ? { ...x, assigned: false } : x));
+      } else {
+        // Toggle ON (assign)
+        await api.locations.addOrUpdateDepartment(selectedLocation.id, {
+          departmentId: dept.id
+        });
+        setLocationDepts(prev => prev.map(x => x.id === dept.id ? { ...x, assigned: true } : x));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update department assignment.');
+    } finally {
+      setSavingDeptId(null);
+    }
+  };
+
+  const fetchGlobalDepts = async () => {
+    setGlobalDeptsLoading(true);
+    try {
+      const data = await api.departments.list();
+      setGlobalDepts(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load global departments.');
+    } finally {
+      setGlobalDeptsLoading(false);
+    }
+  };
+
+  const handleSaveDept = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deptCode.trim() || !deptFullName.trim()) {
+      alert('Please provide code and full name.');
+      return;
+    }
+    setError('');
+    try {
+      if (editingDept) {
+        // Update
+        await api.departments.update(editingDept.id, {
+          code: deptCode,
+          fullName: deptFullName,
+          slackChannel: deptSlackChannel || null
+        });
+      } else {
+        // Create
+        await api.departments.create({
+          code: deptCode,
+          fullName: deptFullName,
+          slackChannel: deptSlackChannel || null
+        });
+      }
+      setDeptCode('');
+      setDeptFullName('');
+      setDeptSlackChannel('');
+      setEditingDept(null);
+      fetchGlobalDepts();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save department.');
+    }
+  };
+
+  const handleDeleteDept = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this department? Any linked vendors or location mappings will be affected.')) {
+      return;
+    }
+    try {
+      await api.departments.delete(id);
+      fetchGlobalDepts();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete department.');
     }
   };
 
@@ -181,18 +287,33 @@ export default function LocationsPage() {
             <h1>Store Locations</h1>
             <p>Onboard and manage franchise store branches, contact credentials, and delivery directions.</p>
           </div>
-          <button
-            onClick={() => {
-              setError('');
-              setShowModal(true);
-            }}
-            className="btn btn-primary"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add Location
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => {
+                setError('');
+                setShowGlobalDeptsModal(true);
+                fetchGlobalDepts();
+              }}
+              className="btn btn-secondary"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
+              Manage Departments
+            </button>
+            <button
+              onClick={() => {
+                setError('');
+                setShowModal(true);
+              }}
+              className="btn btn-primary"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add Location
+            </button>
+          </div>
         </div>
 
         {error && !showModal && !showEditModal && (
@@ -355,22 +476,40 @@ export default function LocationsPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setSelectedLocation(loc);
-                    setError('');
-                    setProductsSearch('');
-                    setShowProductsModal(true);
-                    fetchLocationItems(loc.id);
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px', zIndex: 2 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                  </svg>
-                  Manage Products
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                  <button
+                    onClick={() => {
+                      setSelectedLocation(loc);
+                      setError('');
+                      setProductsSearch('');
+                      setShowProductsModal(true);
+                      fetchLocationItems(loc.id);
+                    }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 2 }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                    </svg>
+                    Manage Products
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedLocation(loc);
+                      setError('');
+                      setShowDeptsModal(true);
+                      fetchLocationDepts(loc.id);
+                    }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 2 }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    </svg>
+                    Manage Departments
+                  </button>
+                </div>
 
                 <div style={{
                   paddingTop: '12px',
@@ -832,6 +971,295 @@ export default function LocationsPage() {
                   style={{ minWidth: '100px' }}
                 >
                   Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Manage Location Departments */}
+        {showDeptsModal && selectedLocation && (
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
+              <button
+                onClick={() => {
+                  setShowDeptsModal(false);
+                  setSelectedLocation(null);
+                }}
+                className="modal-close"
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
+
+              <div style={{ marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  Manage Departments
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
+                  Assign or remove departments active at <strong>{selectedLocation.name}</strong>.
+                </p>
+              </div>
+
+              <div style={{ maxHeight: '350px', overflowY: 'auto', marginBottom: '24px' }}>
+                {deptsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)' }}>
+                    Loading departments...
+                  </div>
+                ) : locationDepts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)' }}>
+                    No global departments configured. Use "Manage Departments" in the header to create one.
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px', fontSize: '0.75rem', color: 'var(--text-tertiary)', width: '60px' }}>Active</th>
+                        <th style={{ padding: '8px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Code</th>
+                        <th style={{ padding: '8px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Name</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {locationDepts.map((dept) => {
+                        const isSaving = savingDeptId === dept.id;
+                        return (
+                          <tr key={dept.id} style={{ borderBottom: '1px solid var(--border-subtle)', opacity: isSaving ? 0.6 : 1 }}>
+                            <td style={{ padding: '12px' }}>
+                              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={dept.assigned}
+                                  disabled={isSaving}
+                                  onChange={() => handleToggleDept(dept)}
+                                  style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                  position: 'absolute',
+                                  cursor: 'pointer',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  backgroundColor: dept.assigned ? 'var(--accent)' : 'var(--bg-sunken)',
+                                  border: '1px solid var(--border-subtle)',
+                                  transition: '0.2s',
+                                  borderRadius: '10px'
+                                }}>
+                                  <span style={{
+                                    position: 'absolute',
+                                    content: '""',
+                                    height: '14px',
+                                    width: '14px',
+                                    left: dept.assigned ? '23px' : '2px',
+                                    bottom: '2px',
+                                    backgroundColor: 'white',
+                                    transition: '0.2s',
+                                    borderRadius: '50%',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                  }} />
+                                </span>
+                              </label>
+                            </td>
+                            <td style={{ padding: '12px', fontSize: '0.875rem' }}>
+                              <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{dept.code}</span>
+                            </td>
+                            <td style={{ padding: '12px', fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                              {dept.fullName}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowDeptsModal(false);
+                    setSelectedLocation(null);
+                  }}
+                  className="btn btn-primary"
+                  style={{ minWidth: '100px' }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Manage Global Departments */}
+        {showGlobalDeptsModal && (
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-md">
+              <button
+                onClick={() => {
+                  setShowGlobalDeptsModal(false);
+                  setEditingDept(null);
+                  setDeptCode('');
+                  setDeptFullName('');
+                  setDeptSlackChannel('');
+                }}
+                className="modal-close"
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
+
+              <div style={{ marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  Manage Global Departments
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
+                  Add, update, or remove company-wide departments and their associated Slack notifications channels.
+                </p>
+              </div>
+
+              {/* Form to Add/Edit Department */}
+              <form onSubmit={handleSaveDept} className="card" style={{ padding: '16px', backgroundColor: 'var(--bg-sunken)', marginBottom: '24px', border: '1px solid var(--border-subtle)' }}>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '12px', color: 'var(--text-primary)' }}>
+                  {editingDept ? 'Edit Department' : 'Create New Department'}
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Dept Code (e.g. KIT)</label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="KIT"
+                      value={deptCode}
+                      onChange={(e) => setDeptCode(e.target.value.toUpperCase())}
+                      maxLength={10}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Full Department Name</label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="Kitchen & Food Supply"
+                      value={deptFullName}
+                      onChange={(e) => setDeptFullName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Slack Notifications Channel Name (Optional)</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="orders-kitchen"
+                    value={deptSlackChannel}
+                    onChange={(e) => setDeptSlackChannel(e.target.value.replace(/^#/, ''))}
+                  />
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                    Slack channel name (e.g. 'orders-kitchen') where department-specific order sheets are posted. Do not include the '#' symbol.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  {editingDept && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDept(null);
+                        setDeptCode('');
+                        setDeptFullName('');
+                        setDeptSlackChannel('');
+                      }}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button type="submit" className="btn btn-primary btn-sm">
+                    {editingDept ? 'Save Changes' : 'Create Department'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Departments List */}
+              <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)' }}>
+                {globalDeptsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-tertiary)' }}>
+                    Loading global catalog...
+                  </div>
+                ) : globalDepts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-tertiary)' }}>
+                    No global departments defined yet.
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'var(--bg-sunken)', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <th style={{ padding: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', width: '60px' }}>Code</th>
+                        <th style={{ padding: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Department Name</th>
+                        <th style={{ padding: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Slack Channel</th>
+                        <th style={{ padding: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'right', width: '110px' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {globalDepts.map((dept) => (
+                        <tr key={dept.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '10px', fontSize: '0.8125rem' }}>
+                            <span className="badge badge-neutral" style={{ fontFamily: 'monospace' }}>{dept.code}</span>
+                          </td>
+                          <td style={{ padding: '10px', fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 550 }}>
+                            {dept.fullName}
+                          </td>
+                          <td style={{ padding: '10px', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                            {dept.slackChannel ? (
+                              <span className="mono" style={{ color: 'var(--accent)', fontWeight: 550 }}>#{dept.slackChannel}</span>
+                            ) : (
+                              <span style={{ color: 'var(--text-quaternary)' }}>—</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button
+                                onClick={() => {
+                                  setEditingDept(dept);
+                                  setDeptCode(dept.code);
+                                  setDeptFullName(dept.fullName);
+                                  setDeptSlackChannel(dept.slackChannel || '');
+                                }}
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '2px 6px', fontSize: '0.6875rem' }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDept(dept.id)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '2px 6px', fontSize: '0.6875rem', color: 'var(--error)' }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button
+                  onClick={() => {
+                    setShowGlobalDeptsModal(false);
+                    setEditingDept(null);
+                    setDeptCode('');
+                    setDeptFullName('');
+                    setDeptSlackChannel('');
+                  }}
+                  className="btn btn-primary"
+                  style={{ minWidth: '100px' }}
+                >
+                  Close
                 </button>
               </div>
             </div>

@@ -47,6 +47,9 @@ export const api = {
     getItems: (locationId: string) => request<any[]>(`/locations/${locationId}/items`),
     addOrUpdateItem: (locationId: string, data: any) => request<any>(`/locations/${locationId}/items`, { method: 'POST', body: JSON.stringify(data) }),
     removeItem: (locationId: string, itemId: string) => request<any>(`/locations/${locationId}/items/${itemId}`, { method: 'DELETE' }),
+    getDepartments: (locationId: string) => request<any[]>(`/locations/${locationId}/departments`),
+    addOrUpdateDepartment: (locationId: string, data: any) => request<any>(`/locations/${locationId}/departments`, { method: 'POST', body: JSON.stringify(data) }),
+    removeDepartment: (locationId: string, departmentId: string) => request<any>(`/locations/${locationId}/departments/${departmentId}`, { method: 'DELETE' }),
   },
   vendors: {
     list: (departmentId?: string) => {
@@ -57,6 +60,12 @@ export const api = {
     update: (id: string, data: any) => request<any>(`/vendors/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => request<any>(`/vendors/${id}`, { method: 'DELETE' }),
     departments: () => request<any[]>('/vendors/departments'),
+  },
+  departments: {
+    list: () => request<any[]>('/vendors/departments'),
+    create: (data: any) => request<any>('/vendors/departments', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/vendors/departments/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request<any>(`/vendors/departments/${id}`, { method: 'DELETE' }),
   },
   items: {
     list: (vendorId?: string) => {

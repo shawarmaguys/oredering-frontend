@@ -86,14 +86,14 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
   const handleSecondaryQuantityChange = (itemId: string, val: string) => {
     const numVal = parseFloat(val);
-    setFormItems(prev => prev.map(item => 
+    setFormItems(prev => prev.map(item =>
       item.itemId === itemId ? { ...item, secondaryInput: isNaN(numVal) ? 0 : numVal } : item
     ));
   };
 
   const handleBaseQuantityChange = (itemId: string, val: string) => {
     const numVal = parseFloat(val);
-    setFormItems(prev => prev.map(item => 
+    setFormItems(prev => prev.map(item =>
       item.itemId === itemId ? { ...item, baseInput: isNaN(numVal) ? 0 : numVal } : item
     ));
   };
@@ -202,7 +202,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   }
 
   return (
-    <div className="card animate-fade-up" style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>
+    <div className="card animate-fade-up" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
       {/* Decorative Brand Glow */}
       <div style={{
         position: 'absolute',
@@ -269,7 +269,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
-            maxHeight: '450px',
+            maxHeight: '60vh',
             overflowY: 'auto',
             paddingRight: '4px'
           }}>
@@ -283,25 +283,23 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                   key={item.itemId}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '16px 20px',
+                    flexDirection: 'column',
+                    padding: '16px',
                     backgroundColor: 'var(--bg-sunken)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-lg)',
-                    gap: '16px',
-                    flexWrap: 'wrap'
+                    gap: '16px'
                   }}
                 >
-                  <div style={{ flex: 1, minWidth: '150px' }}>
-                    <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <div style={{ width: '100%', paddingBottom: '12px', borderBottom: '1px dashed var(--border-subtle)' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                       {item.displayName}
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
                     {item.isSameUnit ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                         <input
                           type="number"
                           step="any"
@@ -313,20 +311,21 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                           placeholder="0.00"
                           style={{
                             width: '120px',
-                            padding: '8px 12px',
-                            fontSize: '0.9375rem',
+                            padding: '10px 12px',
+                            fontSize: '1rem',
                             textAlign: 'right',
-                            fontWeight: 550
+                            fontWeight: 550,
+                            flexShrink: 0
                           }}
                         />
-                        <span className="mono" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        <div className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', wordBreak: 'break-word', lineHeight: 1.2, width: '120px', textAlign: 'center' }}>
                           {item.displayUnitName}
-                        </span>
+                        </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
                         {/* Secondary unit input */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                           <input
                             type="number"
                             step="any"
@@ -336,23 +335,24 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                             className="input"
                             placeholder="0"
                             style={{
-                              width: '80px',
-                              padding: '8px 10px',
-                              fontSize: '0.9375rem',
+                              width: '90px',
+                              padding: '10px 12px',
+                              fontSize: '1rem',
                               textAlign: 'right',
-                              fontWeight: 550
+                              fontWeight: 550,
+                              flexShrink: 0
                             }}
                           />
-                          <span className="mono" style={{ fontSize: '0.8125rem', fontWeight: 550, color: 'var(--text-tertiary)' }}>
+                          <div className="mono" style={{ fontSize: '0.75rem', fontWeight: 550, color: 'var(--text-tertiary)', wordBreak: 'break-word', lineHeight: 1.2, width: '90px', textAlign: 'center' }}>
                             {item.displayUnitName}
-                          </span>
+                          </div>
                         </div>
 
                         {/* Plus sign */}
-                        <span style={{ color: 'var(--text-quaternary)', fontWeight: 600 }}>+</span>
+                        <div style={{ color: 'var(--text-quaternary)', fontWeight: 600, width: '16px', textAlign: 'center', paddingTop: '12px', fontSize: '1.25rem' }}>+</div>
 
                         {/* Base unit input */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                           <input
                             type="number"
                             step="any"
@@ -362,16 +362,17 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                             className="input"
                             placeholder="0"
                             style={{
-                              width: '80px',
-                              padding: '8px 10px',
-                              fontSize: '0.9375rem',
+                              width: '90px',
+                              padding: '10px 12px',
+                              fontSize: '1rem',
                               textAlign: 'right',
-                              fontWeight: 550
+                              fontWeight: 550,
+                              flexShrink: 0
                             }}
                           />
-                          <span className="mono" style={{ fontSize: '0.8125rem', fontWeight: 550, color: 'var(--text-tertiary)' }}>
+                          <div className="mono" style={{ fontSize: '0.75rem', fontWeight: 550, color: 'var(--text-tertiary)', wordBreak: 'break-word', lineHeight: 1.2, width: '90px', textAlign: 'center' }}>
                             {item.baseUnitName}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     )}
