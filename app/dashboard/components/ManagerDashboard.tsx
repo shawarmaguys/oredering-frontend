@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../../utils/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function ManagerDashboard() {
   const [pendingReviews, setPendingReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function loadPendingReviews() {
@@ -27,8 +29,8 @@ export default function ManagerDashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div className="page-header">
         <div className="page-header-text">
-          <h1>Manager Portal</h1>
-          <p>Review worker inventory submissions, fix anomalies, and authorize purchase orders for distribution.</p>
+          <h1>{t('Manager Portal')}</h1>
+          <p>{t('Review worker inventory submissions, fix anomalies, and authorize purchase orders for distribution.')}</p>
         </div>
       </div>
 
@@ -47,15 +49,15 @@ export default function ManagerDashboard() {
             }}>
               <div>
                 <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Pending Stock Reviews
+                  {t('Pending Approvals & Orders')}
                 </h2>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                  Audits awaiting approval before supplier dispatches.
+                  {t('Review and send pending procurement orders to suppliers.')}
                 </p>
               </div>
               <span className="badge badge-amber">
                 <span className="badge-dot" />
-                {pendingReviews.length} Action Needed
+                {pendingReviews.length} {t('Action Needed')}
               </span>
             </div>
 
@@ -84,18 +86,18 @@ export default function ManagerDashboard() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                          PO: {po.id.substring(0, 8)}
+                          {t('PO')}: {po.id.substring(0, 8)}
                         </span>
                         <span className={`badge ${po.status === 'GENERATED' ? 'badge-teal' : 'badge-amber'}`} style={{ fontSize: '0.6875rem', padding: '1px 6px' }}>
                           <span className="badge-dot" style={{ backgroundColor: po.status === 'GENERATED' ? 'var(--teal)' : 'var(--amber)' }} />
-                          {po.status === 'GENERATED' ? 'Approved (Not Sent)' : 'Pending Review'}
+                          {po.status === 'GENERATED' ? t('Approved (Not Sent)') : t('Pending Review')}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                           • {new Date(po.createdAt).toLocaleDateString()} {new Date(po.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                        <strong>{po.vendor?.displayName || 'Supplier'}</strong> at {po.location?.name || 'Store'}
+                        <strong>{po.vendor?.displayName || t('Supplier')}</strong> {t('at')} {po.location?.name || t('Store')}
                       </p>
                     </div>
                     <Link
@@ -103,7 +105,7 @@ export default function ManagerDashboard() {
                       className={`btn btn-sm ${po.status === 'GENERATED' ? 'btn-primary' : 'btn-secondary'}`}
                       style={{ textDecoration: 'none' }}
                     >
-                      {po.status === 'GENERATED' ? 'Send PO' : 'Review values'}
+                      {po.status === 'GENERATED' ? t('Send PO') : t('Review values')}
                     </Link>
                   </div>
                 ))
@@ -114,8 +116,8 @@ export default function ManagerDashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3>No pending reviews</h3>
-                  <p>All store counts are approved and synchronized.</p>
+                  <h3>{t('No pending reviews')}</h3>
+                  <p>{t('All store counts are approved and synchronized.')}</p>
                 </div>
               )}
             </div>
@@ -149,14 +151,14 @@ export default function ManagerDashboard() {
             </div>
             <div>
               <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                Reports & Audits
+                {t('Reports & Audits')}
               </h3>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                Access all completed kitchen stock sheets and track the stage of procurement purchase orders.
+                {t('Access all completed kitchen stock sheets and track the stage of procurement purchase orders.')}
               </p>
             </div>
             <Link href="/dashboard/admin/reports" className="btn btn-primary" style={{ width: '100%', marginTop: '8px', textAlign: 'center', textDecoration: 'none', justifyContent: 'center' }}>
-              View Reports & Audits
+              {t('View Reports & Audits')}
             </Link>
           </div>
         </div>

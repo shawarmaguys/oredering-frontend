@@ -6,6 +6,7 @@ import AdminGuard from '../../../../components/AdminGuard';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ConfirmDialog } from '../../../../../components/ConfirmDialog';
+import { useLanguage } from '../../../../../context/LanguageContext';
 
 interface POItem {
   id: string;
@@ -50,6 +51,7 @@ export default function PODetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { t } = useLanguage();
 
   const [po, setPo] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -231,17 +233,17 @@ export default function PODetailsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '840px', margin: '0 auto' }}>
         {/* Navigation Breadcrumbs */}
         <div className="breadcrumb">
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard">{t('Dashboard')}</Link>
           <span className="breadcrumb-sep">/</span>
-          <Link href="/dashboard/admin/reports">Reports</Link>
+          <Link href="/dashboard/admin/reports">{t('Reports')}</Link>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Purchase Order</span>
+          <span className="breadcrumb-current">{t('Purchase Order')}</span>
         </div>
 
         {/* Back Link */}
         <div style={{ alignSelf: 'flex-start' }}>
           <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-            ← Back to Reports & Audits
+            ← {t('Back to Reports & Audits')}
           </Link>
         </div>
 
@@ -260,32 +262,32 @@ export default function PODetailsPage() {
             {/* Header Card */}
             <div className="card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderTop: '3px solid var(--accent)' }}>
               <div>
-                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>PO ID: {po.id}</span>
+                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('PO ID')}: {po.id}</span>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0 8px 0' }}>
-                  {po.vendor?.displayName || 'Supplier Wholesaler'}
+                  {po.vendor?.displayName || t('Supplier Wholesaler')}
                 </h1>
 
                 <div style={{ display: 'flex', gap: '24px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                   <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>Location: </span>
+                    <span style={{ color: 'var(--text-tertiary)' }}>{t('Location')}: </span>
                     <strong style={{ color: 'var(--text-primary)' }}>{po.location?.name}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>Date: </span>
+                    <span style={{ color: 'var(--text-tertiary)' }}>{t('Date')}: </span>
                     <strong style={{ color: 'var(--text-primary)' }}>{new Date(po.createdAt).toLocaleDateString()}</strong>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Stage / Status</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('Current Stage')} / {t('Status')}</span>
                 <span className={`badge ${po.status === 'SENT' ? 'badge-success' :
                   po.status === 'GENERATED' ? 'badge-success' :
                     po.status === 'APPROVED' ? 'badge-success' :
                       'badge-amber'
                   }`} style={{ fontSize: '0.875rem', padding: '6px 12px' }}>
                   <span className="badge-dot" />
-                  {po.status}
+                  {t(po.status === 'DRAFT' ? 'Pending Review' : po.status === 'GENERATED' ? 'Approved (Not Sent)' : po.status)}
                 </span>
               </div>
             </div>
@@ -306,13 +308,13 @@ export default function PODetailsPage() {
             {/* Main PO Items Grid */}
             <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-                Ordered Items Breakdown
+                {t('Ordered Items Breakdown')}
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {po.items?.length === 0 ? (
                   <p style={{ fontStyle: 'italic', color: 'var(--text-tertiary)', fontSize: '0.875rem', textAlign: 'center', paddingTop: '24px', paddingBottom: '24px' }}>
-                    No items in this purchase order.
+                    {t('No items in this purchase order.')}
                   </p>
                 ) : (
                   po.items.map((item) => {
@@ -349,25 +351,25 @@ export default function PODetailsPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '240px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <strong style={{ fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                              {item.item?.displayName || 'Item'}
+                              {item.item?.displayName || t('Item')}
                             </strong>
                             <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>
-                              Unit: {displayUnit}
+                              {t('Unit')}: {displayUnit}
                             </span>
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px 16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
-                            <div>Normalized (Cases): <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
-                            <div>Par (Cases): <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
-                            <div>Suggested PO (Cases): <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
+                            <div>{t('Counted')}: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
+                            <div>{t('Normalized (Cases)')}: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
+                            <div>{t('Par (Cases)')}: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
+                            <div>{t('Suggested PO (Cases)')}: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
                           </div>
                         </div>
 
                         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '20px' }}>
                           {po.status === 'DRAFT' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Order Qty ({displayUnit})</label>
+                              <label style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{t('Order Qty')} ({displayUnit})</label>
                               <input
                                 type="number"
                                 min="0"
@@ -389,7 +391,7 @@ export default function PODetailsPage() {
                             </div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Ordered Qty</span>
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>{t('Ordered Qty')}</span>
                               <strong style={{ fontSize: '1.125rem', color: 'var(--green)' }}>{item.quantity} {displayUnit}</strong>
                             </div>
                           )}
@@ -409,7 +411,7 @@ export default function PODetailsPage() {
                     className="btn btn-secondary"
                     style={{ backgroundColor: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px' }}
                   >
-                    {actionLoading ? 'Saving...' : '💾 Save Draft Changes'}
+                    {actionLoading ? t('Saving...') : `💾 ${t('Save Draft Changes')}`}
                   </button>
                 )}
 
@@ -423,7 +425,7 @@ export default function PODetailsPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 18, height: 18, marginRight: 4 }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
                     </svg>
-                    {actionLoading ? 'Approving...' : 'Approve Purchase Order'}
+                    {actionLoading ? t('Approving...') : t('Approve Purchase Order')}
                   </button>
                 )}
 
@@ -443,7 +445,7 @@ export default function PODetailsPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 16, height: 16, color: '#10b981' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
                     </svg>
-                    <span>Already approved by: <strong>{po.approver?.fullName || 'Manager'}</strong></span>
+                    <span>{t('Already approved by')}: <strong>{po.approver?.fullName || t('Manager')}</strong></span>
                   </div>
                 )}
 
@@ -454,7 +456,7 @@ export default function PODetailsPage() {
                     className="btn btn-secondary"
                     style={{ backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent)', padding: '10px 20px' }}
                   >
-                    ✉️ Email Order to Supplier
+                    ✉️ {t('Email Order to Supplier')}
                   </button>
                 )}
 
@@ -466,7 +468,7 @@ export default function PODetailsPage() {
                     className="btn btn-secondary"
                     style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '10px 20px' }}
                   >
-                    📄 View Order PDF
+                    📄 {t('View Order PDF')}
                   </a>
                 )}
               </div>
@@ -477,8 +479,8 @@ export default function PODetailsPage() {
         {/* Approve Confirmation Modal */}
         <ConfirmDialog
           isOpen={approveConfirmOpen}
-          title="Approve Purchase Order?"
-          message={`Are you sure you want to approve this purchase order for ${approveConfirmOpen && po ? po.vendor?.displayName : ''}?`}
+          title={t('Approve Purchase Order?')}
+          message={`${t('Are you sure you want to approve this purchase order for')} ${approveConfirmOpen && po ? po.vendor?.displayName : ''}?`}
           onConfirm={handleConfirmApprove}
           onCancel={() => setApproveConfirmOpen(false)}
         />
@@ -529,13 +531,13 @@ export default function PODetailsPage() {
               </div>
               <div>
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Purchase Order Approved!
+                  {t('Purchase Order Approved!')}
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  The purchase order for <strong>{postApprovalPO.vendorName}</strong> has been successfully authorized and moved to generated status.
+                  {t('The purchase order for')} <strong>{postApprovalPO.vendorName}</strong> {t('has been successfully authorized and moved to generated status.')}
                 </p>
                 <p style={{ margin: '8px 0 0 0', fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                  Would you like to send it to the supplier via email now?
+                  {t('Would you like to send it to the supplier via email now?')}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
@@ -544,14 +546,14 @@ export default function PODetailsPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
                 >
-                  No, Later
+                  {t('No, Later')}
                 </button>
                 <button
                   onClick={handlePostApprovalYes}
                   className="btn btn-primary"
                   style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
                 >
-                  Yes, Send Now
+                  {t('Yes, Send Now')}
                 </button>
               </div>
             </div>
@@ -588,16 +590,16 @@ export default function PODetailsPage() {
             }}>
               <div>
                 <h3 style={{ margin: '0 0 4px 0', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Email Purchase Order
+                  {t('Email Purchase Order')}
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                  Send official PDF purchase order to <strong>{sendEmailState.vendorName}</strong>.
+                  {t('Send official PDF purchase order to')} <strong>{sendEmailState.vendorName}</strong>.
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('Recipient Email(s)')}</label>
                   <input
                     type="text"
                     value={sendEmailState.emails}
@@ -615,22 +617,20 @@ export default function PODetailsPage() {
                     }}
                   />
                   <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
-                    Separate multiple recipient emails with commas.
+                    {t('Separate multiple recipient emails with commas.')}
                   </span>
                 </div>
-
-
 
                 {/* PDF Custom Note */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Purchase Order Note / Dispatch Instructions
+                    {t('Purchase Order Note / Dispatch Instructions')}
                   </label>
                   <textarea
                     rows={3}
                     value={sendEmailState.notes}
                     onChange={(e) => setSendEmailState(prev => prev ? { ...prev, notes: e.target.value } : null)}
-                    placeholder="Enter dispatch times, delivery notes, or instructions. This note will appear inside the generated PDF purchase order."
+                    placeholder={t('Enter dispatch times, delivery notes, or instructions. This note will appear inside the generated PDF purchase order.')}
                     style={{
                       width: '100%',
                       padding: '8px 12px',
@@ -644,7 +644,6 @@ export default function PODetailsPage() {
                       fontFamily: 'inherit'
                     }}
                   />
-
                 </div>
               </div>
 
@@ -655,7 +654,7 @@ export default function PODetailsPage() {
                   className="btn btn-secondary"
                   style={{ padding: '8px 16px' }}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button
                   onClick={handleSendEmail}
@@ -663,7 +662,7 @@ export default function PODetailsPage() {
                   className="btn btn-primary"
                   style={{ padding: '8px 20px' }}
                 >
-                  {actionLoading ? 'Sending...' : '✉️ Send Purchase Order'}
+                  {actionLoading ? t('Sending...') : `✉️ ${t('Send Purchase Order')}`}
                 </button>
               </div>
             </div>
