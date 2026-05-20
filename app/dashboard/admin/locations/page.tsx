@@ -936,7 +936,7 @@ export default function LocationsPage() {
                                       className="input mono"
                                       style={{ padding: '4px 8px', fontSize: '0.8125rem', height: '30px', width: '80px', textAlign: 'right' }}
                                     />
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.baseUnitName}</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.displayUnitName ? item.displayUnitName : item.baseUnitName}</span>
                                   </div>
                                 </td>
                                 <td style={{ textAlign: 'center', padding: '12px' }}>

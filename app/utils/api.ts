@@ -98,6 +98,7 @@ export const api = {
     },
     get: (id: string) => request<any>(`/purchase-orders/${id}`),
     create: (data: any) => request<any>('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/purchase-orders/${id}`, { method: 'POST', body: JSON.stringify(data) }),
     approve: (id: string) => request<any>(`/purchase-orders/${id}/approve`, { method: 'POST' }),
   },
 };

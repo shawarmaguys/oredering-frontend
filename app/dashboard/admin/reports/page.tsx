@@ -64,6 +64,51 @@ export default function ReportsPage() {
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [poToApprove, setPoToApprove] = useState<{ id: string; vendorName: string } | null>(null);
 
+  // Editable purchase order quantities state
+  const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
+
+  const handleQtyChange = (itemId: string, newQty: number) => {
+    setEditedQuantities(prev => ({
+      ...prev,
+      [itemId]: Math.max(0, newQty)
+    }));
+  };
+
+  const handleSaveDraft = async () => {
+    if (!selectedPO) return;
+    setActionLoading(true);
+    setError('');
+    try {
+      const payloadItems = Object.keys(editedQuantities).map(itemId => ({
+        itemId,
+        quantity: editedQuantities[itemId]
+      }));
+      const updatedPO = await api.purchaseOrders.update(selectedPO.id, {
+        items: payloadItems
+      });
+
+      // Update state
+      setPoItems(updatedPO.items || []);
+      const qties: Record<string, number> = {};
+      (updatedPO.items || []).forEach((item: any) => {
+        qties[item.itemId] = Number(item.quantity);
+      });
+      setEditedQuantities(qties);
+
+      // Force refresh of initial list to keep sync
+      await fetchInitialData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update purchase order.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const isModified = Object.keys(editedQuantities).some(itemId => {
+    const originalItem = poItems.find(i => i.itemId === itemId);
+    return originalItem && Number(originalItem.quantity) !== editedQuantities[itemId];
+  });
+
   useEffect(() => {
     fetchInitialData();
   }, [activeTab]);
@@ -83,6 +128,7 @@ export default function ReportsPage() {
     setPoDetailsLoading(true);
     setSelectedPO(null);
     setPoItems([]);
+    setEditedQuantities({});
     try {
       const details = await api.purchaseOrders.get(poId);
       const mappedPO: PurchaseOrder = {
@@ -104,6 +150,13 @@ export default function ReportsPage() {
       };
       setSelectedPO(mappedPO);
       setPoItems(details.items || []);
+
+      // Populate edited quantities
+      const qties: Record<string, number> = {};
+      (details.items || []).forEach((item: any) => {
+        qties[item.itemId] = Number(item.quantity);
+      });
+      setEditedQuantities(qties);
     } catch (err: any) {
       console.error('Failed to auto-load single PO details', err);
     } finally {
@@ -160,9 +213,17 @@ export default function ReportsPage() {
     setSelectedPO(po);
     setPoDetailsLoading(true);
     setPoItems([]);
+    setEditedQuantities({});
     try {
       const details = await api.purchaseOrders.get(po.id);
       setPoItems(details.items || []);
+
+      // Populate edited quantities
+      const qties: Record<string, number> = {};
+      (details.items || []).forEach((item: any) => {
+        qties[item.itemId] = Number(item.quantity);
+      });
+      setEditedQuantities(qties);
     } catch (err: any) {
       console.error('Failed to load PO details', err);
     } finally {
@@ -471,7 +532,7 @@ export default function ReportsPage() {
 
                 {/* Items Breakdown */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Ordered Items</span>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Ordered Items Breakdown</span>
                   {poDetailsLoading ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0' }}>
                       <div className="skeleton" style={{ height: '16px', width: '100%' }} />
@@ -482,46 +543,102 @@ export default function ReportsPage() {
                       No items listed in this purchase order.
                     </p>
                   ) : (
-                    <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {poItems.map((item: any) => (
-                        <div
-                          key={item.id}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '12px',
-                            padding: '8px 12px',
-                            backgroundColor: 'var(--bg-sunken)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: 'var(--radius-sm)'
-                          }}
-                        >
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {item.item?.displayName || 'Item'}
-                          </span>
-                          <span className="mono" style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            backgroundColor: 'var(--accent-subtle)',
-                            color: 'var(--accent)',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--accent-border)'
-                          }}>
-                            {item.quantity} {item.unitName}
-                          </span>
-                        </div>
-                      ))}
+                    <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
+                      {poItems.map((item: any) => {
+                        const displayUnit = item.unitName || 'cases';
+                        const baseUnit = item.item?.baseUnitName || 'pcs';
+                        const isSameUnit = baseUnit.toLowerCase() === displayUnit.toLowerCase() || Number(item.item?.multiplier) === 1;
+
+                        let countedStr = '';
+                        if (item.secondaryQuantity !== null && item.basicQuantity !== null) {
+                          if (isSameUnit) {
+                            countedStr = `${Number(item.secondaryQuantity).toFixed(1)} ${displayUnit}`;
+                          } else {
+                            countedStr = `${Number(item.secondaryQuantity).toFixed(0)} ${displayUnit} + ${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
+                          }
+                        } else {
+                          countedStr = 'N/A';
+                        }
+
+                        return (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                              padding: '12px',
+                              backgroundColor: 'var(--bg-sunken)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: 'var(--radius-md)'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {item.item?.displayName || 'Item'}
+                              </span>
+                              <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                                Unit: {displayUnit}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
+                              <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
+                              <div>Par Level: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
+                              <div>Suggested: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
+                            </div>
+
+                            {selectedPO.status === 'DRAFT' ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--border-subtle)' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Order Qty:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editedQuantities[item.itemId] ?? Number(item.quantity)}
+                                  onChange={(e) => handleQtyChange(item.itemId, parseFloat(e.target.value) || 0)}
+                                  style={{
+                                    width: '80px',
+                                    padding: '4px 8px',
+                                    fontSize: '0.75rem',
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid var(--border-subtle)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    outline: 'none'
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--border-subtle)' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Ordered Qty:</span>
+                                <strong style={{ fontSize: '0.75rem', color: 'var(--green)' }}>{item.quantity}</strong>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
+                {/* Save Draft Action */}
+                {selectedPO.status === 'DRAFT' && isModified && (
+                  <button
+                    onClick={handleSaveDraft}
+                    disabled={actionLoading}
+                    className="btn btn-secondary"
+                    style={{ width: '100%', padding: '12px', justifyContent: 'center', backgroundColor: 'var(--accent)', color: 'white', border: 'none' }}
+                  >
+                    {actionLoading ? 'Saving...' : '💾 Save Draft Changes'}
+                  </button>
+                )}
+
                 {/* Approval Action */}
-                {selectedPO.status === 'GENERATED' && (
+                {(selectedPO.status === 'DRAFT' || selectedPO.status === 'GENERATED') && (
                   <button
                     onClick={() => handleApprovePOClick(selectedPO.id, selectedPO.vendor?.displayName || 'Unknown Supplier')}
-                    disabled={actionLoading}
+                    disabled={actionLoading || isModified}
                     className="btn btn-primary"
                     style={{ width: '100%', padding: '12px', justifyContent: 'center' }}
                   >
