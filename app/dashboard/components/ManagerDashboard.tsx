@@ -1,12 +1,26 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api } from '../../utils/api';
 
 export default function ManagerDashboard() {
-  const pendingReviews = [
-    { id: 'FRM-1002', location: 'Downtown Store', submittedBy: 'John (Worker)', time: '10 mins ago' },
-    { id: 'FRM-1003', location: 'Uptown Store', submittedBy: 'Sarah (Worker)', time: '1 hour ago' },
-  ];
+  const [pendingReviews, setPendingReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPendingReviews() {
+      try {
+        const data = await api.purchaseOrders.list('DRAFT');
+        setPendingReviews(data);
+      } catch (err) {
+        console.error('Failed to load pending reviews:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPendingReviews();
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -45,41 +59,46 @@ export default function ManagerDashboard() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {pendingReviews.map((review) => (
-                <div
-                  key={review.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '16px',
-                    backgroundColor: 'var(--bg-sunken)',
-                    borderRadius: 'var(--radius-lg)',
-                    border: '1px solid var(--border-subtle)',
-                    gap: '16px',
-                    flexWrap: 'wrap'
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                        {review.id}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                        • {review.time}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                      {review.location} <span style={{ color: 'var(--text-tertiary)' }}>submitted by</span> {review.submittedBy}
-                    </p>
-                  </div>
-                  <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
-                    Review values
-                  </Link>
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="skeleton" style={{ height: '72px', width: '100%' }} />
+                  <div className="skeleton" style={{ height: '72px', width: '100%' }} />
                 </div>
-              ))}
-
-              {pendingReviews.length === 0 && (
+              ) : pendingReviews.length > 0 ? (
+                pendingReviews.map((po) => (
+                  <div
+                    key={po.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '16px',
+                      backgroundColor: 'var(--bg-sunken)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid var(--border-subtle)',
+                      gap: '16px',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                          PO: {po.id.substring(0, 8)}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                          • {new Date(po.createdAt).toLocaleDateString()} {new Date(po.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                        <strong>{po.vendor?.displayName || 'Supplier'}</strong> at {po.location?.name || 'Store'}
+                      </p>
+                    </div>
+                    <Link href={`/dashboard/admin/reports/po/${po.id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+                      Review values
+                    </Link>
+                  </div>
+                ))
+              ) : (
                 <div className="empty-state">
                   <div className="empty-state-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>

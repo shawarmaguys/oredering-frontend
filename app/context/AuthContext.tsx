@@ -10,6 +10,7 @@ export interface User {
   fullName: string;
   email: string;
   role: Role;
+  locationIds?: string[];
 }
 
 interface AuthContextType {

@@ -13,10 +13,12 @@ interface User {
   role: 'WORKER' | 'MANAGER' | 'ADMIN' | 'SUPER_MANAGER';
   isActive: boolean;
   createdAt: string;
+  locationIds?: string[];
 }
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [locationsList, setLocationsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -25,6 +27,7 @@ export default function UsersPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'WORKER' | 'MANAGER' | 'ADMIN' | 'SUPER_MANAGER'>('WORKER');
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -41,7 +44,17 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+    fetchLocations();
   }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const data = await api.locations.list();
+      setLocationsList(data);
+    } catch (err: any) {
+      console.error('Failed to load locations:', err);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -56,6 +69,7 @@ export default function UsersPage() {
         role: u.role,
         isActive: u.is_active !== undefined ? u.is_active : u.isActive !== undefined ? u.isActive : true,
         createdAt: u.created_at || u.createdAt,
+        locationIds: u.locationIds || []
       }));
       
       setUsers(mapped);
@@ -77,6 +91,7 @@ export default function UsersPage() {
         email,
         password,
         role,
+        locationIds: selectedLocationIds
       });
 
       // Reset
@@ -84,6 +99,7 @@ export default function UsersPage() {
       setEmail('');
       setPassword('');
       setRole('WORKER');
+      setSelectedLocationIds([]);
       
       setShowModal(false);
       fetchUsers();
@@ -104,10 +120,12 @@ export default function UsersPage() {
       await api.users.update(selectedUser.id, {
         fullName: editFullName,
         role: editRole,
+        locationIds: selectedLocationIds
       });
       
       setShowEditModal(false);
       setSelectedUser(null);
+      setSelectedLocationIds([]);
       fetchUsers();
     } catch (err: any) {
       setError(err.message || 'Failed to update user account.');
@@ -155,6 +173,7 @@ export default function UsersPage() {
           <button
             onClick={() => {
               setError('');
+              setSelectedLocationIds([]);
               setShowModal(true);
             }}
             className="btn btn-primary"
@@ -191,6 +210,7 @@ export default function UsersPage() {
                     <th style={{ paddingLeft: '24px' }}>Full Name</th>
                     <th>Email Address</th>
                     <th>Assigned Role</th>
+                    <th>Assigned Store Locations</th>
                     <th>Account Status</th>
                     <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                   </tr>
@@ -215,6 +235,24 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {item.locationIds && item.locationIds.length > 0 ? (
+                            item.locationIds.map(locId => {
+                              const loc = locationsList.find(l => l.id === locId);
+                              return (
+                                <span key={locId} className="badge badge-neutral" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
+                                  {loc ? loc.name : 'Unknown Store'}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
+                              {item.role === 'ADMIN' ? 'All Locations (Admin)' : 'No Locations Assigned'}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
                         <span className={`badge ${item.isActive ? 'badge-green' : 'badge-neutral'}`}>
                           <span className="badge-dot" style={{ backgroundColor: item.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
                           {item.isActive ? 'Active' : 'Deactivated'}
@@ -227,6 +265,7 @@ export default function UsersPage() {
                               setSelectedUser(item);
                               setEditFullName(item.fullName);
                               setEditRole(item.role);
+                              setSelectedLocationIds(item.locationIds || []);
                               setError('');
                               setShowEditModal(true);
                             }}
@@ -335,6 +374,47 @@ export default function UsersPage() {
                   </select>
                 </div>
 
+                {role !== 'ADMIN' && (
+                  <div>
+                    <label className="label">Assigned store locations</label>
+                    <div style={{
+                      maxHeight: '130px',
+                      overflowY: 'auto',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px',
+                      backgroundColor: 'var(--bg-sunken)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      {locationsList.map((loc) => {
+                        const isChecked = selectedLocationIds.includes(loc.id);
+                        return (
+                          <label key={loc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedLocationIds((prev) => [...prev, loc.id]);
+                                } else {
+                                  setSelectedLocationIds((prev) => prev.filter((id) => id !== loc.id));
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            {loc.name}
+                          </label>
+                        );
+                      })}
+                      {locationsList.length === 0 && (
+                        <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>No locations registered in system.</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
@@ -428,6 +508,47 @@ export default function UsersPage() {
                     <option value="SUPER_MANAGER">Super Manager (Advanced Ops)</option>
                   </select>
                 </div>
+
+                {editRole !== 'ADMIN' && (
+                  <div>
+                    <label className="label">Assigned store locations</label>
+                    <div style={{
+                      maxHeight: '130px',
+                      overflowY: 'auto',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px',
+                      backgroundColor: 'var(--bg-sunken)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      {locationsList.map((loc) => {
+                        const isChecked = selectedLocationIds.includes(loc.id);
+                        return (
+                          <label key={loc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedLocationIds((prev) => [...prev, loc.id]);
+                                } else {
+                                  setSelectedLocationIds((prev) => prev.filter((id) => id !== loc.id));
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            {loc.name}
+                          </label>
+                        );
+                      })}
+                      {locationsList.length === 0 && (
+                        <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>No locations registered in system.</span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
