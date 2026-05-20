@@ -64,6 +64,17 @@ export default function ReportsPage() {
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [poToApprove, setPoToApprove] = useState<{ id: string; vendorName: string } | null>(null);
 
+  // Post approval and email modal states
+  const [postApprovalPO, setPostApprovalPO] = useState<{ id: string; vendorName: string; vendorEmail: string; locationName: string } | null>(null);
+  const [sendEmailState, setSendEmailState] = useState<{
+    isOpen: boolean;
+    poId: string;
+    vendorName: string;
+    emails: string;
+    subject: string;
+    body: string;
+  } | null>(null);
+
   // Editable purchase order quantities state
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
 
@@ -246,11 +257,84 @@ export default function ReportsPage() {
     setError('');
 
     try {
-      await api.purchaseOrders.approve(id);
+      const approved = await api.purchaseOrders.approve(id);
+      await fetchInitialData();
+      
+      // Open post-approval options
+      setPostApprovalPO({
+        id: approved.id,
+        vendorName: approved.vendor?.displayName || 'Supplier',
+        vendorEmail: approved.vendor?.email || '',
+        locationName: approved.location?.name || 'Store'
+      });
       setSelectedPO(null);
-      fetchInitialData();
     } catch (err: any) {
       setError(err.message || 'Failed to approve purchase order.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePostApprovalNo = () => {
+    setPostApprovalPO(null);
+  };
+
+  const handlePostApprovalYes = () => {
+    if (!postApprovalPO) return;
+    const poIdShort = postApprovalPO.id.slice(0, 8);
+    setSendEmailState({
+      isOpen: true,
+      poId: postApprovalPO.id,
+      vendorName: postApprovalPO.vendorName,
+      emails: postApprovalPO.vendorEmail,
+      subject: `Purchase Order #${poIdShort} - Shawarma Guys (${postApprovalPO.locationName})`,
+      body: ''
+    });
+    setPostApprovalPO(null);
+  };
+
+  const handleTriggerSendEmail = (po: any) => {
+    const poIdShort = po.id.slice(0, 8);
+    const locationName = po.location?.name || 'Store';
+    setSendEmailState({
+      isOpen: true,
+      poId: po.id,
+      vendorName: po.vendor?.displayName || 'Supplier',
+      emails: po.vendor?.email || '',
+      subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
+      body: ''
+    });
+  };
+
+  const handleSendEmail = async () => {
+    if (!sendEmailState) return;
+    const { poId, emails, subject, body } = sendEmailState;
+    
+    setActionLoading(true);
+    setError('');
+    
+    const emailsArray = emails
+      .split(',')
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+      
+    if (emailsArray.length === 0) {
+      setError('Please provide at least one recipient email address.');
+      setActionLoading(false);
+      return;
+    }
+    
+    try {
+      await api.purchaseOrders.send(poId, {
+        emails: emailsArray,
+        subject: subject || undefined,
+        body: body || undefined
+      });
+      
+      setSendEmailState(null);
+      await fetchInitialData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to send purchase order email.');
     } finally {
       setActionLoading(false);
     }
@@ -649,6 +733,17 @@ export default function ReportsPage() {
                   </button>
                 )}
                 
+                {selectedPO.status !== 'DRAFT' && (
+                  <button
+                    onClick={() => handleTriggerSendEmail(selectedPO)}
+                    disabled={actionLoading}
+                    className="btn btn-secondary"
+                    style={{ width: '100%', padding: '12px', justifyContent: 'center', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}
+                  >
+                    ✉️ Email Order to Supplier
+                  </button>
+                )}
+
                 {selectedPO.pdfUrl && (
                   <a
                     href={selectedPO.pdfUrl}
@@ -689,6 +784,219 @@ export default function ReportsPage() {
             setPoToApprove(null);
           }}
         />
+
+        {/* Post-Approval Options Prompt Modal */}
+        {postApprovalPO && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '16px'
+          }}>
+            <div className="card" style={{
+              width: '100%',
+              maxWidth: '440px',
+              padding: '24px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-xl)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--green-subtle)',
+                color: 'var(--green)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto',
+                fontSize: '1.5rem',
+                border: '1px solid var(--green-border)'
+              }}>
+                ✓
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Purchase Order Approved!
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  The purchase order for <strong>{postApprovalPO.vendorName}</strong> has been successfully authorized and moved to generated status.
+                </p>
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  Would you like to send it to the supplier via email now?
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button
+                  onClick={handlePostApprovalNo}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
+                >
+                  No, Later
+                </button>
+                <button
+                  onClick={handlePostApprovalYes}
+                  className="btn btn-primary"
+                  style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
+                >
+                  Yes, Send Now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Send Purchase Order Email Modal */}
+        {sendEmailState && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '16px'
+          }}>
+            <div className="card" style={{
+              width: '100%',
+              maxWidth: '520px',
+              padding: '24px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-xl)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Email Purchase Order
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                  Send official PDF purchase order to <strong>{sendEmailState.vendorName}</strong>.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</label>
+                  <input
+                    type="text"
+                    value={sendEmailState.emails}
+                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, emails: e.target.value } : null)}
+                    placeholder="supplier@example.com, manager@example.com"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '0.8125rem',
+                      backgroundColor: 'var(--bg-sunken)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      outline: 'none'
+                    }}
+                  />
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                    Separate multiple recipient emails with commas.
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Email Subject</label>
+                  <input
+                    type="text"
+                    value={sendEmailState.subject}
+                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, subject: e.target.value } : null)}
+                    placeholder="Enter email subject"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '0.8125rem',
+                      backgroundColor: 'var(--bg-sunken)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Optional Custom Message (HTML / Text)</label>
+                  <textarea
+                    rows={4}
+                    value={sendEmailState.body}
+                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, body: e.target.value } : null)}
+                    placeholder="Add custom notes or instructions for the supplier..."
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '0.8125rem',
+                      backgroundColor: 'var(--bg-sunken)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      outline: 'none',
+                      resize: 'vertical',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                    Leave blank to send standard automated vendor procurement message.
+                  </span>
+                </div>
+              </div>
+
+              {error && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--red)', backgroundColor: 'var(--red-subtle)', border: '1px solid var(--red-border)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button
+                  onClick={() => {
+                    setSendEmailState(null);
+                    setError('');
+                  }}
+                  disabled={actionLoading}
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  disabled={actionLoading}
+                  className="btn btn-primary"
+                  style={{ padding: '8px 20px' }}
+                >
+                  {actionLoading ? 'Sending...' : '✉️ Send Purchase Order'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminGuard>
   );
