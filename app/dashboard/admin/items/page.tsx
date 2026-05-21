@@ -476,7 +476,7 @@ export default function ItemsPage() {
                         />
                       </div>
 
-                      <div>
+                      <div hidden={!displayUnitName}>
                         <label className="label" htmlFor="item-multiplier">Multiplier *</label>
                         <input
                           id="item-multiplier"
@@ -631,7 +631,7 @@ export default function ItemsPage() {
                       />
                     </div>
 
-                    <div>
+                    <div hidden={!editDisplayUnitName} >
                       <label className="label" htmlFor="edit-item-multiplier">Multiplier *</label>
                       <input
                         id="edit-item-multiplier"
