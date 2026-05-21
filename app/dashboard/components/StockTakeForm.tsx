@@ -207,7 +207,119 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   }
 
   return (
-    <div className="card animate-fade-up" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+    <div className="card animate-fade-up stock-take-wrapper" style={{ position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        .stock-take-wrapper {
+          padding: 24px !important;
+        }
+        .stock-take-form-container {
+          max-height: 58vh;
+          gap: 12px;
+        }
+        .stock-take-card {
+          display: flex;
+          flex-direction: column;
+          padding: 16px;
+          background-color: var(--bg-sunken);
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-lg);
+          gap: 16px;
+        }
+        .stock-item-title-wrapper {
+          width: 100%;
+          padding-bottom: 12px;
+          border-bottom: 1px dashed var(--border-subtle);
+        }
+        .stock-item-title {
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+        .stock-take-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 16px;
+          width: 100%;
+        }
+        .stock-take-subcard {
+          border-radius: var(--radius-md);
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .stock-take-subcard.boh {
+          background-color: rgba(217, 119, 6, 0.03);
+          border: 1px solid rgba(217, 119, 6, 0.12);
+        }
+        .stock-take-subcard.foh {
+          background-color: rgba(16, 185, 129, 0.03);
+          border: 1px solid rgba(16, 185, 129, 0.12);
+        }
+        .stock-input-field {
+          width: 100%;
+          padding: 8px 10px;
+          font-size: 0.95rem;
+          text-align: center;
+          font-weight: 600;
+        }
+        .stock-unit-label {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--text-tertiary);
+        }
+
+        @media (max-width: 640px) {
+          .stock-take-wrapper {
+            padding: 12px 10px !important;
+          }
+          .stock-take-form-container {
+            max-height: 68vh !important;
+            gap: 8px !important;
+          }
+          .stock-take-card {
+            padding: 10px !important;
+            gap: 8px !important;
+            border-radius: var(--radius-md) !important;
+          }
+          .stock-item-title-wrapper {
+            padding-bottom: 6px !important;
+          }
+          .stock-item-title {
+            font-size: 0.875rem !important;
+          }
+          .stock-take-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+          }
+          .stock-take-subcard {
+            padding: 8px 4px !important;
+            gap: 6px !important;
+            border-radius: var(--radius-sm) !important;
+          }
+          .stock-take-subcard span {
+            font-size: 0.65rem !important;
+            letter-spacing: 0.02em !important;
+          }
+          .stock-input-field {
+            padding: 6px 4px !important;
+            font-size: 0.85rem !important;
+            height: 32px !important;
+          }
+          .stock-unit-label {
+            font-size: 0.65rem !important;
+          }
+          .stock-take-header {
+            gap: 12px !important;
+          }
+          .stock-take-header-title {
+            font-size: 1.2rem !important;
+          }
+          .stock-take-header-sub {
+            font-size: 0.75rem !important;
+          }
+        }
+      `}</style>
       {/* Decorative Brand Glow */}
       <div style={{
         position: 'absolute',
@@ -223,17 +335,17 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         pointerEvents: 'none'
       }} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', zIndex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', zIndex: 1 }} className="stock-take-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
           <div>
             <span className="badge badge-indigo" style={{ marginBottom: '8px' }}>
               Stock Count Audit
             </span>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            <h1 className="stock-take-header-title" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               {locationName}
             </h1>
             {vendorName && (
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px', marginBottom: 0 }}>
+              <p className="stock-take-header-sub" style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px', marginBottom: 0 }}>
                 Vendor: <strong>{vendorName}</strong>
               </p>
             )}
@@ -270,13 +382,11 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{
+          <div className="stock-take-form-container" style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
-            maxHeight: '60vh',
-            overflowY: 'auto',
-            paddingRight: '4px'
+            paddingRight: '4px',
+            overflowY: 'auto'
           }}>
             {formItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
@@ -286,33 +396,17 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               formItems.map((item) => (
                 <div
                   key={item.itemId}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '16px',
-                    backgroundColor: 'var(--bg-sunken)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-lg)',
-                    gap: '16px'
-                  }}
+                  className="stock-take-card"
                 >
-                  <div style={{ width: '100%', paddingBottom: '12px', borderBottom: '1px dashed var(--border-subtle)' }}>
-                    <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <div className="stock-item-title-wrapper">
+                    <span className="stock-item-title">
                       {item.displayName}
                     </span>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', width: '100%' }}>
+                  <div className="stock-take-grid">
                     {/* BACK OF HOUSE (BOH) */}
-                    <div style={{
-                      backgroundColor: 'rgba(217, 119, 6, 0.03)',
-                      border: '1px solid rgba(217, 119, 6, 0.12)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px'
-                    }}>
+                    <div className="stock-take-subcard boh">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Back of House
@@ -328,17 +422,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                               min="0"
                               value={item.backSecondaryInput || ''}
                               onChange={(e) => handleBackSecondaryChange(item.itemId, e.target.value)}
-                              className="input"
+                              className="input stock-input-field"
                               placeholder="0"
-                              style={{
-                                width: '100%',
-                                padding: '8px 10px',
-                                fontSize: '0.95rem',
-                                textAlign: 'center',
-                                fontWeight: 600,
-                              }}
                             />
-                            <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                            <span className="mono stock-unit-label">
                               {item.displayUnitName}
                             </span>
                           </div>
@@ -351,17 +438,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                                 min="0"
                                 value={item.backSecondaryInput || ''}
                                 onChange={(e) => handleBackSecondaryChange(item.itemId, e.target.value)}
-                                className="input"
+                                className="input stock-input-field"
                                 placeholder="0"
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  fontSize: '0.95rem',
-                                  textAlign: 'center',
-                                  fontWeight: 600,
-                                }}
                               />
-                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                              <span className="mono stock-unit-label" style={{ whiteSpace: 'nowrap' }}>
                                 {item.displayUnitName}
                               </span>
                             </div>
@@ -373,17 +453,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                                 min="0"
                                 value={item.backBaseInput || ''}
                                 onChange={(e) => handleBackBaseChange(item.itemId, e.target.value)}
-                                className="input"
+                                className="input stock-input-field"
                                 placeholder="0"
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  fontSize: '0.95rem',
-                                  textAlign: 'center',
-                                  fontWeight: 600,
-                                }}
                               />
-                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                              <span className="mono stock-unit-label" style={{ whiteSpace: 'nowrap' }}>
                                 {item.baseUnitName}
                               </span>
                             </div>
@@ -393,15 +466,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                     </div>
 
                     {/* FRONT OF HOUSE (FOH) */}
-                    <div style={{
-                      backgroundColor: 'rgba(16, 185, 129, 0.03)',
-                      border: '1px solid rgba(16, 185, 129, 0.12)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px'
-                    }}>
+                    <div className="stock-take-subcard foh">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Front of House
@@ -417,17 +482,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                               min="0"
                               value={item.frontSecondaryInput || ''}
                               onChange={(e) => handleFrontSecondaryChange(item.itemId, e.target.value)}
-                              className="input"
+                              className="input stock-input-field"
                               placeholder="0"
-                              style={{
-                                width: '100%',
-                                padding: '8px 10px',
-                                fontSize: '0.95rem',
-                                textAlign: 'center',
-                                fontWeight: 600,
-                              }}
                             />
-                            <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                            <span className="mono stock-unit-label">
                               {item.displayUnitName}
                             </span>
                           </div>
@@ -440,17 +498,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                                 min="0"
                                 value={item.frontSecondaryInput || ''}
                                 onChange={(e) => handleFrontSecondaryChange(item.itemId, e.target.value)}
-                                className="input"
+                                className="input stock-input-field"
                                 placeholder="0"
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  fontSize: '0.95rem',
-                                  textAlign: 'center',
-                                  fontWeight: 600,
-                                }}
                               />
-                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                              <span className="mono stock-unit-label" style={{ whiteSpace: 'nowrap' }}>
                                 {item.displayUnitName}
                               </span>
                             </div>
@@ -462,17 +513,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                                 min="0"
                                 value={item.frontBaseInput || ''}
                                 onChange={(e) => handleFrontBaseChange(item.itemId, e.target.value)}
-                                className="input"
+                                className="input stock-input-field"
                                 placeholder="0"
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  fontSize: '0.95rem',
-                                  textAlign: 'center',
-                                  fontWeight: 600,
-                                }}
                               />
-                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                              <span className="mono stock-unit-label" style={{ whiteSpace: 'nowrap' }}>
                                 {item.baseUnitName}
                               </span>
                             </div>
