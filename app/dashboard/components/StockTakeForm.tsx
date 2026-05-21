@@ -16,8 +16,10 @@ interface FormItem {
   displayUnitName: string;
   multiplier: number;
   isSameUnit: boolean;
-  secondaryInput: number;
-  baseInput: number;
+  backSecondaryInput: number;
+  backBaseInput: number;
+  frontSecondaryInput: number;
+  frontBaseInput: number;
 }
 
 export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTakeFormProps) {
@@ -53,8 +55,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         const multiplier = Number(ri.item?.multiplier) || 1;
         const isSameUnit = baseUnit.toLowerCase() === displayUnit.toLowerCase() || multiplier === 1;
 
-        const secondaryVal = Number(ri.secondaryQuantity) || 0;
-        const baseVal = Number(ri.basicQuantity) || 0;
+        const backSec = Number(ri.secondaryQuantity) || 0;
+        const backBase = Number(ri.basicQuantity) || 0;
+        const frontSec = Number(ri.frontSecondaryQuantity) || 0;
+        const frontBase = Number(ri.frontBasicQuantity) || 0;
 
         return {
           itemId: ri.itemId,
@@ -63,8 +67,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           displayUnitName: displayUnit,
           multiplier: multiplier,
           isSameUnit: isSameUnit,
-          secondaryInput: secondaryVal,
-          baseInput: baseVal
+          backSecondaryInput: backSec,
+          backBaseInput: backBase,
+          frontSecondaryInput: frontSec,
+          frontBaseInput: frontBase
         };
       });
       setFormItems(initialItems);
@@ -75,17 +81,31 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
     }
   };
 
-  const handleSecondaryQuantityChange = (itemId: string, val: string) => {
+  const handleBackSecondaryChange = (itemId: string, val: string) => {
     const numVal = parseFloat(val);
     setFormItems(prev => prev.map(item =>
-      item.itemId === itemId ? { ...item, secondaryInput: isNaN(numVal) ? 0 : numVal } : item
+      item.itemId === itemId ? { ...item, backSecondaryInput: isNaN(numVal) ? 0 : numVal } : item
     ));
   };
 
-  const handleBaseQuantityChange = (itemId: string, val: string) => {
+  const handleBackBaseChange = (itemId: string, val: string) => {
     const numVal = parseFloat(val);
     setFormItems(prev => prev.map(item =>
-      item.itemId === itemId ? { ...item, baseInput: isNaN(numVal) ? 0 : numVal } : item
+      item.itemId === itemId ? { ...item, backBaseInput: isNaN(numVal) ? 0 : numVal } : item
+    ));
+  };
+
+  const handleFrontSecondaryChange = (itemId: string, val: string) => {
+    const numVal = parseFloat(val);
+    setFormItems(prev => prev.map(item =>
+      item.itemId === itemId ? { ...item, frontSecondaryInput: isNaN(numVal) ? 0 : numVal } : item
+    ));
+  };
+
+  const handleFrontBaseChange = (itemId: string, val: string) => {
+    const numVal = parseFloat(val);
+    setFormItems(prev => prev.map(item =>
+      item.itemId === itemId ? { ...item, frontBaseInput: isNaN(numVal) ? 0 : numVal } : item
     ));
   };
 
@@ -98,8 +118,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
       const payloadItems = formItems.map(item => {
         return {
           itemId: item.itemId,
-          basicQuantity: item.baseInput,
-          secondaryQuantity: item.secondaryInput
+          basicQuantity: item.backBaseInput,
+          secondaryQuantity: item.backSecondaryInput,
+          frontBasicQuantity: item.frontBaseInput,
+          frontSecondaryQuantity: item.frontSecondaryInput
         };
       });
 
@@ -280,85 +302,184 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
-                    {item.isSameUnit ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0"
-                          required
-                          value={item.secondaryInput || ''}
-                          onChange={(e) => handleSecondaryQuantityChange(item.itemId, e.target.value)}
-                          className="input"
-                          placeholder="0.00"
-                          style={{
-                            width: '120px',
-                            padding: '10px 12px',
-                            fontSize: '1rem',
-                            textAlign: 'right',
-                            fontWeight: 550,
-                            flexShrink: 0
-                          }}
-                        />
-                        <div className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', wordBreak: 'break-word', lineHeight: 1.2, width: '120px', textAlign: 'center' }}>
-                          {item.displayUnitName}
-                        </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', width: '100%' }}>
+                    {/* BACK OF HOUSE (BOH) */}
+                    <div style={{
+                      backgroundColor: 'rgba(217, 119, 6, 0.03)',
+                      border: '1px solid rgba(217, 119, 6, 0.12)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Back of House
+                        </span>
                       </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
-                        {/* Secondary unit input */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                          <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            value={item.secondaryInput || ''}
-                            onChange={(e) => handleSecondaryQuantityChange(item.itemId, e.target.value)}
-                            className="input"
-                            placeholder="0"
-                            style={{
-                              width: '90px',
-                              padding: '10px 12px',
-                              fontSize: '1rem',
-                              textAlign: 'right',
-                              fontWeight: 550,
-                              flexShrink: 0
-                            }}
-                          />
-                          <div className="mono" style={{ fontSize: '0.75rem', fontWeight: 550, color: 'var(--text-tertiary)', wordBreak: 'break-word', lineHeight: 1.2, width: '90px', textAlign: 'center' }}>
-                            {item.displayUnitName}
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'center' }}>
+                        {item.isSameUnit ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '100%' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              min="0"
+                              value={item.backSecondaryInput || ''}
+                              onChange={(e) => handleBackSecondaryChange(item.itemId, e.target.value)}
+                              className="input"
+                              placeholder="0"
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
+                                fontSize: '0.95rem',
+                                textAlign: 'center',
+                                fontWeight: 600,
+                              }}
+                            />
+                            <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                              {item.displayUnitName}
+                            </span>
                           </div>
-                        </div>
-
-                        {/* Plus sign */}
-                        <div style={{ color: 'var(--text-quaternary)', fontWeight: 600, width: '16px', textAlign: 'center', paddingTop: '12px', fontSize: '1.25rem' }}>+</div>
-
-                        {/* Base unit input */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                          <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            value={item.baseInput || ''}
-                            onChange={(e) => handleBaseQuantityChange(item.itemId, e.target.value)}
-                            className="input"
-                            placeholder="0"
-                            style={{
-                              width: '90px',
-                              padding: '10px 12px',
-                              fontSize: '1rem',
-                              textAlign: 'right',
-                              fontWeight: 550,
-                              flexShrink: 0
-                            }}
-                          />
-                          <div className="mono" style={{ fontSize: '0.75rem', fontWeight: 550, color: 'var(--text-tertiary)', wordBreak: 'break-word', lineHeight: 1.2, width: '90px', textAlign: 'center' }}>
-                            {item.baseUnitName}
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={item.backSecondaryInput || ''}
+                                onChange={(e) => handleBackSecondaryChange(item.itemId, e.target.value)}
+                                className="input"
+                                placeholder="0"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  fontSize: '0.95rem',
+                                  textAlign: 'center',
+                                  fontWeight: 600,
+                                }}
+                              />
+                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                {item.displayUnitName}
+                              </span>
+                            </div>
+                            <span style={{ color: 'var(--text-quaternary)', fontWeight: 600, fontSize: '1rem' }}>+</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={item.backBaseInput || ''}
+                                onChange={(e) => handleBackBaseChange(item.itemId, e.target.value)}
+                                className="input"
+                                placeholder="0"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  fontSize: '0.95rem',
+                                  textAlign: 'center',
+                                  fontWeight: 600,
+                                }}
+                              />
+                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                {item.baseUnitName}
+                              </span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    {/* FRONT OF HOUSE (FOH) */}
+                    <div style={{
+                      backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                      border: '1px solid rgba(16, 185, 129, 0.12)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Front of House
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'center' }}>
+                        {item.isSameUnit ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '100%' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              min="0"
+                              value={item.frontSecondaryInput || ''}
+                              onChange={(e) => handleFrontSecondaryChange(item.itemId, e.target.value)}
+                              className="input"
+                              placeholder="0"
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
+                                fontSize: '0.95rem',
+                                textAlign: 'center',
+                                fontWeight: 600,
+                              }}
+                            />
+                            <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                              {item.displayUnitName}
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={item.frontSecondaryInput || ''}
+                                onChange={(e) => handleFrontSecondaryChange(item.itemId, e.target.value)}
+                                className="input"
+                                placeholder="0"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  fontSize: '0.95rem',
+                                  textAlign: 'center',
+                                  fontWeight: 600,
+                                }}
+                              />
+                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                {item.displayUnitName}
+                              </span>
+                            </div>
+                            <span style={{ color: 'var(--text-quaternary)', fontWeight: 600, fontSize: '1rem' }}>+</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={item.frontBaseInput || ''}
+                                onChange={(e) => handleFrontBaseChange(item.itemId, e.target.value)}
+                                className="input"
+                                placeholder="0"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  fontSize: '0.95rem',
+                                  textAlign: 'center',
+                                  fontWeight: 600,
+                                }}
+                              />
+                              <span className="mono" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                {item.baseUnitName}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))
