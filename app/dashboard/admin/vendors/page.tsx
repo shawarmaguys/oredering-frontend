@@ -46,6 +46,12 @@ export default function VendorsPage() {
   const [address3, setAddress3] = useState('');
   const [departmentId, setDepartmentId] = useState('');
 
+  // View / filter / sort state
+  const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
+  const [search, setSearch] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
+
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -222,6 +228,32 @@ export default function VendorsPage() {
           </div>
         )}
 
+        {/* Filter / Sort / View Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input className="input" style={{ paddingLeft: 32 }} placeholder="Search vendors..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={departmentFilter} onChange={e => setDepartmentFilter(e.target.value)}>
+            <option value="all">All Departments</option>
+            {departments.map(d => <option key={d.id} value={d.id}>{d.fullName}</option>)}
+          </select>
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+            <option value="name">Sort: Name</option>
+            <option value="date">Sort: Date Added</option>
+          </select>
+          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <button onClick={() => setViewMode('list')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+            </button>
+            <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+            </button>
+          </div>
+        </div>
+
         {/* Vendors Grid */}
         {loading ? (
           <div style={{
@@ -262,134 +294,190 @@ export default function VendorsPage() {
             </div>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-            gap: '24px'
-          }} className="stagger">
-            {vendors.map((vendor) => (
-              <div
-                key={vendor.id}
-                className="card card-hover"
-                style={{
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '20px',
-                  position: 'relative'
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {vendor.displayName}
-                      </h3>
-                      {vendor.department && (
-                        <span className="badge badge-teal" style={{ marginTop: '6px' }}>
-                          {vendor.department.code}
-                        </span>
-                      )}
+          (() => {
+            const filtered = vendors
+              .filter(v => {
+                const q = search.toLowerCase();
+                if (q && !v.displayName.toLowerCase().includes(q) && !v.email?.toLowerCase().includes(q) && !v.channelName?.toLowerCase().includes(q)) return false;
+                if (departmentFilter !== 'all' && v.departmentId !== departmentFilter) return false;
+                return true;
+              })
+              .sort((a, b) => {
+                if (sortBy === 'name') return a.displayName.localeCompare(b.displayName);
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              });
+
+            if (filtered.length === 0) return (
+              <div className="card" style={{ padding: '48px 24px' }}>
+                <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+              </div>
+            );
+
+            return viewMode === 'tile' ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+                gap: '24px'
+              }} className="stagger">
+                {filtered.map((vendor) => (
+                  <div
+                    key={vendor.id}
+                    className="card card-hover"
+                    style={{
+                      padding: '24px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '20px',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {vendor.displayName}
+                          </h3>
+                          {vendor.department && (
+                            <span className="badge badge-teal" style={{ marginTop: '6px' }}>
+                              {vendor.department.code}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            onClick={() => {
+                              setSelectedVendor(vendor);
+                              setEditDisplayName(vendor.displayName);
+                              setEditChannelName(vendor.channelName || '');
+                              setEditEmail(vendor.email || '');
+                              setEditPhone(vendor.phone || '');
+                              setEditAddress1(vendor.address1 || '');
+                              setEditAddress2(vendor.address2 || '');
+                              setEditAddress3(vendor.address3 || '');
+                              setEditDepartmentId(vendor.departmentId);
+                              setError('');
+                              setShowEditModal(true);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
+                            title="Edit Vendor"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                            </svg>
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }}
+                            title="Delete Vendor"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8125rem' }}>
+                        {vendor.department && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Dept:</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{vendor.department.fullName}</span>
+                          </div>
+                        )}
+                        {vendor.channelName && (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Slack:</span>
+                            <span className="mono" style={{
+                              color: 'var(--accent)',
+                              backgroundColor: 'var(--accent-subtle)',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--accent-border)',
+                              fontSize: '0.75rem'
+                            }}>
+                              #{vendor.channelName}
+                            </span>
+                          </div>
+                        )}
+                        {vendor.email && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Email:</span>
+                            <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vendor.email}</span>
+                          </div>
+                        )}
+                        {vendor.phone && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Phone:</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{vendor.phone}</span>
+                          </div>
+                        )}
+                        {vendor.address1 && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Addr:</span>
+                            <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }} className="line-clamp-2">
+                              {[vendor.address1, vendor.address2, vendor.address3].filter(Boolean).join(', ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedVendor(vendor);
-                          setEditDisplayName(vendor.displayName);
-                          setEditChannelName(vendor.channelName || '');
-                          setEditEmail(vendor.email || '');
-                          setEditPhone(vendor.phone || '');
-                          setEditAddress1(vendor.address1 || '');
-                          setEditAddress2(vendor.address2 || '');
-                          setEditAddress3(vendor.address3 || '');
-                          setEditDepartmentId(vendor.departmentId);
-                          setError('');
-                          setShowEditModal(true);
-                        }}
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
-                        title="Edit Vendor"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }}
-                        title="Delete Vendor"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                        </svg>
-                        Delete
-                      </button>
+
+                    <div style={{
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.6875rem',
+                      color: 'var(--text-tertiary)'
+                    }}>
+                      <span className="mono">ID: {vendor.id.substring(0, 8)}</span>
+                      {vendor.createdAt && <span>Added {new Date(vendor.createdAt).toLocaleDateString()}</span>}
                     </div>
                   </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8125rem' }}>
-                    {vendor.department && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Dept:</span>
-                        <span style={{ color: 'var(--text-secondary)' }}>{vendor.department.fullName}</span>
-                      </div>
-                    )}
-                    {vendor.channelName && (
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Slack:</span>
-                        <span className="mono" style={{
-                          color: 'var(--accent)',
-                          backgroundColor: 'var(--accent-subtle)',
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          border: '1px solid var(--accent-border)',
-                          fontSize: '0.75rem'
-                        }}>
-                          #{vendor.channelName}
-                        </span>
-                      </div>
-                    )}
-                    {vendor.email && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Email:</span>
-                        <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vendor.email}</span>
-                      </div>
-                    )}
-                    {vendor.phone && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Phone:</span>
-                        <span style={{ color: 'var(--text-secondary)' }}>{vendor.phone}</span>
-                      </div>
-                    )}
-                    {vendor.address1 && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '48px', flexShrink: 0 }}>Addr:</span>
-                        <span style={{ color: 'var(--text-secondary)', lineHeight: 1.4 }} className="line-clamp-2">
-                          {[vendor.address1, vendor.address2, vendor.address3].filter(Boolean).join(', ')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{
-                  paddingTop: '12px',
-                  borderTop: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '0.6875rem',
-                  color: 'var(--text-tertiary)'
-                }}>
-                  <span className="mono">ID: {vendor.id.substring(0, 8)}</span>
-                  {vendor.createdAt && <span>Added {new Date(vendor.createdAt).toLocaleDateString()}</span>}
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="table-responsive-wrap">
+                  <table className="data-table">
+                    <thead><tr>
+                      <th style={{ paddingLeft: 24 }}>Name</th>
+                      <th>Dept</th>
+                      <th>Slack</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Added</th>
+                      <th style={{ textAlign: 'right', paddingRight: 24 }}>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {filtered.map(vendor => (
+                        <tr key={vendor.id}>
+                          <td style={{ paddingLeft: 24, fontWeight: 600, color: 'var(--text-primary)' }}>{vendor.displayName}</td>
+                          <td>{vendor.department ? <span className="badge badge-teal">{vendor.department.code}</span> : '—'}</td>
+                          <td>{vendor.channelName ? <span className="mono" style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--accent-border)', fontSize: '0.75rem' }}>#{vendor.channelName}</span> : '—'}</td>
+                          <td>{vendor.email || '—'}</td>
+                          <td>{vendor.phone || '—'}</td>
+                          <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : '—'}</td>
+                          <td style={{ textAlign: 'right', paddingRight: 24 }}>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                              <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedVendor(vendor); setEditDisplayName(vendor.displayName); setEditChannelName(vendor.channelName || ''); setEditEmail(vendor.email || ''); setEditPhone(vendor.phone || ''); setEditAddress1(vendor.address1 || ''); setEditAddress2(vendor.address2 || ''); setEditAddress3(vendor.address3 || ''); setEditDepartmentId(vendor.departmentId); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}>Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })()
         )}
 
         {/* Modal Onboarding Form */}

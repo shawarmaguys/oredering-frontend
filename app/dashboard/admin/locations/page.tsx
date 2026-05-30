@@ -22,6 +22,12 @@ export default function LocationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // View / filter / sort state
+  const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
+  const [search, setSearch] = useState('');
+  const [slackFilter, setSlackFilter] = useState<'all' | 'configured' | 'not-configured'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
+
   // Create Form State
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -337,6 +343,33 @@ export default function LocationsPage() {
           </div>
         )}
 
+        {/* Filter / Sort / View Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input className="input" style={{ paddingLeft: 32 }} placeholder="Search locations..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={slackFilter} onChange={e => setSlackFilter(e.target.value as any)}>
+            <option value="all">All Slack</option>
+            <option value="configured">Slack Configured</option>
+            <option value="not-configured">Slack Missing</option>
+          </select>
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+            <option value="name">Sort: Name</option>
+            <option value="date">Sort: Date Added</option>
+          </select>
+          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <button onClick={() => setViewMode('list')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+            </button>
+            <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+            </button>
+          </div>
+        </div>
+
         {/* Locations List */}
         {loading ? (
           <div style={{
@@ -372,157 +405,212 @@ export default function LocationsPage() {
             </div>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-            gap: '24px'
-          }} className="stagger">
-            {locations.map((loc) => (
-              <div
-                key={loc.id}
-                className="card card-hover"
-                style={{
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '20px',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {/* Accent element */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '80px',
-                  height: '80px',
-                  background: 'var(--accent-subtle)',
-                  borderRadius: '50%',
-                  filter: 'blur(30px)',
-                  marginRight: '-20px',
-                  marginTop: '-20px',
-                  pointerEvents: 'none'
-                }} />
-
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--bg-sunken)',
-                        border: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--accent)'
-                      }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                        </svg>
-                      </div>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {loc.name}
-                      </h3>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedLocation(loc);
-                        setEditName(loc.name);
-                        setEditAddress(loc.address);
-                        setEditPhone(loc.phone);
-                        setEditEmail(loc.email);
-                        setEditSlackBotToken(loc.slackBotToken || '');
-                        setEditSlackUserToken(loc.slackUserToken || '');
-                        setError('');
-                        setShowEditModal(true);
-                      }}
-                      className="btn btn-secondary btn-sm"
-                      style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
-                      title="Edit Location"
-                    >
-                      Edit
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: '36px' }} className="line-clamp-2">
-                      {loc.address || 'No address provided'}
-                    </p>
-
-                    <div style={{
+          (() => {
+            const filtered = locations
+              .filter(loc => {
+                const q = search.toLowerCase();
+                if (q && !loc.name.toLowerCase().includes(q) && !loc.address?.toLowerCase().includes(q) && !loc.email?.toLowerCase().includes(q)) return false;
+                if (slackFilter === 'configured' && !(loc.slackBotToken && loc.slackUserToken)) return false;
+                if (slackFilter === 'not-configured' && (loc.slackBotToken && loc.slackUserToken)) return false;
+                return true;
+              })
+              .sort((a, b) => {
+                if (sortBy === 'name') return a.name.localeCompare(b.name);
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              });
+            if (filtered.length === 0) return (
+              <div className="card" style={{ padding: '48px 24px' }}>
+                <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+              </div>
+            );
+            return viewMode === 'tile' ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+                gap: '24px'
+              }} className="stagger">
+                {filtered.map((loc) => (
+                  <div
+                    key={loc.id}
+                    className="card card-hover"
+                    style={{
+                      padding: '24px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
-                      fontSize: '0.75rem',
-                      color: 'var(--text-tertiary)',
-                      paddingTop: '12px',
-                      borderTop: '1px solid var(--border-subtle)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>📞</span>
-                        <span style={{ color: 'var(--text-secondary)' }}>{loc.phone || 'N/A'}</span>
+                      justifyContent: 'space-between',
+                      gap: '20px',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Accent element */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      width: '80px',
+                      height: '80px',
+                      background: 'var(--accent-subtle)',
+                      borderRadius: '50%',
+                      filter: 'blur(30px)',
+                      marginRight: '-20px',
+                      marginTop: '-20px',
+                      pointerEvents: 'none'
+                    }} />
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: 'var(--radius-md)',
+                            backgroundColor: 'var(--bg-sunken)',
+                            border: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent)'
+                          }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                            </svg>
+                          </div>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {loc.name}
+                          </h3>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setSelectedLocation(loc);
+                            setEditName(loc.name);
+                            setEditAddress(loc.address);
+                            setEditPhone(loc.phone);
+                            setEditEmail(loc.email);
+                            setEditSlackBotToken(loc.slackBotToken || '');
+                            setEditSlackUserToken(loc.slackUserToken || '');
+                            setError('');
+                            setShowEditModal(true);
+                          }}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
+                          title="Edit Location"
+                        >
+                          Edit
+                        </button>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                        <span>✉️</span>
-                        <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.email || 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                        <span>💬</span>
-                        <span style={{
-                          color: loc.slackBotToken && loc.slackUserToken ? 'var(--accent)' : 'var(--text-tertiary)',
-                          fontWeight: loc.slackBotToken && loc.slackUserToken ? '500' : 'normal',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: '36px' }} className="line-clamp-2">
+                          {loc.address || 'No address provided'}
+                        </p>
+
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          fontSize: '0.75rem',
+                          color: 'var(--text-tertiary)',
+                          paddingTop: '12px',
+                          borderTop: '1px solid var(--border-subtle)'
                         }}>
-                          Slack: {loc.slackBotToken && loc.slackUserToken ? 'Configured' : 'Not configured'}
-                        </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>📞</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{loc.phone || 'N/A'}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                            <span>✉️</span>
+                            <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.email || 'N/A'}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                            <span>💬</span>
+                            <span style={{
+                              color: loc.slackBotToken && loc.slackUserToken ? 'var(--accent)' : 'var(--text-tertiary)',
+                              fontWeight: loc.slackBotToken && loc.slackUserToken ? '500' : 'normal',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              Slack: {loc.slackBotToken && loc.slackUserToken ? 'Configured' : 'Not configured'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedLocation(loc);
+                          setError('');
+                          setProductsSearch('');
+                          setShowProductsModal(true);
+                          fetchLocationItems(loc.id);
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 2 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                        </svg>
+                        Manage Products
+                      </button>
+
+                    </div>
+
+                    <div style={{
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.6875rem',
+                      color: 'var(--text-tertiary)'
+                    }}>
+                      <span className="mono">ID: {loc.id.substring(0, 8)}</span>
+                      {loc.createdAt && <span>Added {new Date(loc.createdAt).toLocaleDateString()}</span>}
+                    </div>
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                  <button
-                    onClick={() => {
-                      setSelectedLocation(loc);
-                      setError('');
-                      setProductsSearch('');
-                      setShowProductsModal(true);
-                      fetchLocationItems(loc.id);
-                    }}
-                    className="btn btn-secondary btn-sm"
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 2 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                    </svg>
-                    Manage Products
-                  </button>
-
-                </div>
-
-                <div style={{
-                  paddingTop: '12px',
-                  borderTop: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '0.6875rem',
-                  color: 'var(--text-tertiary)'
-                }}>
-                  <span className="mono">ID: {loc.id.substring(0, 8)}</span>
-                  {loc.createdAt && <span>Added {new Date(loc.createdAt).toLocaleDateString()}</span>}
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="table-responsive-wrap">
+                  <table className="data-table">
+                    <thead><tr>
+                      <th style={{ paddingLeft: 24 }}>Name</th>
+                      <th>Address</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Slack</th>
+                      <th>Added</th>
+                      <th style={{ textAlign: 'right', paddingRight: 24 }}>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {filtered.map(loc => (
+                        <tr key={loc.id}>
+                          <td style={{ paddingLeft: 24, fontWeight: 600, color: 'var(--text-primary)' }}>{loc.name}</td>
+                          <td style={{ color: 'var(--text-secondary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.address || '—'}</td>
+                          <td>{loc.phone || '—'}</td>
+                          <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.email || '—'}</td>
+                          <td><span className={`badge ${loc.slackBotToken && loc.slackUserToken ? 'badge-teal' : 'badge-neutral'}`}>{loc.slackBotToken && loc.slackUserToken ? 'Configured' : 'Not set'}</span></td>
+                          <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{loc.createdAt ? new Date(loc.createdAt).toLocaleDateString() : '—'}</td>
+                          <td style={{ textAlign: 'right', paddingRight: 24 }}>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                              <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setError(''); setProductsSearch(''); setShowProductsModal(true); fetchLocationItems(loc.id); }}>Products</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })()
         )}
 
         {/* Modal Add form */}

@@ -28,12 +28,12 @@ export default function UsersPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'WORKER' | 'MANAGER' | 'ADMIN' | 'SUPER_MANAGER'>('WORKER');
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  
+
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  
+
   // Edit State
   const [editRole, setEditRole] = useState<'WORKER' | 'MANAGER' | 'ADMIN' | 'SUPER_MANAGER'>('WORKER');
   const [editFullName, setEditFullName] = useState('');
@@ -41,6 +41,12 @@ export default function UsersPage() {
   // Deactivate confirmation state
   const [deactivateConfirmOpen, setDeactivateConfirmOpen] = useState(false);
   const [userToDeactivate, setUserToDeactivate] = useState<{ id: string; fullName: string } | null>(null);
+
+  // View / filter / sort state
+  const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
 
   useEffect(() => {
     fetchUsers();
@@ -61,7 +67,7 @@ export default function UsersPage() {
     setError('');
     try {
       const data = await api.users.list();
-      
+
       const mapped = data.map((u: any) => ({
         id: u.id,
         fullName: u.full_name || u.fullName,
@@ -71,7 +77,7 @@ export default function UsersPage() {
         createdAt: u.created_at || u.createdAt,
         locationIds: u.locationIds || []
       }));
-      
+
       setUsers(mapped);
     } catch (err: any) {
       setError(err.message || 'Failed to load users.');
@@ -100,7 +106,7 @@ export default function UsersPage() {
       setPassword('');
       setRole('WORKER');
       setSelectedLocationIds([]);
-      
+
       setShowModal(false);
       fetchUsers();
     } catch (err: any) {
@@ -122,7 +128,7 @@ export default function UsersPage() {
         role: editRole,
         locationIds: selectedLocationIds
       });
-      
+
       setShowEditModal(false);
       setSelectedUser(null);
       setSelectedLocationIds([]);
@@ -194,6 +200,35 @@ export default function UsersPage() {
           </div>
         )}
 
+        {/* Filter / Sort / View Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input className="input" style={{ paddingLeft: 32 }} placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+            <option value="all">All Roles</option>
+            <option value="ADMIN">Admin</option>
+            <option value="SUPER_MANAGER">Super Manager</option>
+            <option value="MANAGER">Manager</option>
+            <option value="WORKER">Worker</option>
+          </select>
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+            <option value="name">Sort: Name</option>
+            <option value="date">Sort: Date Added</option>
+          </select>
+          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <button onClick={() => setViewMode('list')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+            </button>
+            <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+            </button>
+          </div>
+        </div>
+
         {/* Users list / table */}
         {loading ? (
           <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -202,93 +237,226 @@ export default function UsersPage() {
             <div className="skeleton" style={{ height: '32px', width: '100%' }} />
           </div>
         ) : (
-          <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="table-responsive-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ paddingLeft: '24px' }}>Full Name</th>
-                    <th>Email Address</th>
-                    <th>Assigned Role</th>
-                    <th>Assigned Store Locations</th>
-                    <th>Account Status</th>
-                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((item) => (
-                    <tr key={item.id}>
-                      <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {item.fullName}
-                      </td>
-                      <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        {item.email}
-                      </td>
-                      <td>
-                        <span className={`badge ${
-                          item.role === 'ADMIN' ? 'badge-teal' :
-                          item.role === 'SUPER_MANAGER' ? 'badge-amber' :
-                          item.role === 'MANAGER' ? 'badge-teal' :
-                          'badge-neutral'
-                        }`}>
-                          {item.role === 'SUPER_MANAGER' ? 'SUPER MGR' : item.role}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                          {item.locationIds && item.locationIds.length > 0 ? (
-                            item.locationIds.map(locId => {
-                              const loc = locationsList.find(l => l.id === locId);
-                              return (
-                                <span key={locId} className="badge badge-neutral" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
-                                  {loc ? loc.name : 'Unknown Store'}
-                                </span>
-                              );
-                            })
-                          ) : (
-                            <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
-                              {item.role === 'ADMIN' ? 'All Locations (Admin)' : 'No Locations Assigned'}
-                            </span>
-                          )}
+          (() => {
+            const filtered = users
+              .filter(u => {
+                const q = search.toLowerCase();
+                if (q && !u.fullName.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
+                if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+                return true;
+              })
+              .sort((a, b) => {
+                if (sortBy === 'name') return a.fullName.localeCompare(b.fullName);
+                return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+              });
+
+            if (filtered.length === 0) return (
+              <div className="card" style={{ padding: '48px 24px' }}>
+                <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+              </div>
+            );
+
+            return viewMode === 'tile' ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+                gap: '24px'
+              }} className="stagger">
+                {filtered.map((item) => (
+                  <div
+                    key={item.id}
+                    className="card card-hover"
+                    style={{
+                      padding: '24px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '20px',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.fullName}
+                          </h3>
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }} className="mono">
+                            {item.email}
+                          </span>
                         </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${item.isActive ? 'badge-green' : 'badge-neutral'}`}>
-                          <span className="badge-dot" style={{ backgroundColor: item.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
-                          {item.isActive ? 'Active' : 'Deactivated'}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right', paddingRight: '24px' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <span className={`badge ${item.role === 'ADMIN' ? 'badge-teal' :
+                              item.role === 'SUPER_MANAGER' ? 'badge-amber' :
+                                item.role === 'MANAGER' ? 'badge-teal' :
+                                  'badge-neutral'
+                            }`}>
+                            {item.role === 'SUPER_MANAGER' ? 'SUPER MGR' : item.role}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8125rem' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>Status:</span>
+                          <span className={`badge ${item.isActive ? 'badge-green' : 'badge-neutral'}`} style={{ padding: '2px 6px', fontSize: '0.6875rem' }}>
+                            <span className="badge-dot" style={{ backgroundColor: item.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
+                            {item.isActive ? 'Active' : 'Deactivated'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>Stores:</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {item.locationIds && item.locationIds.length > 0 ? (
+                              item.locationIds.map(locId => {
+                                const loc = locationsList.find(l => l.id === locId);
+                                return (
+                                  <span key={locId} className="badge badge-neutral" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
+                                    {loc ? loc.name : 'Unknown Store'}
+                                  </span>
+                                );
+                              })
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
+                                {item.role === 'ADMIN' ? 'All Locations (Admin)' : 'No Locations'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--border-subtle)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.6875rem',
+                      color: 'var(--text-tertiary)'
+                    }}>
+                      <span className="mono">ID: {item.id.substring(0, 8)}</span>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(item);
+                            setEditFullName(item.fullName);
+                            setEditRole(item.role);
+                            setSelectedLocationIds(item.locationIds || []);
+                            setError('');
+                            setShowEditModal(true);
+                          }}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '4px 8px' }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12, marginRight: '4px' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                          </svg>
+                          Edit
+                        </button>
+                        {item.isActive && (
                           <button
-                            onClick={() => {
-                              setSelectedUser(item);
-                              setEditFullName(item.fullName);
-                              setEditRole(item.role);
-                              setSelectedLocationIds(item.locationIds || []);
-                              setError('');
-                              setShowEditModal(true);
-                            }}
+                            onClick={() => handleDeactivateClick(item.id, item.fullName)}
                             className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', color: '#ef4444', borderColor: '#fca5a5' }}
                           >
-                            Edit
+                            Deactivate
                           </button>
-                          {item.isActive && (
-                            <button
-                              onClick={() => handleDeactivateClick(item.id, item.fullName)}
-                              className="btn btn-danger btn-sm"
-                            >
-                              Deactivate
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="table-responsive-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th style={{ paddingLeft: '24px' }}>Full Name</th>
+                        <th>Email Address</th>
+                        <th>Assigned Role</th>
+                        <th>Assigned Store Locations</th>
+                        <th>Account Status</th>
+                        <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((item) => (
+                        <tr key={item.id}>
+                          <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {item.fullName}
+                          </td>
+                          <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {item.email}
+                          </td>
+                          <td>
+                            <span className={`badge ${item.role === 'ADMIN' ? 'badge-teal' :
+                                item.role === 'SUPER_MANAGER' ? 'badge-amber' :
+                                  item.role === 'MANAGER' ? 'badge-teal' :
+                                    'badge-neutral'
+                              }`}>
+                              {item.role === 'SUPER_MANAGER' ? 'SUPER MGR' : item.role}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {item.locationIds && item.locationIds.length > 0 ? (
+                                item.locationIds.map(locId => {
+                                  const loc = locationsList.find(l => l.id === locId);
+                                  return (
+                                    <span key={locId} className="badge badge-neutral" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
+                                      {loc ? loc.name : 'Unknown Store'}
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
+                                  {item.role === 'ADMIN' ? 'All Locations (Admin)' : 'No Locations Assigned'}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`badge ${item.isActive ? 'badge-green' : 'badge-neutral'}`}>
+                              <span className="badge-dot" style={{ backgroundColor: item.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
+                              {item.isActive ? 'Active' : 'Deactivated'}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(item);
+                                  setEditFullName(item.fullName);
+                                  setEditRole(item.role);
+                                  setSelectedLocationIds(item.locationIds || []);
+                                  setError('');
+                                  setShowEditModal(true);
+                                }}
+                                className="btn btn-secondary btn-sm"
+                              >
+                                Edit
+                              </button>
+                              {item.isActive && (
+                                <button
+                                  onClick={() => handleDeactivateClick(item.id, item.fullName)}
+                                  className="btn btn-danger btn-sm"
+                                >
+                                  Deactivate
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()
         )}
 
         {/* Modal Register Form */}
