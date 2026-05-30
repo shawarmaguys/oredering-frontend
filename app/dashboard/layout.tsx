@@ -1,21 +1,53 @@
 'use client';
 
 import { useAuth } from '../context/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const recordId = searchParams.get('recordId');
+
+  // Allow unauthenticated access when a recordId is present (stock take form via Slack link)
+  const isPublicStockTake = !!recordId && pathname === '/dashboard';
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !isPublicStockTake) {
       router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [isAuthenticated, isLoading, router, pathname]);
+  }, [isAuthenticated, isLoading, router, pathname, isPublicStockTake]);
 
-  if (isLoading || !isAuthenticated) return null;
+  // Show nothing while loading auth state (but not for public stock take links)
+  if (isLoading && !isPublicStockTake) return null;
+
+  // Unauthenticated but accessing a public stock take form — minimal wrapper
+  if (!isAuthenticated && isPublicStockTake) {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)' }}>
+        {/* Minimal branded navbar */}
+        <nav className="navbar">
+          <div className="navbar-inner">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div className="navbar-logo">SG</div>
+              <span className="navbar-wordmark">ShawarmaGuys</span>
+              <div className="navbar-sep" />
+              <span className="navbar-context">Stock Count Audit</span>
+            </div>
+          </div>
+        </nav>
+        <main style={{ flex: 1, overflow: 'auto', width: '100%' }}>
+          <div className="dashboard-body animate-fade-up">
+            {children}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)' }}>
@@ -65,5 +97,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </Suspense>
   );
 }

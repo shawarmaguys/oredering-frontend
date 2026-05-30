@@ -30,8 +30,6 @@ export default function DashboardPage() {
     }
   };
 
-  if (!user) return null;
-
   if (recordId) {
     return (
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
@@ -39,6 +37,8 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   switch (user.role) {
     case 'ADMIN':
