@@ -24,6 +24,8 @@ interface FormItem {
 
 type Step = 'boh' | 'foh' | 'review';
 
+const SUBMITTER_NAME_STORAGE_KEY = 'shawarmaguys_stock_submitter_name';
+
 export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTakeFormProps) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -34,12 +36,24 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [isCompleted, setIsCompleted] = useState(false);
   const [formItems, setFormItems] = useState<FormItem[]>([]);
   const [step, setStep] = useState<Step>('boh');
+  const [showSubmitterModal, setShowSubmitterModal] = useState(false);
+  const [submitterName, setSubmitterName] = useState('');
+  const [submitterNameError, setSubmitterNameError] = useState('');
 
   useEffect(() => {
     if (recordId) {
       loadRecordDetails();
     }
   }, [recordId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      setSubmitterName(localStorage.getItem(SUBMITTER_NAME_STORAGE_KEY) || '');
+    } catch {
+      setSubmitterName('');
+    }
+  }, []);
 
   const loadRecordDetails = async () => {
     setLoading(true);
@@ -87,9 +101,24 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   };
 
   const handleSubmit = async () => {
+    const trimmedSubmitterName = submitterName.trim();
+    if (!trimmedSubmitterName) {
+      setSubmitterNameError('Enter your name to submit.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
+    setSubmitterNameError('');
     try {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(SUBMITTER_NAME_STORAGE_KEY, trimmedSubmitterName);
+        } catch {
+          // Local persistence is best-effort; the submitted PDF still gets the entered name.
+        }
+      }
+
       const payloadItems = formItems.map(item => ({
         itemId: item.itemId,
         basicQuantity: item.backBaseInput,
@@ -98,14 +127,24 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         frontSecondaryQuantity: item.frontSecondaryInput,
       }));
 
-      await api.stockRecords.complete(recordId, { items: payloadItems });
+      await api.stockRecords.complete(recordId, {
+        items: payloadItems,
+        submitterName: trimmedSubmitterName,
+      });
       setSuccess(true);
+      setShowSubmitterModal(false);
       if (onSuccess) onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to submit stock recording.');
+      setShowSubmitterModal(false);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmitRequest = () => {
+    setSubmitterNameError('');
+    setShowSubmitterModal(true);
   };
 
   // ─── Loading ─────────────────────────────────────────────────────────────────
@@ -428,7 +467,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               </button>
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleSubmitRequest}
                 disabled={submitting || formItems.length === 0}
                 className="btn btn-primary"
                 style={{ flex: 2, justifyContent: 'center' }}
@@ -439,6 +478,79 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           )}
         </div>
       </div>
+
+      {showSubmitterModal && (
+        <div className="modal-backdrop">
+          <div className="modal-panel modal-panel-sm" style={{ maxWidth: '380px' }}>
+            <button
+              type="button"
+              onClick={() => setShowSubmitterModal(false)}
+              className="modal-close"
+              aria-label="Close modal"
+              disabled={submitting}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="modal-header">
+              <h2>Submit Stock Count</h2>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            >
+              <div>
+                <label className="label" htmlFor="stock-submitter-name">Submitted By *</label>
+                <input
+                  id="stock-submitter-name"
+                  type="text"
+                  required
+                  value={submitterName}
+                  onChange={(e) => {
+                    setSubmitterName(e.target.value);
+                    setSubmitterNameError('');
+                  }}
+                  className="input"
+                  autoFocus
+                  maxLength={120}
+                />
+              </div>
+
+              {submitterNameError && (
+                <div className="alert alert-error">
+                  {submitterNameError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitterModal(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Submitting...' : 'Submit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
