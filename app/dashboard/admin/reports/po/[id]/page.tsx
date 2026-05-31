@@ -66,7 +66,9 @@ export default function PODetailsPage() {
     isOpen: boolean;
     poId: string;
     vendorName: string;
-    emails: string;
+    vendorEmails: string[];
+    selectedVendorEmails: string[];
+    customEmails: string;
     subject: string;
     body: string;
     notes: string;
@@ -166,11 +168,14 @@ export default function PODetailsPage() {
   const handlePostApprovalYes = () => {
     if (!postApprovalPO) return;
     const poIdShort = postApprovalPO.id.slice(0, 8);
+    const vendorEmails = (postApprovalPO.vendorEmail || '').split(',').map(e => e.trim()).filter(e => e.length > 0);
     setSendEmailState({
       isOpen: true,
       poId: postApprovalPO.id,
       vendorName: postApprovalPO.vendorName,
-      emails: postApprovalPO.vendorEmail,
+      vendorEmails,
+      selectedVendorEmails: [...vendorEmails],
+      customEmails: '',
       subject: `Purchase Order #${poIdShort} - Shawarma Guys (${postApprovalPO.locationName})`,
       body: '',
       notes: po?.notes || ''
@@ -182,11 +187,14 @@ export default function PODetailsPage() {
     if (!po) return;
     const poIdShort = po.id.slice(0, 8);
     const locationName = po.location?.name || 'Store';
+    const vendorEmails = (po.vendor?.email || '').split(',').map(e => e.trim()).filter(e => e.length > 0);
     setSendEmailState({
       isOpen: true,
       poId: po.id,
       vendorName: po.vendor?.displayName || 'Supplier',
-      emails: po.vendor?.email || '',
+      vendorEmails,
+      selectedVendorEmails: [...vendorEmails],
+      customEmails: '',
       subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
       body: '',
       notes: po.notes || ''
@@ -195,15 +203,17 @@ export default function PODetailsPage() {
 
   const handleSendEmail = async () => {
     if (!sendEmailState) return;
-    const { poId, emails, notes } = sendEmailState;
+    const { poId, selectedVendorEmails, customEmails, notes } = sendEmailState;
 
     setActionLoading(true);
     setError('');
 
-    const emailsArray = emails
+    const customEmailsArray = customEmails
       .split(',')
       .map(e => e.trim())
       .filter(e => e.length > 0);
+
+    const emailsArray = Array.from(new Set([...selectedVendorEmails, ...customEmailsArray]));
 
     if (emailsArray.length === 0) {
       setError('Please provide at least one recipient email address.');
@@ -596,12 +606,39 @@ export default function PODetailsPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</label>
+                  
+                  {sendEmailState.vendorEmails.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Vendor Emails:</span>
+                      {sendEmailState.vendorEmails.map(email => (
+                        <label key={email} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                          <input 
+                            type="checkbox"
+                            checked={sendEmailState.selectedVendorEmails.includes(email)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSendEmailState(prev => prev ? { ...prev, selectedVendorEmails: [...prev.selectedVendorEmails, email] } : null);
+                              } else {
+                                setSendEmailState(prev => prev ? { ...prev, selectedVendorEmails: prev.selectedVendorEmails.filter(x => x !== email) } : null);
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          {email}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                    {sendEmailState.vendorEmails.length > 0 ? 'Additional Emails (comma separated):' : 'Enter Emails (comma separated):'}
+                  </span>
                   <input
                     type="text"
-                    value={sendEmailState.emails}
-                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, emails: e.target.value } : null)}
+                    value={sendEmailState.customEmails}
+                    onChange={(e) => setSendEmailState(prev => prev ? { ...prev, customEmails: e.target.value } : null)}
                     placeholder="supplier@example.com, manager@example.com"
                     style={{
                       width: '100%',
@@ -614,9 +651,6 @@ export default function PODetailsPage() {
                       outline: 'none'
                     }}
                   />
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
-                    Separate multiple recipient emails with commas.
-                  </span>
                 </div>
 
 

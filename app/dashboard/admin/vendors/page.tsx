@@ -574,15 +574,18 @@ export default function VendorsPage() {
                 </div>
 
                 <div>
-                  <label className="label" htmlFor="vendor-email">Contact Email Address</label>
+                  <label className="label" htmlFor="vendor-email">Contact Email Address(es)</label>
                   <input
                     id="vendor-email"
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="input"
-                    placeholder="orders@syscowholesale.com"
+                    placeholder="orders@syscowholesale.com, rep@sysco.com"
                   />
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
+                    Separate multiple emails with commas.
+                  </span>
                 </div>
 
                 <div>
@@ -736,14 +739,18 @@ export default function VendorsPage() {
                 </div>
 
                 <div>
-                  <label className="label" htmlFor="edit-vendor-email">Contact Email Address</label>
+                  <label className="label" htmlFor="edit-vendor-email">Contact Email Address(es)</label>
                   <input
                     id="edit-vendor-email"
-                    type="email"
+                    type="text"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
                     className="input"
+                    placeholder="orders@syscowholesale.com, rep@sysco.com"
                   />
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
+                    Separate multiple emails with commas.
+                  </span>
                 </div>
 
                 <div>
