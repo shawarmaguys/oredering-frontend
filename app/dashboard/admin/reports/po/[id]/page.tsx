@@ -156,7 +156,7 @@ export default function PODetailsPage() {
 
       const poIdShort = approved.id.slice(0, 8);
       const locationName = approved.location?.name || 'Store';
-      const vendorEmails = (approved.vendor?.email || '').split(',').map(e => e.trim()).filter(e => e.length > 0);
+      const vendorEmails = (approved.vendor?.email || '').split(',').map((e: string) => e.trim()).filter((e: string) => e.length > 0);
       setSendEmailState({
         isOpen: true,
         poId: approved.id,
@@ -182,7 +182,7 @@ export default function PODetailsPage() {
     if (!po) return;
     const poIdShort = po.id.slice(0, 8);
     const locationName = po.location?.name || 'Store';
-    const vendorEmails = (po.vendor?.email || '').split(',').map(e => e.trim()).filter(e => e.length > 0);
+    const vendorEmails = (po.vendor?.email || '').split(',').map((e: string) => e.trim()).filter((e: string) => e.length > 0);
     setSendEmailState({
       isOpen: true,
       poId: po.id,

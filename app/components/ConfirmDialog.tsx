@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -15,14 +16,21 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   if (!isOpen) return null;
 
   const handleCancel = () => {
     if (onCancel) onCancel();
   };
 
-  return (
-    <div className="modal-backdrop" style={{ zIndex: 9999 }}>
+  const dialogContent = (
+    <div className="modal-backdrop confirm-modal-backdrop" style={{ zIndex: 9999 }}>
       <div className="modal-panel modal-panel-sm" style={{ maxWidth: '380px' }}>
         <button
           onClick={handleCancel}
@@ -48,4 +56,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       </div>
     </div>
   );
+
+  if (!mounted) return null;
+
+  return createPortal(dialogContent, document.body);
 };

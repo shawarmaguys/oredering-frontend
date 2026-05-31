@@ -529,6 +529,10 @@ code,
   padding: 40px 16px;
 }
 
+.confirm-modal-backdrop {
+  align-items: center !important;
+}
+
 .modal-panel {
   background-color: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
@@ -731,6 +735,12 @@ code,
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .navbar-inner {
+    padding: 0 16px;
+  }
 }
 
 .navbar-brand {
@@ -1070,13 +1080,13 @@ code,
 
 @media (max-width: 1024px) {
   .dashboard-body {
-    padding: 8px 8px;
+    padding: 20px 20px;
   }
 }
 
 @media (max-width: 640px) {
   .dashboard-body {
-    padding: 8px 8px;
+    padding: 16px 16px;
   }
 }
 
@@ -1104,15 +1114,14 @@ code,
 
 @media (max-width: 640px) {
   .modal-backdrop {
-    padding: 0 !important;
-    align-items: flex-start !important;
+    padding: 16px !important;
   }
 
   .modal-data-layout {
-    width: 100vw !important;
-    max-height: 100dvh !important;
-    border-radius: 0 !important;
-    border: none !important;
+    width: 100% !important;
+    max-height: calc(100dvh - 32px) !important;
+    border-radius: var(--radius-xl) !important;
+    border: 1px solid var(--border-subtle) !important;
     padding: 16px !important;
   }
 }

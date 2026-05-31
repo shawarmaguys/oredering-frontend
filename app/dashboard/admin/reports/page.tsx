@@ -136,6 +136,9 @@ export default function ReportsPage() {
       if (poId) {
         router.push(`/dashboard/admin/reports/po/${poId}`);
       }
+      if (window.innerWidth < 640) {
+        setViewMode('tile');
+      }
     }
   }, []);
 
@@ -598,7 +601,7 @@ export default function ReportsPage() {
                           <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>ID: {sr.id.substring(0, 8)}...</span>
                           <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>{sr.location?.name || 'Store Location'}</h4>
                           <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                            Submitted by: <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{sr.submittedByUser?.fullName || 'Worker'}</strong>
+                            Submitted by: <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{sr.submittedBy || 'Worker'}</strong>
                           </span>
                         </div>
                       </div>

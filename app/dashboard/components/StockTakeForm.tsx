@@ -313,13 +313,13 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
   // ─── Main form ────────────────────────────────────────────────────────────────
   return (
-    <div className="card animate-fade-up" style={{ position: 'relative', overflow: 'hidden', padding: '24px' }}>
+    <div className="card animate-fade-up stock-form-pad" style={{ position: 'relative', overflow: 'hidden', padding: '24px' }}>
       <style>{`
         @keyframes pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.3); }
           50% { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
           .stock-form-pad { padding: 16px !important; }
           .stock-step-label { display: none !important; }
         }

@@ -73,6 +73,9 @@ export default function VendorsPage() {
 
   useEffect(() => {
     fetchInitialData();
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setViewMode('tile');
+    }
   }, []);
 
   const fetchInitialData = async () => {
