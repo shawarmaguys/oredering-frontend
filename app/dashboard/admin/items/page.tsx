@@ -100,7 +100,7 @@ export default function ItemsPage() {
     const hasSecondaryUnit = displayUnitName && displayUnitName.trim() !== '';
     if (hasSecondaryUnit) {
       if (multiplier === '' || Number(multiplier) <= 0) {
-        setError('Please enter a valid multiplier for the secondary unit.');
+        setError('Please enter a valid multiplier for the pack size.');
         return;
       }
     }
@@ -146,7 +146,7 @@ export default function ItemsPage() {
     const hasSecondaryUnit = editDisplayUnitName && editDisplayUnitName.trim() !== '';
     if (hasSecondaryUnit) {
       if (editMultiplier === '' || Number(editMultiplier) <= 0) {
-        setError('Please enter a valid multiplier for the secondary unit.');
+        setError('Please enter a valid multiplier for the pack size.');
         return;
       }
     }
@@ -433,8 +433,8 @@ export default function ItemsPage() {
                         <th>Assigned Vendor</th>
                         <th>Product Code</th>
                         <th>Notes</th>
-                        <th>Secondary Unit</th>
-                        <th>Base Unit</th>
+                        <th>pack size</th>
+                        <th>individual stock unit</th>
                         <th style={{ textAlign: 'center' }}>Multiplier</th>
                         <th style={{ textAlign: 'center' }}>Status</th>
                         <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
@@ -621,7 +621,7 @@ export default function ItemsPage() {
 
                   <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div>
-                      <label className="label" htmlFor="item-base">Base Stock Unit *</label>
+                      <label className="label" htmlFor="item-base">individual stock unit *</label>
                       <input
                         id="item-base"
                         type="text"
@@ -635,7 +635,7 @@ export default function ItemsPage() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       <div>
-                        <label className="label" htmlFor="item-secondary">Secondary Order Unit</label>
+                        <label className="label" htmlFor="item-secondary">pack size</label>
                         <input
                           id="item-secondary"
                           type="text"
@@ -778,7 +778,7 @@ export default function ItemsPage() {
 
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label className="label" htmlFor="edit-item-base">Base Stock Unit *</label>
+                    <label className="label" htmlFor="edit-item-base">individual stock unit *</label>
                     <input
                       id="edit-item-base"
                       type="text"
@@ -791,7 +791,7 @@ export default function ItemsPage() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label className="label" htmlFor="edit-item-secondary">Secondary Order Unit</label>
+                      <label className="label" htmlFor="edit-item-secondary">pack size</label>
                       <input
                         id="edit-item-secondary"
                         type="text"
