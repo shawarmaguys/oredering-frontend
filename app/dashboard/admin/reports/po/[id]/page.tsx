@@ -61,7 +61,7 @@ export default function PODetailsPage() {
 
   // Modals state
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
-  const [postApprovalPO, setPostApprovalPO] = useState<{ id: string; vendorName: string; vendorEmail: string; locationName: string } | null>(null);
+
   const [sendEmailState, setSendEmailState] = useState<{
     isOpen: boolean;
     poId: string;
@@ -142,14 +142,31 @@ export default function PODetailsPage() {
     setError('');
 
     try {
+      if (isModified) {
+        const payloadItems = Object.keys(editedQuantities).map(itemId => ({
+          itemId,
+          quantity: editedQuantities[itemId]
+        }));
+        await api.purchaseOrders.update(po.id, {
+          items: payloadItems
+        });
+      }
+
       const approved = await api.purchaseOrders.approve(po.id);
 
-      // Set post approval state
-      setPostApprovalPO({
-        id: approved.id,
+      const poIdShort = approved.id.slice(0, 8);
+      const locationName = approved.location?.name || 'Store';
+      const vendorEmails = (approved.vendor?.email || '').split(',').map(e => e.trim()).filter(e => e.length > 0);
+      setSendEmailState({
+        isOpen: true,
+        poId: approved.id,
         vendorName: approved.vendor?.displayName || 'Supplier',
-        vendorEmail: approved.vendor?.email || '',
-        locationName: approved.location?.name || 'Store'
+        vendorEmails,
+        selectedVendorEmails: [...vendorEmails],
+        customEmails: '',
+        subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
+        body: '',
+        notes: approved.notes || po.notes || ''
       });
 
       // Reload details
@@ -159,28 +176,6 @@ export default function PODetailsPage() {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const handlePostApprovalNo = () => {
-    setPostApprovalPO(null);
-  };
-
-  const handlePostApprovalYes = () => {
-    if (!postApprovalPO) return;
-    const poIdShort = postApprovalPO.id.slice(0, 8);
-    const vendorEmails = (postApprovalPO.vendorEmail || '').split(',').map(e => e.trim()).filter(e => e.length > 0);
-    setSendEmailState({
-      isOpen: true,
-      poId: postApprovalPO.id,
-      vendorName: postApprovalPO.vendorName,
-      vendorEmails,
-      selectedVendorEmails: [...vendorEmails],
-      customEmails: '',
-      subject: `Purchase Order #${poIdShort} - Shawarma Guys (${postApprovalPO.locationName})`,
-      body: '',
-      notes: po?.notes || ''
-    });
-    setPostApprovalPO(null);
   };
 
   const handleTriggerSendEmail = () => {
@@ -412,28 +407,17 @@ export default function PODetailsPage() {
 
               {/* Action Toolbar */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '20px', marginTop: '12px' }}>
-                {po.status === 'DRAFT' && isModified && (
-                  <button
-                    onClick={handleSaveDraft}
-                    disabled={actionLoading}
-                    className="btn btn-secondary"
-                    style={{ backgroundColor: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px' }}
-                  >
-                    {actionLoading ? 'Saving...' : '💾 Save Draft Changes'}
-                  </button>
-                )}
-
                 {po.status === 'DRAFT' && (
                   <button
                     onClick={handleApproveClick}
-                    disabled={actionLoading || isModified}
+                    disabled={actionLoading}
                     className="btn btn-primary"
                     style={{ padding: '10px 24px' }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 18, height: 18, marginRight: 4 }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
                     </svg>
-                    {actionLoading ? 'Approving...' : 'Approve Purchase Order'}
+                    {actionLoading ? 'Approving...' : (isModified ? 'Save & Approve Purchase Order' : 'Approve Purchase Order')}
                   </button>
                 )}
 
@@ -493,80 +477,6 @@ export default function PODetailsPage() {
           onCancel={() => setApproveConfirmOpen(false)}
         />
 
-        {/* Post-Approval Options Prompt Modal */}
-        {postApprovalPO && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '16px'
-          }}>
-            <div className="card" style={{
-              width: '100%',
-              maxWidth: '440px',
-              padding: '24px',
-              backgroundColor: 'var(--bg-elevated)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-xl)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--green-subtle)',
-                color: 'var(--green)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto',
-                fontSize: '1.5rem',
-                border: '1px solid var(--green-border)'
-              }}>
-                ✓
-              </div>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Purchase Order Approved!
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  The purchase order for <strong>{postApprovalPO.vendorName}</strong> has been successfully authorized and moved to generated status.
-                </p>
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                  Would you like to send it to the supplier via email now?
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button
-                  onClick={handlePostApprovalNo}
-                  className="btn btn-secondary"
-                  style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
-                >
-                  No, Later
-                </button>
-                <button
-                  onClick={handlePostApprovalYes}
-                  className="btn btn-primary"
-                  style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
-                >
-                  Yes, Send Now
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Send Purchase Order Email Modal */}
         {sendEmailState && (
