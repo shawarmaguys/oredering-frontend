@@ -24,9 +24,6 @@ interface StockRecord {
     name: string;
   };
   submittedBy?: string;
-  submittedByUser?: {
-    fullName: string;
-  };
   submittedAt: string;
   isCompleted: boolean;
   items?: StockRecordItem[];

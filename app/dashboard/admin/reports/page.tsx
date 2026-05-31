@@ -14,9 +14,6 @@ interface StockRecord {
     name: string;
   };
   submittedBy: string;
-  submittedByUser?: {
-    fullName: string;
-  };
   slackMessageTs?: string;
   submittedAt: string;
   approvedAt?: string;
@@ -157,9 +154,9 @@ export default function ReportsPage() {
         location: details.location,
         stockRecordId: details.stockRecordId || details.stock_record_id,
         createdBy: details.createdBy || details.created_by,
-        createdByUser: details.createdByUser || details.createdBy_user || { fullName: 'Worker Portal' },
+        createdByUser: details.creator || details.createdByUser || details.createdBy_user || { fullName: 'Worker Portal' },
         approvedBy: details.approvedBy || details.approved_by,
-        approvedByUser: details.approvedByUser || details.approvedBy_user,
+        approvedByUser: details.approver || details.approvedByUser || details.approvedBy_user,
         status: details.status,
         pdfUrl: details.pdfUrl || details.pdf_url,
         notes: details.notes,
@@ -196,9 +193,9 @@ export default function ReportsPage() {
           location: po.location,
           stockRecordId: po.stockRecordId || po.stock_record_id,
           createdBy: po.createdBy || po.created_by,
-          createdByUser: po.createdByUser || po.createdBy_user || { fullName: 'Worker Portal' },
+          createdByUser: po.creator || po.createdByUser || po.createdBy_user || { fullName: 'Worker Portal' },
           approvedBy: po.approvedBy || po.approved_by,
-          approvedByUser: po.approvedByUser || po.approvedBy_user,
+          approvedByUser: po.approver || po.approvedByUser || po.approvedBy_user,
           status: po.status,
           pdfUrl: po.pdfUrl || po.pdf_url,
           notes: po.notes,
@@ -212,8 +209,7 @@ export default function ReportsPage() {
           id: sr.id,
           locationId: sr.locationId || sr.location_id,
           location: sr.location,
-          submittedBy: sr.submittedBy || sr.submitted_by,
-          submittedByUser: sr.submittedByUser || sr.submittedBy_user || { fullName: 'System Worker' },
+          submittedBy: sr.submittedBy || sr.submitted_by || 'System',
           slackMessageTs: sr.slackMessageTs || sr.slack_message_ts,
           submittedAt: sr.submittedAt || sr.submitted_at,
           approvedAt: sr.approvedAt || sr.approved_at,
@@ -576,7 +572,7 @@ export default function ReportsPage() {
             (() => {
               const filtered = stockRecords.filter(sr => {
                 const q = search.toLowerCase();
-                if (q && !sr.location?.name?.toLowerCase().includes(q) && !sr.submittedByUser?.fullName?.toLowerCase().includes(q)) return false;
+                if (q && !sr.location?.name?.toLowerCase().includes(q) && !sr.submittedBy?.toLowerCase().includes(q)) return false;
                 return true;
               }).sort((a, b) => {
                 return sortBy === 'date_desc'
@@ -637,7 +633,7 @@ export default function ReportsPage() {
                           <tr key={sr.id}>
                             <td className="mono" style={{ paddingLeft: '24px', fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{sr.id.substring(0, 8)}</td>
                             <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{sr.location?.name || 'Store Location'}</td>
-                            <td>{sr.submittedByUser?.fullName || 'Worker'}</td>
+                            <td>{sr.submittedBy || 'Worker'}</td>
                             <td style={{ textAlign: 'right', paddingRight: '24px', fontSize: '0.8125rem' }}>
                               {new Date(sr.submittedAt).toLocaleDateString()} <span className="mono" style={{ color: 'var(--text-tertiary)', marginLeft: '4px' }}>{new Date(sr.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </td>
