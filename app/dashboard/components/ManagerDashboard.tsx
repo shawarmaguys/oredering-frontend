@@ -149,14 +149,14 @@ export default function ManagerDashboard() {
             </div>
             <div>
               <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                Reports & Audits
+                Purchase Orders and Stock records
               </h3>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
                 Access all completed kitchen stock sheets and track the stage of procurement purchase orders.
               </p>
             </div>
             <Link href="/dashboard/admin/reports" className="btn btn-primary" style={{ width: '100%', marginTop: '8px', textAlign: 'center', textDecoration: 'none', justifyContent: 'center' }}>
-              View Reports & Audits
+              View Purchase Orders and Stock records
             </Link>
           </div>
         </div>

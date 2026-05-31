@@ -354,13 +354,13 @@ export default function ReportsPage() {
         <div className="breadcrumb">
           <Link href="/dashboard">Dashboard</Link>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Reports</span>
+          <span className="breadcrumb-current">Purchase Orders and Stock records</span>
         </div>
 
         {/* Header */}
         <div className="page-header">
           <div className="page-header-text">
-            <h1>Reports & Purchase Orders</h1>
+            <h1>Purchase Orders and Stock records</h1>
             <p>Verify kitchen stock sheets and authorize supplier purchase orders.</p>
           </div>
         </div>

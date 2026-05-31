@@ -238,7 +238,7 @@ export default function PODetailsPage() {
         <div className="breadcrumb">
           <Link href="/dashboard">Dashboard</Link>
           <span className="breadcrumb-sep">/</span>
-          <Link href="/dashboard/admin/reports">Reports</Link>
+          <Link href="/dashboard/admin/reports">Purchase Orders and Stock records</Link>
           <span className="breadcrumb-sep">/</span>
           <span className="breadcrumb-current">Purchase Order</span>
         </div>
@@ -246,7 +246,7 @@ export default function PODetailsPage() {
         {/* Back Link */}
         <div style={{ alignSelf: 'flex-start' }}>
           <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-            ← Back to Reports & Audits
+            ← Back to Purchase Orders and Stock records
           </Link>
         </div>
 
