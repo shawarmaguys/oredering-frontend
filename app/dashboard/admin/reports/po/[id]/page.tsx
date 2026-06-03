@@ -39,6 +39,7 @@ interface PurchaseOrder {
   createdAt: string;
   notes?: string;
   pdfUrl?: string;
+  emailsSent?: string;
   items: POItem[];
   approver?: {
     fullName: string;
@@ -298,6 +299,15 @@ export default function PODetailsPage() {
             {po.notes && (
               <div className="card" style={{ padding: '16px 20px', borderLeft: '3px solid var(--accent-subtle)', fontStyle: 'italic', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 "{po.notes}"
+              </div>
+            )}
+
+            {po.emailsSent && (
+              <div className="card" style={{ padding: '16px 20px', borderLeft: '3px solid var(--green)', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ✉️ Dispatched Recipients
+                </span>
+                <span>This purchase order was emailed to: <strong>{po.emailsSent}</strong></span>
               </div>
             )}
 

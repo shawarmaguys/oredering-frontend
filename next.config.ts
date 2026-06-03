@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  allowedDevOrigins: ['192.168.1.5', 'https://oredering-backend.vercel.app'],
+  allowedDevOrigins: ['192.168.1.9', 'https://oredering-backend.vercel.app'],
 };
 
 export default nextConfig;

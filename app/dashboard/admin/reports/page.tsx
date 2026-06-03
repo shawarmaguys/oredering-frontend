@@ -41,6 +41,7 @@ interface PurchaseOrder {
   status: 'DRAFT' | 'GENERATED' | 'SENT' | 'ACKNOWLEDGED' | 'CANCELLED';
   pdfUrl?: string;
   notes?: string;
+  emailsSent?: string;
   createdAt: string;
   approvedAt?: string;
 }
@@ -162,6 +163,7 @@ export default function ReportsPage() {
         approvedByUser: details.approver || details.approvedByUser || details.approvedBy_user,
         status: details.status,
         pdfUrl: details.pdfUrl || details.pdf_url,
+        emailsSent: details.emailsSent || details.emails_sent,
         notes: details.notes,
         createdAt: details.createdAt || details.created_at,
         approvedAt: details.approvedAt || details.approved_at,
@@ -201,6 +203,7 @@ export default function ReportsPage() {
           approvedByUser: po.approver || po.approvedByUser || po.approvedBy_user,
           status: po.status,
           pdfUrl: po.pdfUrl || po.pdf_url,
+          emailsSent: po.emailsSent || po.emails_sent,
           notes: po.notes,
           createdAt: po.createdAt || po.created_at,
           approvedAt: po.approvedAt || po.approved_at,
