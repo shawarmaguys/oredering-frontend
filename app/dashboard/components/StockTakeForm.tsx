@@ -417,7 +417,8 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         )}
 
         {/* Items list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '45vh', overflowY: 'auto', paddingRight: '2px' }}>
+        <div className="flex-1 max-h-[400px] overflow-y-auto pr-1">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
           {formItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
               No items assigned to this location.
@@ -425,7 +426,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           ) : (
             formItems.map(item => renderItemCard(item, step as 'boh' | 'foh'))
           )}
-        </div>
+        </div></div>
 
         {/* Navigation buttons */}
         <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>

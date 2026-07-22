@@ -245,11 +245,11 @@ export default function PODetailsPage() {
         </div>
 
         {/* Back Link */}
-        <div style={{ alignSelf: 'flex-start' }}>
+        {/* <div style={{ alignSelf: 'flex-start' }}>
           <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
             ← Back to Purchase Orders and Stock records
           </Link>
-        </div>
+        </div> */}
 
         {loading ? (
           <div className="card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -294,13 +294,8 @@ export default function PODetailsPage() {
                   {po.status}
                 </span>
               </div>
+              "{po.notes}"
             </div>
-
-            {po.notes && (
-              <div className="card" style={{ padding: '16px 20px', borderLeft: '3px solid var(--accent-subtle)', fontStyle: 'italic', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                "{po.notes}"
-              </div>
-            )}
 
             {po.emailsSent && (
               <div className="card" style={{ padding: '16px 20px', borderLeft: '3px solid var(--green)', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -320,11 +315,11 @@ export default function PODetailsPage() {
 
             {/* Main PO Items Grid */}
             <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
+              {/* <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
                 Ordered Items Breakdown
-              </h3>
+              </h3> */}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} className="flex-1 max-h-[400px] overflow-y-auto pr-1">
                 {po.items?.length === 0 ? (
                   <p style={{ fontStyle: 'italic', color: 'var(--text-tertiary)', fontSize: '0.875rem', textAlign: 'center', paddingTop: '24px', paddingBottom: '24px' }}>
                     No items in this purchase order.
