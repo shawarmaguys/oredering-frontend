@@ -326,8 +326,21 @@ export default function PODetailsPage() {
                   </p>
                 ) : (
                   po.items.map((item) => {
-                    const displayUnit = item.unitName || 'cases';
-                    const baseUnit = item.item?.baseUnitName || 'pcs';
+                    const displayUnit = item.unitName;
+                    const baseUnit = item.item?.baseUnitName;
+                    if (!baseUnit) {
+                      return (
+                        <div key={item.id} style={{ padding: '16px', backgroundColor: 'var(--bg-sunken)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)' }}>
+                          <strong style={{ fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                            {item.item?.displayName || 'Item'}
+                          </strong>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                            ⚠️ Base unit information is missing for this item.
+                          </p>
+                        </div>
+                      );
+                    }
+
                     const isSameUnit = baseUnit.toLowerCase() === displayUnit.toLowerCase() || Number(item.item?.multiplier) === 1;
 
                     let countedStr = '';
