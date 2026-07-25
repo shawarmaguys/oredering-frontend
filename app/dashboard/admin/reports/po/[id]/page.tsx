@@ -20,6 +20,7 @@ interface POItem {
   item?: {
     displayName: string;
     baseUnitName: string;
+    displayUnitName: string;
     multiplier: number;
   };
 }
@@ -117,10 +118,14 @@ export default function PODetailsPage() {
     setActionLoading(true);
     setError('');
     try {
-      const payloadItems = Object.keys(editedQuantities).map(itemId => ({
-        itemId,
-        quantity: editedQuantities[itemId]
-      }));
+      const payloadItems = Object.keys(editedQuantities).map(itemId => {
+        const item = po.items?.find((i: POItem) => i.itemId === itemId);
+        return {
+          itemId,
+          quantity: editedQuantities[itemId],
+          displayUnitName: item?.item?.displayUnitName || item?.unitName || ''
+        };
+      });
       await api.purchaseOrders.update(po.id, {
         items: payloadItems
       });
@@ -144,10 +149,14 @@ export default function PODetailsPage() {
 
     try {
       if (isModified) {
-        const payloadItems = Object.keys(editedQuantities).map(itemId => ({
-          itemId,
-          quantity: editedQuantities[itemId]
-        }));
+        const payloadItems = Object.keys(editedQuantities).map(itemId => {
+          const item = po.items?.find((i: POItem) => i.itemId === itemId);
+          return {
+            itemId,
+            quantity: editedQuantities[itemId],
+            displayUnitName: item?.item?.displayUnitName || item?.unitName || ''
+          };
+        });
         await api.purchaseOrders.update(po.id, {
           items: payloadItems
         });
@@ -293,8 +302,11 @@ export default function PODetailsPage() {
                   <span className="badge-dot" />
                   {po.status}
                 </span>
+                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                  "{po.notes}"
+                </span>
               </div>
-              "{po.notes}"
+
             </div>
 
             {po.emailsSent && (
@@ -326,7 +338,7 @@ export default function PODetailsPage() {
                   </p>
                 ) : (
                   po.items.map((item) => {
-                    const displayUnit = item.unitName;
+                    const displayUnit = item.item?.displayUnitName;
                     const baseUnit = item.item?.baseUnitName;
                     if (!baseUnit) {
                       return (
@@ -341,17 +353,15 @@ export default function PODetailsPage() {
                       );
                     }
 
-                    const isSameUnit = baseUnit.toLowerCase() === displayUnit.toLowerCase() || Number(item.item?.multiplier) === 1;
-
                     let countedStr = '';
-                    if (item.secondaryQuantity !== null && item.basicQuantity !== null) {
-                      if (isSameUnit) {
-                        countedStr = `${Number(item.secondaryQuantity).toFixed(1)} ${displayUnit}`;
-                      } else {
-                        countedStr = `${Number(item.secondaryQuantity).toFixed(0)} ${displayUnit} + ${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
+                    if (baseUnit) {
+                      countedStr = `${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
+                      if (displayUnit) {
+                        countedStr += ` + ${Number(item.secondaryQuantity).toFixed(0)} ${displayUnit}`;
                       }
-                    } else {
-                      countedStr = 'N/A';
+                    }
+                    else {
+                      countedStr = `N/A`;
                     }
 
                     return (
@@ -375,22 +385,22 @@ export default function PODetailsPage() {
                               {item.item?.displayName || 'Item'}
                             </strong>
                             <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>
-                              Unit: {displayUnit}
+                              Unit: {displayUnit || baseUnit}
                             </span>
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px 16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                             <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
-                            <div>Normalized (Cases): <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
-                            <div>Par (Cases): <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
-                            <div>Suggested PO (Cases): <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
+                            <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
+                            <div>Par: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
+                            <div>Suggested PO: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
                           </div>
                         </div>
 
                         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '20px' }}>
                           {po.status === 'DRAFT' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Order Qty ({displayUnit})</label>
+                              <label style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Order Qty</label>
                               <input
                                 type="number"
                                 min="0"
@@ -536,13 +546,13 @@ export default function PODetailsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</label>
-                  
+
                   {sendEmailState.vendorEmails.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '4px' }}>
                       <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Vendor Emails:</span>
                       {sendEmailState.vendorEmails.map(email => (
                         <label key={email} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                          <input 
+                          <input
                             type="checkbox"
                             checked={sendEmailState.selectedVendorEmails.includes(email)}
                             onChange={(e) => {

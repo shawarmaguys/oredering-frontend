@@ -15,7 +15,6 @@ interface FormItem {
   baseUnitName: string;
   displayUnitName: string;
   multiplier: number;
-  isSameUnit: boolean;
   backSecondaryInput: number;
   backBaseInput: number;
   frontSecondaryInput: number;
@@ -65,18 +64,15 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
       setIsCompleted(detailedRecord.isCompleted || false);
 
       const initialItems = (detailedRecord.items || []).map((ri: any) => {
-        const baseUnit = ri.item?.baseUnitName || 'pcs';
-        const displayUnit = ri.item?.displayUnitName || baseUnit;
+        const baseUnit = ri.item?.baseUnitName;
+        const displayUnit = ri.item?.displayUnitName;
         const multiplier = Number(ri.item?.multiplier) || 1;
-        const isSameUnit = baseUnit.toLowerCase() === displayUnit.toLowerCase() || multiplier === 1;
-
         return {
           itemId: ri.itemId,
           displayName: ri.item?.displayName || 'Unknown Item',
           baseUnitName: baseUnit,
           displayUnitName: displayUnit,
           multiplier,
-          isSameUnit,
           backSecondaryInput: Number(ri.secondaryQuantity) || 0,
           backBaseInput: Number(ri.basicQuantity) || 0,
           frontSecondaryInput: Number(ri.frontSecondaryQuantity) || 0,
@@ -92,6 +88,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   };
 
   const updateItem = (itemId: string, field: keyof FormItem, val: string) => {
+    console.log("field", field);
     const numVal = parseFloat(val);
     setFormItems(prev =>
       prev.map(item =>
@@ -252,25 +249,25 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
         {/* Input area */}
         <div style={{ padding: '16px', backgroundColor: bgColor, border: `1px solid ${borderColor}`, margin: '12px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
-          {item.isSameUnit ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%', maxWidth: '180px' }}>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                inputMode="decimal"
-                value={(item[secField] as number) || ''}
-                onChange={e => updateItem(item.itemId, secField, e.target.value)}
-                className="input"
-                placeholder="0"
-                style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
-              />
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {item.displayUnitName}
-              </span>
-            </div>
-          ) : (
-            <>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              inputMode="decimal"
+              value={(item[baseField] as number) || ''}
+              onChange={e => updateItem(item.itemId, baseField, e.target.value)}
+              className="input"
+              placeholder="0"
+              style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
+            />
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+              {item.baseUnitName}
+            </span>
+          </div>
+
+          {item.displayUnitName &&
+            <><span style={{ color: 'var(--text-quaternary)', fontWeight: 700, fontSize: '1.25rem', paddingBottom: '20px' }}>+</span>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
                 <input
                   type="number"
@@ -286,26 +283,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                   {item.displayUnitName}
                 </span>
-              </div>
-              <span style={{ color: 'var(--text-quaternary)', fontWeight: 700, fontSize: '1.25rem', paddingBottom: '20px' }}>+</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  inputMode="decimal"
-                  value={(item[baseField] as number) || ''}
-                  onChange={e => updateItem(item.itemId, baseField, e.target.value)}
-                  className="input"
-                  placeholder="0"
-                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
-                />
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                  {item.baseUnitName}
-                </span>
-              </div>
-            </>
-          )}
+              </div></>
+          }
+
+
         </div>
       </div>
     );
@@ -418,15 +399,15 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
         {/* Items list */}
         <div className="flex-1 max-h-[400px] overflow-y-auto pr-1">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
-          {formItems.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
-              No items assigned to this location.
-            </div>
-          ) : (
-            formItems.map(item => renderItemCard(item, step as 'boh' | 'foh'))
-          )}
-        </div></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
+            {formItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
+                No items assigned to this location.
+              </div>
+            ) : (
+              formItems.map(item => renderItemCard(item, step as 'boh' | 'foh'))
+            )}
+          </div></div>
 
         {/* Navigation buttons */}
         <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>

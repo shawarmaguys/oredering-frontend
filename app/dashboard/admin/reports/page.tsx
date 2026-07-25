@@ -96,10 +96,14 @@ export default function ReportsPage() {
     setActionLoading(true);
     setError('');
     try {
-      const payloadItems = Object.keys(editedQuantities).map(itemId => ({
-        itemId,
-        quantity: editedQuantities[itemId]
-      }));
+      const payloadItems = Object.keys(editedQuantities).map(itemId => {
+        const item = poItems.find(i => i.itemId === itemId);
+        return {
+          itemId,
+          quantity: editedQuantities[itemId],
+          displayUnitName: item?.item?.displayUnitName || item?.unitName || ''
+        };
+      });
       const updatedPO = await api.purchaseOrders.update(selectedPO.id, {
         items: payloadItems
       });
