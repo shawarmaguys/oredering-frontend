@@ -355,9 +355,10 @@ export default function PODetailsPage() {
 
                     let countedStr = '';
                     if (baseUnit) {
-                      countedStr = `${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
                       if (displayUnit) {
-                        countedStr += ` + ${Number(item.secondaryQuantity).toFixed(0)} ${displayUnit}`;
+                        countedStr = `${Number(item.secondaryQuantity).toFixed(0)} ${displayUnit} + ${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
+                      } else {
+                        countedStr = `${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
                       }
                     }
                     else {
