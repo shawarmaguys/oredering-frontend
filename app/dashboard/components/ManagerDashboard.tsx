@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../../utils/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function ManagerDashboard() {
   const [pendingReviews, setPendingReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function loadPendingReviews() {
@@ -27,8 +29,8 @@ export default function ManagerDashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div className="page-header">
         <div className="page-header-text">
-          <h1>Manager Portal</h1>
-          <p>Review worker inventory submissions, fix anomalies, and authorize purchase orders for distribution.</p>
+          <h1>{t('manager_portal')}</h1>
+          <p>{t('manager_desc')}</p>
         </div>
       </div>
 
@@ -47,15 +49,15 @@ export default function ManagerDashboard() {
             }}>
               <div>
                 <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Pending Stock Reviews
+                  {t('pending_stock_reviews')}
                 </h2>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                  Audits awaiting approval before supplier dispatches.
+                  {t('audits_awaiting_approval')}
                 </p>
               </div>
               <span className="badge badge-amber">
                 <span className="badge-dot" />
-                {pendingReviews.length} Action Needed
+                {pendingReviews.length} {t('action_needed')}
               </span>
             </div>
 
@@ -88,14 +90,14 @@ export default function ManagerDashboard() {
                         </span>
                         <span className={`badge ${po.status === 'GENERATED' ? 'badge-teal' : 'badge-amber'}`} style={{ fontSize: '0.6875rem', padding: '1px 6px' }}>
                           <span className="badge-dot" style={{ backgroundColor: po.status === 'GENERATED' ? 'var(--teal)' : 'var(--amber)' }} />
-                          {po.status === 'GENERATED' ? 'Approved (Not Sent)' : 'Pending Review'}
+                          {po.status === 'GENERATED' ? t('approved_not_sent') : t('pending_review')}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                           • {new Date(po.createdAt).toLocaleDateString()} {new Date(po.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                        <strong>{po.vendor?.displayName || 'Supplier'}</strong> at {po.location?.name || 'Store'}
+                        <strong>{t(po.vendor?.displayName || 'Wholesaler Supplier', undefined, po.vendor?.displayName)}</strong> at {t(po.location?.name || 'Store Location', undefined, po.location?.name)}
                       </p>
                     </div>
                     <Link
@@ -103,7 +105,7 @@ export default function ManagerDashboard() {
                       className={`btn btn-sm ${po.status === 'GENERATED' ? 'btn-primary' : 'btn-secondary'}`}
                       style={{ textDecoration: 'none' }}
                     >
-                      {po.status === 'GENERATED' ? 'Send PO' : 'Review values'}
+                      {po.status === 'GENERATED' ? t('send_po') : t('review_values')}
                     </Link>
                   </div>
                 ))
@@ -114,8 +116,8 @@ export default function ManagerDashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3>No pending reviews</h3>
-                  <p>All store counts are approved and synchronized.</p>
+                  <h3>{t('no_pending_reviews')}</h3>
+                  <p>{t('all_counts_approved')}</p>
                 </div>
               )}
             </div>
@@ -149,14 +151,14 @@ export default function ManagerDashboard() {
             </div>
             <div>
               <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                Purchase Orders and Stock records
+                {t('po_and_stock_title')}
               </h3>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                Access all completed kitchen stock sheets and track the stage of procurement purchase orders.
+                {t('access_all_completed')}
               </p>
             </div>
             <Link href="/dashboard/admin/reports" className="btn btn-primary" style={{ width: '100%', marginTop: '8px', textAlign: 'center', textDecoration: 'none', justifyContent: 'center' }}>
-              View Purchase Orders and Stock records
+              {t('view_po_and_stock')}
             </Link>
           </div>
         </div>

@@ -3,9 +3,12 @@
 import { useAuth } from '../context/AuthContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { useLanguage } from '../context/LanguageContext';
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -32,9 +35,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="navbar-inner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div className="navbar-logo">SG</div>
-              <span className="navbar-wordmark">ShawarmaGuys</span>
+              <span className="navbar-wordmark">{t('brand_name')}</span>
               <div className="navbar-sep" />
-              <span className="navbar-context">Stock Count Audit</span>
+              <span className="navbar-context">{t('stock_count_audit')}</span>
+            </div>
+            <div className="navbar-actions">
+              <LanguageSwitcher />
             </div>
           </div>
         </nav>
@@ -49,6 +55,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) return null;
 
+  const roleTranslation = user?.role === 'ADMIN' ? t('role_admin') : user?.role === 'MANAGER' ? t('role_manager') : user?.role === 'WORKER' ? t('role_worker') : user?.role;
+
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)' }}>
       {/* Navbar */}
@@ -58,18 +66,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <a href="/dashboard" className="navbar-brand">
               <div className="navbar-logo">SG</div>
-              <span className="navbar-wordmark">ShawarmaGuys</span>
+              <span className="navbar-wordmark">{t('brand_name')}</span>
             </a>
             <div className="navbar-sep" />
-            <span className="navbar-context">Operations Portal</span>
+            <span className="navbar-context">{t('operations_portal')}</span>
           </div>
 
           {/* Right side */}
           <div className="navbar-actions">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* User info — hidden on mobile */}
-            <div className="hidden sm:block" style={{ textAlign: 'right' }}>
+            <div className="hidden sm:block" style={{ textAlign: 'right', marginLeft: '6px' }}>
               <div className="navbar-user-name">{user?.fullName}</div>
-              <div className="navbar-user-role">{user?.role}</div>
+              <div className="navbar-user-role">{roleTranslation}</div>
             </div>
 
             {/* Divider */}
@@ -79,8 +90,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <button
               onClick={logout}
               className="navbar-icon-btn"
-              aria-label="Sign out"
-              title="Sign out"
+              aria-label={t('sign_out')}
+              title={t('sign_out')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 16, height: 16 }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />

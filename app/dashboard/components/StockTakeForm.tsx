@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface StockTakeFormProps {
   recordId: string;
@@ -38,6 +39,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [showSubmitterModal, setShowSubmitterModal] = useState(false);
   const [submitterName, setSubmitterName] = useState('');
   const [submitterNameError, setSubmitterNameError] = useState('');
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (recordId) {
@@ -88,7 +90,6 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   };
 
   const updateItem = (itemId: string, field: keyof FormItem, val: string) => {
-    console.log("field", field);
     const numVal = parseFloat(val);
     setFormItems(prev =>
       prev.map(item =>
@@ -100,7 +101,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const handleSubmit = async () => {
     const trimmedSubmitterName = submitterName.trim();
     if (!trimmedSubmitterName) {
-      setSubmitterNameError('Enter your name to submit.');
+      setSubmitterNameError(t('enter_name_error'));
       return;
     }
 
@@ -112,7 +113,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         try {
           localStorage.setItem(SUBMITTER_NAME_STORAGE_KEY, trimmedSubmitterName);
         } catch {
-          // Local persistence is best-effort; the submitted PDF still gets the entered name.
+          // Local persistence is best-effort
         }
       }
 
@@ -181,14 +182,14 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Thank You!
+              {t('thank_you')}
             </h1>
             <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '380px', margin: '0 auto', lineHeight: 1.6 }}>
-              Your stock count for <strong style={{ color: 'var(--text-primary)' }}>{locationName}</strong> has been submitted successfully.
+              {t('stock_submitted_success', { location: t(locationName, undefined, locationName) })}
             </p>
             {vendorName && (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', margin: 0 }}>
-                Vendor: <strong>{vendorName}</strong>
+                {t('vendor_label')}: <strong>{t(vendorName, undefined, vendorName)}</strong>
               </p>
             )}
           </div>
@@ -205,12 +206,12 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
             </svg>
             <p style={{ fontSize: '0.8125rem', color: 'var(--success)', margin: 0, lineHeight: 1.5, textAlign: 'left' }}>
-              You may now close this window.
+              {t('close_window_notice')}
             </p>
           </div>
 
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-quaternary)', margin: 0 }}>
-            Submitted at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {t('submitted_at', { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
           </p>
         </div>
       </div>
@@ -219,10 +220,9 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
   // ─── Step indicator helper ────────────────────────────────────────────────────
   const steps = [
-    { id: 'boh', label: 'Back of House', short: 'BOH', color: '#d97706' },
-    { id: 'foh', label: 'Front of House', short: 'FOH', color: '#10b981' },
+    { id: 'boh', label: t('boh'), short: t('boh_short'), color: '#d97706' },
+    { id: 'foh', label: t('foh'), short: t('foh_short'), color: '#10b981' },
   ];
-  const currentStepIdx = steps.findIndex(s => s.id === step);
 
   // ─── Item input card ──────────────────────────────────────────────────────────
   const renderItemCard = (item: FormItem, zone: 'boh' | 'foh') => {
@@ -243,7 +243,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         {/* Item name header */}
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {item.displayName}
+            {t(item.displayName, undefined, item.displayName)}
           </span>
         </div>
 
@@ -262,7 +262,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
             />
             <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-              {item.baseUnitName}
+              {t(item.baseUnitName, undefined, item.baseUnitName)}
             </span>
           </div>
 
@@ -281,12 +281,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                   style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
                 />
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                  {item.displayUnitName}
+                  {t(item.displayUnitName, undefined, item.displayUnitName)}
                 </span>
               </div></>
           }
-
-
         </div>
       </div>
     );
@@ -321,14 +319,14 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         {/* Header */}
         <div>
           <span className="badge badge-indigo" style={{ marginBottom: '8px', display: 'inline-block' }}>
-            Stock Count Audit
+            {t('stock_count_audit')}
           </span>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            {locationName}
+            {t(locationName, undefined, locationName)}
           </h1>
           {vendorName && (
             <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px', marginBottom: 0 }}>
-              Vendor: <strong>{vendorName}</strong>
+              {t('vendor_label')}: <strong>{t(vendorName, undefined, vendorName)}</strong>
             </p>
           )}
         </div>
@@ -339,7 +337,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
-            This audit was already submitted. Submitting again will update the recorded quantities.
+            {t('audit_already_submitted')}
           </div>
         )}
 
@@ -402,12 +400,13 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
             {formItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
-                No items assigned to this location.
+                {t('no_items_assigned')}
               </div>
             ) : (
               formItems.map(item => renderItemCard(item, step as 'boh' | 'foh'))
             )}
-          </div></div>
+          </div>
+        </div>
 
         {/* Navigation buttons */}
         <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
@@ -419,7 +418,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 className="btn btn-secondary"
                 style={{ flex: 1, justifyContent: 'center' }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="button"
@@ -428,7 +427,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 className="btn btn-primary"
                 style={{ flex: 2, justifyContent: 'center', gap: '8px', backgroundColor: '#d97706', borderColor: '#d97706' }}
               >
-                Next: Front of House
+                {t('next_foh')}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
@@ -445,7 +444,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                 </svg>
-                Back
+                {t('back')}
               </button>
               <button
                 type="button"
@@ -454,7 +453,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 className="btn btn-primary"
                 style={{ flex: 2, justifyContent: 'center' }}
               >
-                {submitting ? 'Submitting...' : 'Submit Stock Count'}
+                {submitting ? t('submitting') : t('submit_stock_count')}
               </button>
             </>
           )}
@@ -468,7 +467,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               type="button"
               onClick={() => setShowSubmitterModal(false)}
               className="modal-close"
-              aria-label="Close modal"
+              aria-label={t('close')}
               disabled={submitting}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
@@ -477,7 +476,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             </button>
 
             <div className="modal-header">
-              <h2>Submit Stock Count</h2>
+              <h2>{t('submit_stock_count')}</h2>
             </div>
 
             <form
@@ -488,7 +487,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
             >
               <div>
-                <label className="label" htmlFor="stock-submitter-name">Submitted By *</label>
+                <label className="label" htmlFor="stock-submitter-name">{t('submitted_by_label')}</label>
                 <input
                   id="stock-submitter-name"
                   type="text"
@@ -518,7 +517,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                   style={{ flex: 1, justifyContent: 'center' }}
                   disabled={submitting}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -526,7 +525,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                   style={{ flex: 1, justifyContent: 'center' }}
                   disabled={submitting}
                 >
-                  {submitting ? 'Submitting...' : 'Submit'}
+                  {submitting ? t('submitting') : t('submit')}
                 </button>
               </div>
             </form>

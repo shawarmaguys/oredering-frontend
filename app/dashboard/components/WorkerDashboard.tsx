@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface StockRecordItem {
   id: string;
@@ -37,6 +38,7 @@ export default function WorkerDashboard() {
   const [error, setError] = useState('');
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetchRecords();
@@ -83,8 +85,8 @@ export default function WorkerDashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div className="page-header">
         <div className="page-header-text">
-          <h1>Store Portal</h1>
-          <p>Record kitchen stock audits, view schedules, and submit daily physical quantities.</p>
+          <h1>{t('store_portal')}</h1>
+          <p>{t('worker_desc')}</p>
         </div>
       </div>
 
@@ -100,8 +102,8 @@ export default function WorkerDashboard() {
       {/* Location Selector Card at the Top */}
       <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
         <div>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>Active Store Location</h3>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>Filter pending audits and completed submissions for your kitchen.</p>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{t('active_store_location')}</h3>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{t('filter_pending_audits')}</p>
         </div>
         <div style={{ width: '100%', maxWidth: '280px' }}>
           <select
@@ -120,10 +122,10 @@ export default function WorkerDashboard() {
             }}
           >
             {locations.length === 0 ? (
-              <option value="">No locations assigned</option>
+              <option value="">{t('no_locations_assigned')}</option>
             ) : (
               locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                <option key={loc.id} value={loc.id}>{t(loc.name, undefined, loc.name)}</option>
               ))
             )}
           </select>
@@ -165,12 +167,12 @@ export default function WorkerDashboard() {
             </div>
             <div>
               <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {drafts.length > 0 ? 'Action Required' : 'All Caught Up!'}
+                {drafts.length > 0 ? t('action_required') : t('all_caught_up')}
               </h2>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
                 {drafts.length > 0 
-                  ? `You have ${drafts.length} pending inventory count(s) to complete today.` 
-                  : 'No scheduled inventory counts are currently pending.'}
+                  ? t('pending_counts_message', { count: drafts.length })
+                  : t('no_pending_counts')}
               </p>
             </div>
           </div>
@@ -201,18 +203,18 @@ export default function WorkerDashboard() {
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        Pending Stock Audit: {draft.location?.name || 'Store Location'}
+                        {t('pending_stock_audit')}: {t(draft.location?.name || 'Store Location', undefined, draft.location?.name)}
                       </h3>
                       <span className="badge badge-amber" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
                         <span className="badge-dot" />
-                        Awaiting Count
+                        {t('awaiting_count')}
                       </span>
                     </div>
                     <button
                       onClick={() => handleStartSubmission(draft.id)}
                       className="btn btn-primary"
                     >
-                      Start submission
+                      {t('start_submission')}
                     </button>
                   </div>
                 ))}
@@ -236,24 +238,24 @@ export default function WorkerDashboard() {
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        Submitted Audit: {comp.location?.name || 'Store Location'}
+                        {t('submitted_audit')}: {t(comp.location?.name || 'Store Location', undefined, comp.location?.name)}
                       </h3>
                       <span className="badge badge-green" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: 12, height: 12 }}>
                           <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                         </svg>
-                        Submitted at {new Date(comp.submittedAt).toLocaleDateString()} {new Date(comp.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {t('submitted_at', { time: `${new Date(comp.submittedAt).toLocaleDateString()} ${new Date(comp.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` })}
                       </span>
                     </div>
                     <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                      Completed
+                      {t('completed')}
                     </span>
                   </div>
                 ))}
 
                 {!loading && drafts.length === 0 && completed.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
-                    No stock take history logged for today yet.
+                    {t('no_stock_history')}
                   </div>
                 )}
               </>

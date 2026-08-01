@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../dashboard/components/LanguageSwitcher';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -13,6 +15,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isAuthenticated, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   const redirectTo = searchParams.get('redirect') || '/dashboard';
 
@@ -35,7 +38,7 @@ function LoginForm() {
       });
 
       if (!response.ok) {
-        throw new Error('Invalid credentials. Please check your email and password.');
+        throw new Error(t('invalid_credentials'));
       }
 
       const data = await response.json();
@@ -47,7 +50,7 @@ function LoginForm() {
         throw new Error('Invalid response from server.');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during sign in.');
+      setError(err.message || t('sign_in_error'));
     } finally {
       setLoading(false);
     }
@@ -61,8 +64,14 @@ function LoginForm() {
         minHeight: '100vh',
         display: 'flex',
         backgroundColor: 'var(--bg-base)',
+        position: 'relative',
       }}
     >
+      {/* Top right language switcher */}
+      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+        <LanguageSwitcher />
+      </div>
+
       {/* Left decorative panel — hidden on mobile */}
       <div
         className="hidden lg:flex"
@@ -95,7 +104,7 @@ function LoginForm() {
             SG
           </div>
           <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.02em' }}>
-            ShawarmaGuys
+            {t('brand_name')}
           </span>
         </div>
 
@@ -109,10 +118,10 @@ function LoginForm() {
             color: 'rgba(255,255,255,0.85)', fontSize: '1.125rem',
             lineHeight: 1.65, fontWeight: 400, letterSpacing: '-0.01em',
           }}>
-            Streamline your inventory, vendors, and purchase orders — all in one place.
+            {t('tagline')}
           </p>
           <p style={{ marginTop: 20, color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem' }}>
-            Internal Operations Platform · v1.0
+            {t('internal_platform')}
           </p>
         </div>
       </div>
@@ -137,7 +146,7 @@ function LoginForm() {
                 color: '#fff', fontWeight: 800, fontSize: '0.875rem',
               }}>SG</div>
               <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                ShawarmaGuys
+                {t('brand_name')}
               </span>
             </div>
 
@@ -146,10 +155,10 @@ function LoginForm() {
               color: 'var(--text-primary)', letterSpacing: '-0.025em',
               marginBottom: 6,
             }}>
-              Sign in to your account
+              {t('login_title')}
             </h1>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
-              Enter your credentials to access the portal.
+              {t('login_subtitle')}
             </p>
           </div>
 
@@ -166,14 +175,14 @@ function LoginForm() {
           {/* Form */}
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label className="label" htmlFor="login-email">Email address</label>
+              <label className="label" htmlFor="login-email">{t('email_label')}</label>
               <input
                 id="login-email"
                 type="email"
                 className="input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@shawarmaguys.com"
+                placeholder={t('email_placeholder')}
                 required
                 autoComplete="email"
                 autoFocus
@@ -181,7 +190,7 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="label" htmlFor="login-password">Password</label>
+              <label className="label" htmlFor="login-password">{t('password_label')}</label>
               <div className="input-prefix-wrap">
                 <input
                   id="login-password"
@@ -205,7 +214,7 @@ function LoginForm() {
                     display: 'flex', alignItems: 'center',
                   }}
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('hide_password') : t('show_password')}
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
@@ -233,14 +242,14 @@ function LoginForm() {
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
                     <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Signing in…
+                  {t('signing_in')}
                 </>
-              ) : 'Sign in'}
+              ) : t('sign_in')}
             </button>
           </form>
 
           <p style={{ marginTop: 28, fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            Internal use only · ShawarmaGuys Operations
+            {t('internal_use_only')}
           </p>
         </div>
       </div>
