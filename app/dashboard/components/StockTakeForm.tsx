@@ -13,6 +13,7 @@ interface StockTakeFormProps {
 interface FormItem {
   itemId: string;
   displayName: string;
+  spanishName?: string;
   baseUnitName: string;
   displayUnitName: string;
   multiplier: number;
@@ -39,7 +40,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [showSubmitterModal, setShowSubmitterModal] = useState(false);
   const [submitterName, setSubmitterName] = useState('');
   const [submitterNameError, setSubmitterNameError] = useState('');
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     if (recordId) {
@@ -72,6 +73,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         return {
           itemId: ri.itemId,
           displayName: ri.item?.displayName || 'Unknown Item',
+          spanishName: ri.item?.spanishName,
           baseUnitName: baseUnit,
           displayUnitName: displayUnit,
           multiplier,
@@ -243,7 +245,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         {/* Item name header */}
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {t(item.displayName, undefined, item.displayName)}
+            {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
           </span>
         </div>
 

@@ -14,6 +14,7 @@ interface Vendor {
 interface Item {
   id: string;
   displayName: string;
+  spanishName?: string;
   baseUnitName: string;
   displayUnitName: string;
   multiplier: number;
@@ -35,6 +36,8 @@ export default function ItemsPage() {
 
   // Create Form State
   const [displayName, setDisplayName] = useState('');
+  const [spanishName, setSpanishName] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
   const [vendorId, setVendorId] = useState('');
   const [baseUnitName, setBaseUnitName] = useState('');
   const [displayUnitName, setDisplayUnitName] = useState('');
@@ -54,6 +57,8 @@ export default function ItemsPage() {
   // Edit Form State
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [editDisplayName, setEditDisplayName] = useState('');
+  const [editSpanishName, setEditSpanishName] = useState('');
+  const [isEditTranslating, setIsEditTranslating] = useState(false);
   const [editVendorId, setEditVendorId] = useState('');
   const [editBaseUnitName, setEditBaseUnitName] = useState('');
   const [editDisplayUnitName, setEditDisplayUnitName] = useState('');
@@ -93,6 +98,31 @@ export default function ItemsPage() {
     }
   };
 
+  const handleAutofillTranslation = async (
+    textToTranslate: string,
+    setTarget: (val: string) => void,
+    setLoadingState: (loading: boolean) => void
+  ) => {
+    if (!textToTranslate || !textToTranslate.trim()) {
+      setError('Please enter a Product Name first to translate.');
+      return;
+    }
+    setLoadingState(true);
+    setError('');
+    try {
+      const res = await api.translations.translateText(textToTranslate);
+      if (res && res.translated) {
+        setTarget(res.translated);
+      } else {
+        setError('Could not translate product name.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to connect to translation service.');
+    } finally {
+      setLoadingState(false);
+    }
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorId) {
@@ -114,6 +144,7 @@ export default function ItemsPage() {
     try {
       await api.items.create({
         displayName,
+        spanishName: spanishName.trim() || undefined,
         vendorId,
         baseUnitName,
         displayUnitName: hasSecondaryUnit ? displayUnitName : undefined,
@@ -124,6 +155,7 @@ export default function ItemsPage() {
 
       // Reset
       setDisplayName('');
+      setSpanishName('');
       setBaseUnitName('');
       setDisplayUnitName('');
       setMultiplier('');
@@ -160,6 +192,7 @@ export default function ItemsPage() {
     try {
       await api.items.update(selectedItem.id, {
         displayName: editDisplayName,
+        spanishName: editSpanishName.trim() || undefined,
         vendorId: editVendorId,
         baseUnitName: editBaseUnitName,
         displayUnitName: editDisplayUnitName || '',
@@ -338,6 +371,11 @@ export default function ItemsPage() {
                             <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {item.displayName}
                             </h3>
+                            {item.spanishName && (
+                              <span style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontStyle: 'italic', display: 'block' }}>
+                                🇪🇸 {item.spanishName}
+                              </span>
+                            )}
                             {item.vendor && (
                               <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                                 {item.vendor.displayName}
@@ -349,6 +387,7 @@ export default function ItemsPage() {
                               onClick={() => {
                                 setSelectedItem(item);
                                 setEditDisplayName(item.displayName);
+                                setEditSpanishName(item.spanishName || '');
                                 setEditVendorId(item.vendorId);
                                 setEditBaseUnitName(item.baseUnitName);
                                 setEditDisplayUnitName(isSecondaryConfigured ? item.displayUnitName : '');
@@ -449,7 +488,12 @@ export default function ItemsPage() {
                         return (
                           <tr key={item.id}>
                             <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {item.displayName}
+                              <div>{item.displayName}</div>
+                              {item.spanishName && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 400, fontStyle: 'italic', marginTop: '2px' }}>
+                                  🇪🇸 {item.spanishName}
+                                </div>
+                              )}
                             </td>
                             <td>
                               <span style={{ color: 'var(--text-secondary)' }}>
@@ -491,6 +535,7 @@ export default function ItemsPage() {
                                   onClick={() => {
                                     setSelectedItem(item);
                                     setEditDisplayName(item.displayName);
+                                    setEditSpanishName(item.spanishName || '');
                                     setEditVendorId(item.vendorId);
                                     setEditBaseUnitName(item.baseUnitName);
                                     setEditDisplayUnitName(isSecondaryConfigured ? item.displayUnitName : '');
@@ -577,6 +622,42 @@ export default function ItemsPage() {
                       onChange={(e) => setDisplayName(e.target.value)}
                       className="input"
                       placeholder="e.g. Chicken Shawarma Cone (30lb)"
+                    />
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label className="label" htmlFor="item-spanish-name" style={{ margin: 0 }}>Spanish Name (Nombre en Español)</label>
+                      <button
+                        type="button"
+                        onClick={() => handleAutofillTranslation(displayName, setSpanishName, setIsTranslating)}
+                        disabled={isTranslating || !displayName.trim()}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.75rem' }}
+                        title="Autofill Spanish translation from product name"
+                      >
+                        {isTranslating ? (
+                          <>
+                            <span className="spinner-sm" style={{ width: 12, height: 12 }} />
+                            Translating...
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m0 2.25c0 3.255-1.554 6.13-3.954 7.95a12.062 12.062 0 01-2.906-2.18m8.96 4.908a12.062 12.062 0 01-3.15-2.025" />
+                            </svg>
+                            Autofill Spanish
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <input
+                      id="item-spanish-name"
+                      type="text"
+                      value={spanishName}
+                      onChange={(e) => setSpanishName(e.target.value)}
+                      className="input"
+                      placeholder="e.g. Cono de Shawarma de Pollo (30lb)"
                     />
                   </div>
 
@@ -736,6 +817,42 @@ export default function ItemsPage() {
                     value={editDisplayName}
                     onChange={(e) => setEditDisplayName(e.target.value)}
                     className="input"
+                  />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label className="label" htmlFor="edit-item-spanish-name" style={{ margin: 0 }}>Spanish Name (Nombre en Español)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleAutofillTranslation(editDisplayName, setEditSpanishName, setIsEditTranslating)}
+                      disabled={isEditTranslating || !editDisplayName.trim()}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.75rem' }}
+                      title="Autofill Spanish translation from product name"
+                    >
+                      {isEditTranslating ? (
+                        <>
+                          <span className="spinner-sm" style={{ width: 12, height: 12 }} />
+                          Translating...
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m0 2.25c0 3.255-1.554 6.13-3.954 7.95a12.062 12.062 0 01-2.906-2.18m8.96 4.908a12.062 12.062 0 01-3.15-2.025" />
+                          </svg>
+                          Autofill Spanish
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <input
+                    id="edit-item-spanish-name"
+                    type="text"
+                    value={editSpanishName}
+                    onChange={(e) => setEditSpanishName(e.target.value)}
+                    className="input"
+                    placeholder="e.g. Cono de Shawarma de Pollo (30lb)"
                   />
                 </div>
 

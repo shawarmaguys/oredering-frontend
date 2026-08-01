@@ -84,6 +84,7 @@ export const api = {
   translations: {
     list: () => request<any[]>('/translations'),
     create: (data: any) => request<any>('/translations', { method: 'POST', body: JSON.stringify(data) }),
+    translateText: (text: string) => request<{ success: boolean; original: string; translated: string }>(`/translations/translate?text=${encodeURIComponent(text)}`),
   },
   stockRecords: {
     list: () => request<any[]>('/stock-records'),
