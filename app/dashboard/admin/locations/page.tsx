@@ -53,7 +53,14 @@ export default function LocationsPage() {
   const [productsLoading, setProductsLoading] = useState(false);
   const [locationItems, setLocationItems] = useState<any[]>([]);
   const [productsSearch, setProductsSearch] = useState('');
+  const [productsVendorFilter, setProductsVendorFilter] = useState<string>('all');
+  const [productsSortColumn, setProductsSortColumn] = useState<string>('displayName');
+  const [productsSortDir, setProductsSortDir] = useState<'asc' | 'desc'>('asc');
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
+
+  // Store Locations List Sort State
+  const [locSortColumn, setLocSortColumn] = useState<'name' | 'address' | 'phone' | 'email' | 'slack' | 'createdAt'>('name');
+  const [locSortDir, setLocSortDir] = useState<'asc' | 'desc'>('asc');
 
   // Departments Management State (Location specific)
   const [showDeptsModal, setShowDeptsModal] = useState(false);
@@ -418,8 +425,24 @@ export default function LocationsPage() {
                 return true;
               })
               .sort((a, b) => {
-                if (sortBy === 'name') return a.name.localeCompare(b.name);
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                let valA: any = '';
+                let valB: any = '';
+                if (locSortColumn === 'name') { valA = a.name || ''; valB = b.name || ''; }
+                else if (locSortColumn === 'address') { valA = a.address || ''; valB = b.address || ''; }
+                else if (locSortColumn === 'phone') { valA = a.phone || ''; valB = b.phone || ''; }
+                else if (locSortColumn === 'email') { valA = a.email || ''; valB = b.email || ''; }
+                else if (locSortColumn === 'slack') {
+                  valA = (a.slackBotToken && a.slackUserToken) ? 1 : 0;
+                  valB = (b.slackBotToken && b.slackUserToken) ? 1 : 0;
+                }
+                else if (locSortColumn === 'createdAt') {
+                  valA = new Date(a.createdAt).getTime();
+                  valB = new Date(b.createdAt).getTime();
+                }
+                if (typeof valA === 'string') {
+                  return locSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return locSortDir === 'asc' ? valA - valB : valB - valA;
               });
             if (filtered.length === 0) return (
               <div className="card" style={{ padding: '48px 24px' }}>
@@ -583,12 +606,24 @@ export default function LocationsPage() {
                 <div className="table-responsive-wrap">
                   <table className="data-table">
                     <thead><tr>
-                      <th style={{ paddingLeft: 24 }}>Name</th>
-                      <th>Address</th>
-                      <th>Phone</th>
-                      <th>Email</th>
-                      <th>Slack</th>
-                      <th>Added</th>
+                      <th style={{ paddingLeft: 24, cursor: 'pointer' }} onClick={() => { if (locSortColumn === 'name') setLocSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setLocSortColumn('name'); setLocSortDir('asc'); } }}>
+                        Name {locSortColumn === 'name' ? (locSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (locSortColumn === 'address') setLocSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setLocSortColumn('address'); setLocSortDir('asc'); } }}>
+                        Address {locSortColumn === 'address' ? (locSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (locSortColumn === 'phone') setLocSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setLocSortColumn('phone'); setLocSortDir('asc'); } }}>
+                        Phone {locSortColumn === 'phone' ? (locSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (locSortColumn === 'email') setLocSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setLocSortColumn('email'); setLocSortDir('asc'); } }}>
+                        Email {locSortColumn === 'email' ? (locSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (locSortColumn === 'slack') setLocSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setLocSortColumn('slack'); setLocSortDir('asc'); } }}>
+                        Slack {locSortColumn === 'slack' ? (locSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (locSortColumn === 'createdAt') setLocSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setLocSortColumn('createdAt'); setLocSortDir('asc'); } }}>
+                        Added {locSortColumn === 'createdAt' ? (locSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
                       <th style={{ textAlign: 'right', paddingRight: 24 }}>Actions</th>
                     </tr></thead>
                     <tbody>
@@ -904,9 +939,9 @@ export default function LocationsPage() {
                 <p>Configure which catalog items are active at <strong>{selectedLocation.name}</strong>, customize stock par levels, and display order.</p>
               </div>
 
-              {/* Search Bar */}
-              <div style={{ padding: '16px 0', display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
+              {/* Search Bar & Vendor Filter */}
+              <div style={{ padding: '16px 0', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
                   <input
                     type="text"
                     className="input"
@@ -917,6 +952,18 @@ export default function LocationsPage() {
                   />
                   <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontSize: '1rem' }}>🔍</span>
                 </div>
+
+                <select
+                  className="input"
+                  style={{ width: 'auto', minWidth: '180px' }}
+                  value={productsVendorFilter}
+                  onChange={(e) => setProductsVendorFilter(e.target.value)}
+                >
+                  <option value="all">All Vendors</option>
+                  {Array.from(new Set(locationItems.map(i => i.vendor?.displayName).filter(Boolean))).map((vName: any) => (
+                    <option key={vName} value={vName}>{vName}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Products Table / List */}
@@ -932,11 +979,26 @@ export default function LocationsPage() {
                   (() => {
                     const filtered = locationItems.filter(item => {
                       const searchLower = productsSearch.toLowerCase();
-                      return (
+                      const matchesSearch = (
                         item.displayName.toLowerCase().includes(searchLower) ||
                         (item.productCode && item.productCode.toLowerCase().includes(searchLower)) ||
                         (item.vendor && item.vendor.displayName.toLowerCase().includes(searchLower))
                       );
+                      const matchesVendor = productsVendorFilter === 'all' || item.vendor?.displayName === productsVendorFilter;
+                      return matchesSearch && matchesVendor;
+                    }).sort((a, b) => {
+                      let valA: any = '';
+                      let valB: any = '';
+                      if (productsSortColumn === 'assigned') { valA = a.assigned ? 1 : 0; valB = b.assigned ? 1 : 0; }
+                      else if (productsSortColumn === 'displayName') { valA = a.displayName || ''; valB = b.displayName || ''; }
+                      else if (productsSortColumn === 'vendor') { valA = a.vendor?.displayName || ''; valB = b.vendor?.displayName || ''; }
+                      else if (productsSortColumn === 'parLevel') { valA = Number(a.parLevel) || 0; valB = Number(b.parLevel) || 0; }
+                      else if (productsSortColumn === 'status') { valA = a.assigned ? 1 : 0; valB = b.assigned ? 1 : 0; }
+                      
+                      if (typeof valA === 'string') {
+                        return productsSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                      }
+                      return productsSortDir === 'asc' ? valA - valB : valB - valA;
                     });
 
                     if (filtered.length === 0) {
@@ -947,15 +1009,34 @@ export default function LocationsPage() {
                       );
                     }
 
+                    const handleProductHeaderClick = (col: string) => {
+                      if (productsSortColumn === col) {
+                        setProductsSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                      } else {
+                        setProductsSortColumn(col);
+                        setProductsSortDir('asc');
+                      }
+                    };
+
                     return (
                       <table className="data-table" style={{ width: '100%' }}>
                         <thead>
                           <tr>
-                            <th style={{ width: '80px', textAlign: 'center' }}>Assign</th>
-                            <th>Product Details</th>
-                            <th>Vendor</th>
-                            <th style={{ width: '130px' }}>Par Level</th>
-                            <th style={{ width: '80px', textAlign: 'center' }}>Status</th>
+                            <th style={{ width: '80px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleProductHeaderClick('assigned')}>
+                              Assign {productsSortColumn === 'assigned' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th style={{ cursor: 'pointer' }} onClick={() => handleProductHeaderClick('displayName')}>
+                              Product Details {productsSortColumn === 'displayName' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th style={{ cursor: 'pointer' }} onClick={() => handleProductHeaderClick('vendor')}>
+                              Vendor {productsSortColumn === 'vendor' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th style={{ width: '130px', cursor: 'pointer' }} onClick={() => handleProductHeaderClick('parLevel')}>
+                              Par Level {productsSortColumn === 'parLevel' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
+                            <th style={{ width: '80px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleProductHeaderClick('status')}>
+                              Status {productsSortColumn === 'status' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
+                            </th>
                           </tr>
                         </thead>
                         <tbody>

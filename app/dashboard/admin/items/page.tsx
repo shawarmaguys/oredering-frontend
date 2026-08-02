@@ -50,6 +50,8 @@ export default function ItemsPage() {
   const [search, setSearch] = useState('');
   const [vendorFilter, setVendorFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
+  const [itemSortColumn, setItemSortColumn] = useState<'name' | 'vendor' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'status'>('name');
+  const [itemSortDir, setItemSortDir] = useState<'asc' | 'desc'>('asc');
 
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -334,8 +336,21 @@ export default function ItemsPage() {
                 return true;
               })
               .sort((a, b) => {
-                if (sortBy === 'name') return a.displayName.localeCompare(b.displayName);
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                let valA: any = '';
+                let valB: any = '';
+                if (itemSortColumn === 'name') { valA = a.displayName || ''; valB = b.displayName || ''; }
+                else if (itemSortColumn === 'vendor') { valA = a.vendor?.displayName || ''; valB = b.vendor?.displayName || ''; }
+                else if (itemSortColumn === 'code') { valA = a.productCode || ''; valB = b.productCode || ''; }
+                else if (itemSortColumn === 'note') { valA = a.note || ''; valB = b.note || ''; }
+                else if (itemSortColumn === 'pack') { valA = a.displayUnitName || ''; valB = b.displayUnitName || ''; }
+                else if (itemSortColumn === 'baseUnit') { valA = a.baseUnitName || ''; valB = b.baseUnitName || ''; }
+                else if (itemSortColumn === 'multiplier') { valA = Number(a.multiplier) || 0; valB = Number(b.multiplier) || 0; }
+                else if (itemSortColumn === 'status') { valA = a.isActive ? 1 : 0; valB = b.isActive ? 1 : 0; }
+
+                if (typeof valA === 'string') {
+                  return itemSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return itemSortDir === 'asc' ? valA - valB : valB - valA;
               });
 
             if (filtered.length === 0) return (
@@ -471,14 +486,30 @@ export default function ItemsPage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th style={{ paddingLeft: '24px' }}>Display Name</th>
-                        <th>Assigned Vendor</th>
-                        <th>Product Code</th>
-                        <th>Notes</th>
-                        <th>pack size</th>
-                        <th>individual stock unit</th>
-                        <th style={{ textAlign: 'center' }}>Multiplier</th>
-                        <th style={{ textAlign: 'center' }}>Status</th>
+                        <th style={{ paddingLeft: '24px', cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'name') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('name'); setItemSortDir('asc'); } }}>
+                          Display Name {itemSortColumn === 'name' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'vendor') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('vendor'); setItemSortDir('asc'); } }}>
+                          Assigned Vendor {itemSortColumn === 'vendor' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'code') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('code'); setItemSortDir('asc'); } }}>
+                          Product Code {itemSortColumn === 'code' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'note') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('note'); setItemSortDir('asc'); } }}>
+                          Notes {itemSortColumn === 'note' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'pack') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('pack'); setItemSortDir('asc'); } }}>
+                          pack size {itemSortColumn === 'pack' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'baseUnit') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('baseUnit'); setItemSortDir('asc'); } }}>
+                          individual stock unit {itemSortColumn === 'baseUnit' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'multiplier') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('multiplier'); setItemSortDir('asc'); } }}>
+                          Multiplier {itemSortColumn === 'multiplier' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => { if (itemSortColumn === 'status') setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortColumn('status'); setItemSortDir('asc'); } }}>
+                          Status {itemSortColumn === 'status' ? (itemSortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
                         <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                       </tr>
                     </thead>

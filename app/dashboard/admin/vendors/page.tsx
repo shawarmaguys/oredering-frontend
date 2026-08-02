@@ -51,6 +51,8 @@ export default function VendorsPage() {
   const [search, setSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
+  const [vendorSortColumn, setVendorSortColumn] = useState<'name' | 'dept' | 'slack' | 'email' | 'phone' | 'createdAt'>('name');
+  const [vendorSortDir, setVendorSortDir] = useState<'asc' | 'desc'>('asc');
 
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -306,8 +308,21 @@ export default function VendorsPage() {
                 return true;
               })
               .sort((a, b) => {
-                if (sortBy === 'name') return a.displayName.localeCompare(b.displayName);
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                let valA: any = '';
+                let valB: any = '';
+                if (vendorSortColumn === 'name') { valA = a.displayName || ''; valB = b.displayName || ''; }
+                else if (vendorSortColumn === 'dept') { valA = a.department?.fullName || ''; valB = b.department?.fullName || ''; }
+                else if (vendorSortColumn === 'slack') { valA = a.channelName || ''; valB = b.channelName || ''; }
+                else if (vendorSortColumn === 'email') { valA = a.email || ''; valB = b.email || ''; }
+                else if (vendorSortColumn === 'phone') { valA = a.phone || ''; valB = b.phone || ''; }
+                else if (vendorSortColumn === 'createdAt') {
+                  valA = new Date(a.createdAt).getTime();
+                  valB = new Date(b.createdAt).getTime();
+                }
+                if (typeof valA === 'string') {
+                  return vendorSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return vendorSortDir === 'asc' ? valA - valB : valB - valA;
               });
 
             if (filtered.length === 0) return (
@@ -450,12 +465,24 @@ export default function VendorsPage() {
                 <div className="table-responsive-wrap">
                   <table className="data-table">
                     <thead><tr>
-                      <th style={{ paddingLeft: 24 }}>Name</th>
-                      <th>Dept</th>
-                      <th>Slack</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Added</th>
+                      <th style={{ paddingLeft: 24, cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'name') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('name'); setVendorSortDir('asc'); } }}>
+                        Name {vendorSortColumn === 'name' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'dept') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('dept'); setVendorSortDir('asc'); } }}>
+                        Dept {vendorSortColumn === 'dept' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'slack') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('slack'); setVendorSortDir('asc'); } }}>
+                        Slack {vendorSortColumn === 'slack' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'email') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('email'); setVendorSortDir('asc'); } }}>
+                        Email {vendorSortColumn === 'email' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'phone') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('phone'); setVendorSortDir('asc'); } }}>
+                        Phone {vendorSortColumn === 'phone' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'createdAt') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('createdAt'); setVendorSortDir('asc'); } }}>
+                        Added {vendorSortColumn === 'createdAt' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
+                      </th>
                       <th style={{ textAlign: 'right', paddingRight: 24 }}>Actions</th>
                     </tr></thead>
                     <tbody>

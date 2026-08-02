@@ -79,6 +79,8 @@ export const api = {
   schedules: {
     list: () => request<any[]>('/schedules'),
     create: (data: any) => request<any>('/schedules', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request<any>(`/schedules/${id}`, { method: 'DELETE' }),
     trigger: (id: string) => request<any>(`/schedules/${id}/trigger`, { method: 'POST' }),
   },
   translations: {

@@ -6,6 +6,7 @@ import AdminGuard from '../../../../components/AdminGuard';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ConfirmDialog } from '../../../../../components/ConfirmDialog';
+import { useAuth } from '../../../../../context/AuthContext';
 
 interface POItem {
   id: string;
@@ -52,6 +53,8 @@ export default function PODetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { user } = useAuth();
+  const isManager = user?.role === 'MANAGER';
 
   const [po, setPo] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -390,12 +393,14 @@ export default function PODetailsPage() {
                             </span>
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px 16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
-                            <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
-                            <div>Par: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
-                            <div>Suggested PO: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
-                          </div>
+                          {!isManager && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px 16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
+                              <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
+                              <div>Par: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
+                              <div>Suggested PO: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
+                            </div>
+                          )}
                         </div>
 
                         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '20px' }}>

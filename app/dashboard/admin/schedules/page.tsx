@@ -51,11 +51,13 @@ export default function SchedulesPage() {
   const [error, setError] = useState('');
 
   // Form State
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [locationId, setLocationId] = useState('');
   const [vendorId, setVendorId] = useState('');
   const [scheduleType, setScheduleType] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [dayOfWeek, setDayOfWeek] = useState(1); // Monday
   const [triggerTime, setTriggerTime] = useState('09:00');
+  const [isActive, setIsActive] = useState(true);
 
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -120,12 +122,49 @@ export default function SchedulesPage() {
       setLocations(locationsData);
       setVendors(vendorsData);
 
-      if (locationsData.length > 0) setLocationId(locationsData[0].id);
-      if (vendorsData.length > 0) setVendorId(vendorsData[0].id);
+      if (locationsData.length > 0 && !locationId) setLocationId(locationsData[0].id);
+      if (vendorsData.length > 0 && !vendorId) setVendorId(vendorsData[0].id);
     } catch (err: any) {
       setError(err.message || 'Failed to load schedules.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingSchedule(null);
+    setError('');
+    if (locations.length > 0) setLocationId(locations[0].id);
+    if (vendors.length > 0) setVendorId(vendors[0].id);
+    setScheduleType('DAILY');
+    setDayOfWeek(1);
+    setTriggerTime('09:00');
+    setIsActive(true);
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (schedule: Schedule) => {
+    setEditingSchedule(schedule);
+    setError('');
+    setLocationId(schedule.locationId);
+    setVendorId(schedule.vendorId);
+    setScheduleType(schedule.scheduleType);
+    setDayOfWeek(schedule.dayOfWeek ?? 1);
+    setTriggerTime(schedule.triggerTime);
+    setIsActive(schedule.isActive);
+    setShowModal(true);
+  };
+
+  const handleDeleteSchedule = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this schedule trigger?')) return;
+    setError('');
+    try {
+      await api.schedules.delete(id);
+      setSuccessMessage('Schedule deleted successfully.');
+      setTimeout(() => setSuccessMessage(''), 4000);
+      fetchInitialData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete schedule.');
     }
   };
 
@@ -139,27 +178,43 @@ export default function SchedulesPage() {
     setError('');
 
     try {
-      await api.schedules.create({
-        locationId,
-        vendorId,
-        scheduleType,
-        dayOfWeek: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
-        triggerTime,
-      });
+      if (editingSchedule) {
+        await api.schedules.update(editingSchedule.id, {
+          locationId,
+          vendorId,
+          scheduleType,
+          dayOfWeek: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
+          triggerTime,
+          isActive,
+        });
+        setSuccessMessage('Schedule trigger updated successfully.');
+      } else {
+        await api.schedules.create({
+          locationId,
+          vendorId,
+          scheduleType,
+          dayOfWeek: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
+          triggerTime,
+        });
+        setSuccessMessage('New schedule trigger created successfully.');
+      }
 
-      // Reset
-      setScheduleType('DAILY');
-      setDayOfWeek(1);
-      setTriggerTime('09:00');
-
+      setTimeout(() => setSuccessMessage(''), 4000);
       setShowModal(false);
       fetchInitialData();
     } catch (err: any) {
-      setError(err.message || 'Failed to create schedule.');
+      setError(err.message || 'Failed to save schedule.');
     } finally {
       setFormSubmitting(false);
     }
   };
+
+  // Compute trigger counts per location & vendor combination
+  const triggerCountMap = schedules.reduce((acc, s) => {
+    const key = `${s.locationId}-${s.vendorId}`;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <AdminGuard>
@@ -168,26 +223,23 @@ export default function SchedulesPage() {
         <div className="breadcrumb">
           <Link href="/dashboard">Dashboard</Link>
           <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Schedules</span>
+          <span className="breadcrumb-current">Schedules & Triggers</span>
         </div>
 
         {/* Header */}
         <div className="page-header">
           <div className="page-header-text">
-            <h1>Ordering Schedules</h1>
-            <p>Configure automated Slack notification schedules for routine storefront stock audits.</p>
+            <h1>Ordering Schedules & Triggers</h1>
+            <p>Configure automated Slack notification schedules and multiple triggers for storefront stock audits.</p>
           </div>
           <button
-            onClick={() => {
-              setError('');
-              setShowModal(true);
-            }}
+            onClick={handleOpenCreateModal}
             className="btn btn-primary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Create Schedule
+            Add New Trigger
           </button>
         </div>
 
@@ -226,7 +278,7 @@ export default function SchedulesPage() {
           </select>
           <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 15.75v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
             </button>
             <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
@@ -275,141 +327,171 @@ export default function SchedulesPage() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
                 gap: '24px'
               }} className="stagger">
-                {filtered.map((schedule) => (
-                  <div
-                    key={schedule.id}
-                    className="card card-hover"
-                    style={{
-                      padding: '24px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '16px',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {/* Accent element */}
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '80px',
-                      height: '80px',
-                      background: 'var(--accent-subtle)',
-                      borderRadius: '50%',
-                      filter: 'blur(30px)',
-                      marginRight: '-20px',
-                      marginTop: '-20px',
-                      pointerEvents: 'none'
-                    }} />
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
-                        {schedule.scheduleType}
-                      </span>
-                      <span className="badge badge-green">
-                        <span className="badge-dot" />
-                        Active
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div>
-                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STORE LOCATION</span>
-                        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
-                          {schedule.location?.name || 'Unknown Location'}
-                        </h3>
-                      </div>
-
-                      <div>
-                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>WHOLESALE VENDOR</span>
-                        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--accent)', marginTop: '2px' }}>
-                          {schedule.vendor?.displayName || 'Unknown Vendor'}
-                        </h3>
-                      </div>
-
+                {filtered.map((schedule) => {
+                  const pairCount = triggerCountMap[`${schedule.locationId}-${schedule.vendorId}`] || 1;
+                  return (
+                    <div
+                      key={schedule.id}
+                      className="card card-hover"
+                      style={{
+                        padding: '24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {/* Accent element */}
                       <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '12px',
-                        paddingTop: '12px',
-                        borderTop: '1px solid var(--border-subtle)'
-                      }}>
-                        <div>
-                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Time</span>
-                          <p className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
-                            {schedule.triggerTime.substring(0, 5)}
-                          </p>
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '80px',
+                        height: '80px',
+                        background: 'var(--accent-subtle)',
+                        borderRadius: '50%',
+                        filter: 'blur(30px)',
+                        marginRight: '-20px',
+                        marginTop: '-20px',
+                        pointerEvents: 'none'
+                      }} />
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
+                            {schedule.scheduleType}
+                          </span>
+                          {pairCount > 1 && (
+                            <span className="badge badge-purple" title="Multiple triggers set for this location & vendor">
+                              {pairCount} Triggers
+                            </span>
+                          )}
                         </div>
-                        {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
+                        <span className={`badge ${schedule.isActive ? 'badge-green' : 'badge-neutral'}`}>
+                          <span className="badge-dot" style={{ backgroundColor: schedule.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
+                          {schedule.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STORE LOCATION</span>
+                          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                            {schedule.location?.name || 'Unknown Location'}
+                          </h3>
+                        </div>
+
+                        <div>
+                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>WHOLESALE VENDOR</span>
+                          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--accent)', marginTop: '2px' }}>
+                            {schedule.vendor?.displayName || 'Unknown Vendor'}
+                          </h3>
+                        </div>
+
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '12px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid var(--border-subtle)'
+                        }}>
                           <div>
-                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Day</span>
-                            <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
-                              {DAYS_OF_WEEK[schedule.dayOfWeek]}
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Time</span>
+                            <p className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
+                              {schedule.triggerTime.substring(0, 5)}
                             </p>
+                          </div>
+                          {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
+                            <div>
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Day</span>
+                              <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
+                                {DAYS_OF_WEEK[schedule.dayOfWeek]}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {schedule.slackChannel && (
+                          <div style={{
+                            paddingTop: '12px',
+                            borderTop: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Slack:</span>
+                            <span className="mono" style={{
+                              color: 'var(--accent)',
+                              backgroundColor: 'var(--accent-subtle)',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--accent-border)',
+                              fontSize: '0.75rem'
+                            }}>
+                              #{schedule.slackChannel}
+                            </span>
                           </div>
                         )}
                       </div>
 
-                      {schedule.slackChannel && (
-                        <div style={{
-                          paddingTop: '12px',
-                          borderTop: '1px solid var(--border-subtle)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Slack:</span>
-                          <span className="mono" style={{
-                            color: 'var(--accent)',
-                            backgroundColor: 'var(--accent-subtle)',
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--accent-border)',
-                            fontSize: '0.75rem'
-                          }}>
-                            #{schedule.slackChannel}
-                          </span>
+                      <div style={{
+                        paddingTop: '12px',
+                        borderTop: '1px solid var(--border-subtle)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: '8px'
+                      }}>
+                        <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                          ID: {schedule.id.substring(0, 8)}
+                        </span>
+
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            onClick={() => handleOpenEditModal(schedule)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            title="Edit Trigger"
+                          >
+                            ✏️ Edit
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteSchedule(schedule.id)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--red)' }}
+                            title="Delete Trigger"
+                          >
+                            🗑️
+                          </button>
+
+                          <button
+                            onClick={() => handleTriggerSchedule(schedule.id)}
+                            disabled={triggeringId === schedule.id}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              background: 'var(--accent-subtle)',
+                              border: '1px solid var(--accent-border)',
+                              color: 'var(--accent)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                            {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
+                          </button>
                         </div>
-                      )}
+                      </div>
                     </div>
-
-                    <div style={{
-                      paddingTop: '12px',
-                      borderTop: '1px solid var(--border-subtle)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginTop: '8px'
-                    }}>
-                      <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
-                        ID: {schedule.id.substring(0, 8)}
-                      </span>
-
-                      <button
-                        onClick={() => handleTriggerSchedule(schedule.id)}
-                        disabled={triggeringId === schedule.id}
-                        className="btn btn-secondary btn-sm"
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          background: 'var(--accent-subtle)',
-                          border: '1px solid var(--accent-border)',
-                          color: 'var(--accent)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                        </svg>
-                        {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
@@ -427,47 +509,71 @@ export default function SchedulesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((schedule) => (
-                        <tr key={schedule.id}>
-                          <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {schedule.location?.name || 'Unknown Location'}
-                          </td>
-                          <td style={{ color: 'var(--accent)', fontWeight: 500 }}>
-                            {schedule.vendor?.displayName || 'Unknown Vendor'}
-                          </td>
-                          <td>
-                            <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
-                              {schedule.scheduleType}
-                            </span>
-                          </td>
-                          <td className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                            {schedule.triggerTime.substring(0, 5)}
-                            {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
-                              <span style={{ marginLeft: '8px', color: 'var(--text-secondary)', fontWeight: 400 }}>
-                                ({DAYS_OF_WEEK[schedule.dayOfWeek]})
+                      {filtered.map((schedule) => {
+                        const pairCount = triggerCountMap[`${schedule.locationId}-${schedule.vendorId}`] || 1;
+                        return (
+                          <tr key={schedule.id}>
+                            <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {schedule.location?.name || 'Unknown Location'}
+                            </td>
+                            <td style={{ color: 'var(--accent)', fontWeight: 500 }}>
+                              {schedule.vendor?.displayName || 'Unknown Vendor'}
+                              {pairCount > 1 && (
+                                <span className="badge badge-purple" style={{ marginLeft: '8px', fontSize: '0.6875rem' }}>
+                                  {pairCount} Triggers
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
+                                {schedule.scheduleType}
                               </span>
-                            )}
-                          </td>
-                          <td className="mono" style={{ fontSize: '0.8125rem' }}>
-                            {schedule.slackChannel ? `#${schedule.slackChannel}` : '-'}
-                          </td>
-                          <td>
-                            <span className={`badge ${schedule.isActive ? 'badge-green' : 'badge-neutral'}`}>
-                              <span className="badge-dot" style={{ backgroundColor: schedule.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
-                              {schedule.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right', paddingRight: '24px' }}>
-                            <button
-                              onClick={() => handleTriggerSchedule(schedule.id)}
-                              disabled={triggeringId === schedule.id}
-                              className="btn btn-secondary btn-sm"
-                            >
-                              {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                              {schedule.triggerTime.substring(0, 5)}
+                              {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
+                                <span style={{ marginLeft: '8px', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                                  ({DAYS_OF_WEEK[schedule.dayOfWeek]})
+                                </span>
+                              )}
+                            </td>
+                            <td className="mono" style={{ fontSize: '0.8125rem' }}>
+                              {schedule.slackChannel ? `#${schedule.slackChannel}` : '-'}
+                            </td>
+                            <td>
+                              <span className={`badge ${schedule.isActive ? 'badge-green' : 'badge-neutral'}`}>
+                                <span className="badge-dot" style={{ backgroundColor: schedule.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
+                                {schedule.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                <button
+                                  onClick={() => handleOpenEditModal(schedule)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSchedule(schedule.id)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--red)' }}
+                                >
+                                  🗑️
+                                </button>
+                                <button
+                                  onClick={() => handleTriggerSchedule(schedule.id)}
+                                  disabled={triggeringId === schedule.id}
+                                  className="btn btn-secondary btn-sm"
+                                >
+                                  {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -491,7 +597,7 @@ export default function SchedulesPage() {
               </button>
 
               <div className="modal-header">
-                <h2>Create Schedule</h2>
+                <h2>{editingSchedule ? 'Edit Schedule Trigger' : 'Create Schedule Trigger'}</h2>
                 <p>Configure automated pings to coordinate storefront employee inventory tasks.</p>
               </div>
 
@@ -587,7 +693,20 @@ export default function SchedulesPage() {
                     </div>
                   )}
 
-
+                  {editingSchedule && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        id="sched-active"
+                        type="checkbox"
+                        checked={isActive}
+                        onChange={(e) => setIsActive(e.target.checked)}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                      <label htmlFor="sched-active" style={{ fontSize: '0.875rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                        Active Schedule
+                      </label>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                     <button
@@ -604,7 +723,7 @@ export default function SchedulesPage() {
                       className="btn btn-primary"
                       style={{ flex: 1 }}
                     >
-                      {formSubmitting ? 'Scheduling...' : 'Set Schedule'}
+                      {formSubmitting ? 'Saving...' : (editingSchedule ? 'Update Trigger' : 'Set Schedule')}
                     </button>
                   </div>
                 </form>
