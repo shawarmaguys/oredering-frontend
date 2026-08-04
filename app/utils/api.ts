@@ -69,9 +69,14 @@ export const api = {
     delete: (id: string) => request<any>(`/vendors/departments/${id}`, { method: 'DELETE' }),
   },
   items: {
-    list: (vendorId?: string) => {
-      const query = vendorId ? `?vendor_id=${vendorId}` : '';
-      return request<any[]>(`/items${query}`);
+    list: (params?: { vendorId?: string; search?: string; page?: number; limit?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.vendorId) q.set('vendor_id', params.vendorId);
+      if (params?.search) q.set('search', params.search);
+      if (params?.page != null) q.set('page', String(params.page));
+      if (params?.limit != null) q.set('limit', String(params.limit));
+      const query = q.toString() ? `?${q.toString()}` : '';
+      return request<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(`/items${query}`);
     },
     create: (data: any) => request<any>('/items', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/items/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
