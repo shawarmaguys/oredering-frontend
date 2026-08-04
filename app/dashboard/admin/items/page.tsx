@@ -166,7 +166,7 @@ export default function ItemsPage() {
           />
         )}
         <ConfirmDialog
-          open={deleteConfirmOpen}
+          isOpen={deleteConfirmOpen}
           title="Delete Product"
           message={`Are you sure you want to delete "${itemToDelete?.name}"? This cannot be undone.`}
           onConfirm={handleConfirmDelete}
