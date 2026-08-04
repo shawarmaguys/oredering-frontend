@@ -6,8 +6,8 @@ import { Item, Vendor, SortColumn, SortDir } from './types';
 
 const PAGE_SIZE = 10;
 const LS_KEY = 'items_vendor_filter';
-// Fetch all items at once for cache (high limit avoids multiple round-trips)
-const ALL_LIMIT = 2000;
+// Fetch all items at once for cache — capped at a realistic catalog ceiling
+const ALL_LIMIT = 500;
 
 function applyClientFilter(
   allItems: Item[],

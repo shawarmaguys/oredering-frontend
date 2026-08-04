@@ -95,15 +95,29 @@ export const api = {
     translateText: (text: string) => request<{ success: boolean; original: string; translated: string }>(`/translations/translate?text=${encodeURIComponent(text)}`),
   },
   stockRecords: {
-    list: () => request<any[]>('/stock-records'),
+    list: (params?: { page?: number; limit?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.page != null) q.set('page', String(params.page));
+      if (params?.limit != null) q.set('limit', String(params.limit));
+      const query = q.toString() ? `?${q.toString()}` : '';
+      return request<any>(`/stock-records${query}`);
+    },
     get: (id: string) => request<any>(`/stock-records/${id}`),
     create: (data: any) => request<any>('/stock-records', { method: 'POST', body: JSON.stringify(data) }),
     complete: (id: string, data: any) => request<any>(`/stock-records/${id}/complete`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
   purchaseOrders: {
-    list: (status?: string) => {
-      const query = status ? `?status=${status}` : '';
-      return request<any[]>(`/purchase-orders${query}`);
+    list: (params?: { status?: string; page?: number; limit?: number } | string) => {
+      const q = new URLSearchParams();
+      if (typeof params === 'string') {
+        if (params) q.set('status', params);
+      } else if (params) {
+        if (params.status) q.set('status', params.status);
+        if (params.page != null) q.set('page', String(params.page));
+        if (params.limit != null) q.set('limit', String(params.limit));
+      }
+      const query = q.toString() ? `?${q.toString()}` : '';
+      return request<any>(`/purchase-orders${query}`);
     },
     get: (id: string) => request<any>(`/purchase-orders/${id}`),
     create: (data: any) => request<any>('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),

@@ -83,8 +83,9 @@ export default function ReportsPage() {
     setError('');
     try {
       if (activeTab === 'pos') {
-        const data = await api.purchaseOrders.list();
-        const mapped = data.map((po: any) => ({
+        const res = await api.purchaseOrders.list();
+        const rawList = Array.isArray(res) ? res : res.data || [];
+        const mapped = rawList.map((po: any) => ({
           id: po.id,
           vendorId: po.vendorId || po.vendor_id,
           vendor: po.vendor,
@@ -100,8 +101,9 @@ export default function ReportsPage() {
         }));
         setPos(mapped);
       } else {
-        const data = await api.stockRecords.list();
-        const mapped = data.map((sr: any) => ({
+        const res = await api.stockRecords.list();
+        const rawList = Array.isArray(res) ? res : res.data || [];
+        const mapped = rawList.map((sr: any) => ({
           id: sr.id,
           locationId: sr.locationId || sr.location_id,
           location: sr.location,

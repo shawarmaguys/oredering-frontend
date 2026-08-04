@@ -49,7 +49,8 @@ export default function WorkerDashboard() {
     setLoading(true);
     setError('');
     try {
-      const data = await api.stockRecords.list();
+      const res = await api.stockRecords.list();
+      const data = Array.isArray(res) ? res : res.data || [];
       setRecords(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load stock records.');

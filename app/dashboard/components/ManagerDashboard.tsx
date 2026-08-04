@@ -13,7 +13,8 @@ export default function ManagerDashboard() {
   useEffect(() => {
     async function loadPendingReviews() {
       try {
-        const data = await api.purchaseOrders.list();
+        const res = await api.purchaseOrders.list();
+        const data = Array.isArray(res) ? res : res.data || [];
         const filtered = data.filter((po: any) => po.status === 'DRAFT' || po.status === 'GENERATED');
         setPendingReviews(filtered);
       } catch (err) {
