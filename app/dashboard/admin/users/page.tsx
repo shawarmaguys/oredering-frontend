@@ -46,7 +46,17 @@ export default function UsersPage() {
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'name' | 'date'>('name');
+  const [sortColumn, setSortColumn] = useState<'fullName' | 'email' | 'role' | 'isActive'>('fullName');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (col: 'fullName' | 'email' | 'role' | 'isActive') => {
+    if (sortColumn === col) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      setSortDir('asc');
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -218,13 +228,9 @@ export default function UsersPage() {
             <option value="MANAGER">Manager</option>
             <option value="WORKER">Worker</option>
           </select>
-          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
-            <option value="name">Sort: Name</option>
-            <option value="date">Sort: Date Added</option>
-          </select>
           <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
             </button>
             <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
@@ -249,8 +255,12 @@ export default function UsersPage() {
                 return true;
               })
               .sort((a, b) => {
-                if (sortBy === 'name') return a.fullName.localeCompare(b.fullName);
-                return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                let cmp = 0;
+                if (sortColumn === 'fullName') cmp = a.fullName.localeCompare(b.fullName);
+                else if (sortColumn === 'email') cmp = a.email.localeCompare(b.email);
+                else if (sortColumn === 'role') cmp = a.role.localeCompare(b.role);
+                else if (sortColumn === 'isActive') cmp = (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
+                return sortDir === 'asc' ? cmp : -cmp;
               });
 
             if (filtered.length === 0) return (
@@ -377,11 +387,19 @@ export default function UsersPage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th style={{ paddingLeft: '24px' }}>Full Name</th>
-                        <th>Email Address</th>
-                        <th>Assigned Role</th>
+                        <th onClick={() => handleSort('fullName')} style={{ paddingLeft: '24px', cursor: 'pointer', userSelect: 'none' }}>
+                          Full Name {sortColumn === 'fullName' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th onClick={() => handleSort('email')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                          Email Address {sortColumn === 'email' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th onClick={() => handleSort('role')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                          Assigned Role {sortColumn === 'role' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
                         <th>Assigned Store Locations</th>
-                        <th>Account Status</th>
+                        <th onClick={() => handleSort('isActive')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                          Account Status {sortColumn === 'isActive' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
                         <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                       </tr>
                     </thead>

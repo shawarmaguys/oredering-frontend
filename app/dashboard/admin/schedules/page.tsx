@@ -33,6 +33,24 @@ interface Schedule {
   createdAt: string;
 }
 
+interface GroupTriggerItem {
+  id?: string;
+  scheduleType: 'DAILY' | 'WEEKLY';
+  dayOfWeek: number;
+  triggerTime: string;
+  isActive: boolean;
+  isDeleted?: boolean;
+}
+
+interface ScheduleGroup {
+  key: string;
+  locationId: string;
+  vendorId: string;
+  locationName: string;
+  vendorName: string;
+  items: Schedule[];
+}
+
 const DAYS_OF_WEEK = [
   'Sunday',
   'Monday',
@@ -50,14 +68,11 @@ export default function SchedulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Form State
-  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+  // Group Form State
+  const [editingGroup, setEditingGroup] = useState<ScheduleGroup | null>(null);
   const [locationId, setLocationId] = useState('');
   const [vendorId, setVendorId] = useState('');
-  const [scheduleType, setScheduleType] = useState<'DAILY' | 'WEEKLY'>('DAILY');
-  const [dayOfWeek, setDayOfWeek] = useState(1); // Monday
-  const [triggerTime, setTriggerTime] = useState('09:00');
-  const [isActive, setIsActive] = useState(true);
+  const [groupTriggers, setGroupTriggers] = useState<GroupTriggerItem[]>([]);
 
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -66,26 +81,21 @@ export default function SchedulesPage() {
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
   const [locationFilter, setLocationFilter] = useState('all');
   const [vendorFilter, setVendorFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'time' | 'location' | 'vendor'>('location');
+  const [sortColumn, setSortColumn] = useState<string>('location');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      setSortDir('asc');
+    }
+  };
 
   // Triggering State
   const [triggeringId, setTriggeringId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
-
-  const handleTriggerSchedule = async (id: string) => {
-    setTriggeringId(id);
-    setError('');
-    setSuccessMessage('');
-    try {
-      await api.schedules.trigger(id);
-      setSuccessMessage('Schedule manually triggered! Stock audit generated & Slack notification sent successfully.');
-      setTimeout(() => setSuccessMessage(''), 6000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to trigger schedule.');
-    } finally {
-      setTriggeringId(null);
-    }
-  };
 
   useEffect(() => {
     fetchInitialData();
@@ -132,89 +142,147 @@ export default function SchedulesPage() {
   };
 
   const handleOpenCreateModal = () => {
-    setEditingSchedule(null);
+    setEditingGroup(null);
     setError('');
-    if (locations.length > 0) setLocationId(locations[0].id);
-    if (vendors.length > 0) setVendorId(vendors[0].id);
-    setScheduleType('DAILY');
-    setDayOfWeek(1);
-    setTriggerTime('09:00');
-    setIsActive(true);
+    const defaultLoc = locations[0]?.id || '';
+    const defaultVendor = vendors[0]?.id || '';
+    setLocationId(defaultLoc);
+    setVendorId(defaultVendor);
+    setGroupTriggers([
+      { scheduleType: 'DAILY', dayOfWeek: 1, triggerTime: '09:00', isActive: true }
+    ]);
     setShowModal(true);
   };
 
-  const handleOpenEditModal = (schedule: Schedule) => {
-    setEditingSchedule(schedule);
+  const handleOpenGroupEditModal = (group: ScheduleGroup) => {
+    setEditingGroup(group);
     setError('');
-    setLocationId(schedule.locationId);
-    setVendorId(schedule.vendorId);
-    setScheduleType(schedule.scheduleType);
-    setDayOfWeek(schedule.dayOfWeek ?? 1);
-    setTriggerTime(schedule.triggerTime);
-    setIsActive(schedule.isActive);
+    setLocationId(group.locationId);
+    setVendorId(group.vendorId);
+    setGroupTriggers(group.items.map(s => ({
+      id: s.id,
+      scheduleType: s.scheduleType,
+      dayOfWeek: s.dayOfWeek ?? 1,
+      triggerTime: s.triggerTime,
+      isActive: s.isActive,
+    })));
     setShowModal(true);
   };
 
-  const handleDeleteSchedule = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this schedule trigger?')) return;
+  const handleAddTriggerRow = () => {
+    setGroupTriggers(prev => [
+      ...prev,
+      { scheduleType: 'DAILY', dayOfWeek: 1, triggerTime: '09:00', isActive: true }
+    ]);
+  };
+
+  const handleUpdateTriggerRow = (index: number, updates: Partial<GroupTriggerItem>) => {
+    setGroupTriggers(prev => prev.map((t, idx) => idx === index ? { ...t, ...updates } : t));
+  };
+
+  const handleRemoveTriggerRow = (index: number) => {
+    setGroupTriggers(prev => {
+      const item = prev[index];
+      if (item.id) {
+        return prev.map((t, idx) => idx === index ? { ...t, isDeleted: true } : t);
+      } else {
+        return prev.filter((_, idx) => idx !== index);
+      }
+    });
+  };
+
+  const handleDeleteGroup = async (group: ScheduleGroup) => {
+    if (!confirm(`Are you sure you want to delete all triggers for ${group.vendorName} at ${group.locationName}?`)) return;
     setError('');
     try {
-      await api.schedules.delete(id);
-      setSuccessMessage('Schedule deleted successfully.');
+      await Promise.all(group.items.map(s => api.schedules.delete(s.id)));
+      setSuccessMessage('Schedules deleted successfully.');
       setTimeout(() => setSuccessMessage(''), 4000);
       fetchInitialData();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete schedule.');
+      setError(err.message || 'Failed to delete schedules.');
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleTriggerGroup = async (group: ScheduleGroup) => {
+    const activeItems = group.items.filter(s => s.isActive);
+    if (activeItems.length === 0) {
+      setError('No active triggers found in this group.');
+      return;
+    }
+    setTriggeringId(group.items[0].id);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await Promise.all(activeItems.map(s => api.schedules.trigger(s.id)));
+      setSuccessMessage('Schedules manually triggered! Stock audit generated & Slack notification sent successfully.');
+      setTimeout(() => setSuccessMessage(''), 6000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to trigger schedules.');
+    } finally {
+      setTriggeringId(null);
+    }
+  };
+
+  const handleSubmitGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!locationId || !vendorId) {
       setError('Please ensure locations and vendors exist.');
       return;
     }
+
+    const activeTriggers = groupTriggers.filter(t => !t.isDeleted);
+    if (activeTriggers.length === 0) {
+      setError('Please configure at least one trigger.');
+      return;
+    }
+
     setFormSubmitting(true);
     setError('');
 
     try {
-      if (editingSchedule) {
-        await api.schedules.update(editingSchedule.id, {
-          locationId,
-          vendorId,
-          scheduleType,
-          dayOfWeek: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
-          triggerTime,
-          isActive,
-        });
-        setSuccessMessage('Schedule trigger updated successfully.');
-      } else {
-        await api.schedules.create({
-          locationId,
-          vendorId,
-          scheduleType,
-          dayOfWeek: scheduleType === 'WEEKLY' ? Number(dayOfWeek) : undefined,
-          triggerTime,
-        });
-        setSuccessMessage('New schedule trigger created successfully.');
-      }
+      const tasks: Promise<any>[] = [];
 
+      // Process deletions
+      groupTriggers.forEach(t => {
+        if (t.isDeleted && t.id) {
+          tasks.push(api.schedules.delete(t.id));
+        }
+      });
+
+      // Process updates and creations
+      activeTriggers.forEach(t => {
+        if (t.id) {
+          tasks.push(api.schedules.update(t.id, {
+            locationId,
+            vendorId,
+            scheduleType: t.scheduleType,
+            dayOfWeek: t.scheduleType === 'WEEKLY' ? Number(t.dayOfWeek) : undefined,
+            triggerTime: t.triggerTime,
+            isActive: t.isActive,
+          }));
+        } else {
+          tasks.push(api.schedules.create({
+            locationId,
+            vendorId,
+            scheduleType: t.scheduleType,
+            dayOfWeek: t.scheduleType === 'WEEKLY' ? Number(t.dayOfWeek) : undefined,
+            triggerTime: t.triggerTime,
+          }));
+        }
+      });
+
+      await Promise.all(tasks);
+      setSuccessMessage('All schedule triggers saved successfully.');
       setTimeout(() => setSuccessMessage(''), 4000);
       setShowModal(false);
       fetchInitialData();
     } catch (err: any) {
-      setError(err.message || 'Failed to save schedule.');
+      setError(err.message || 'Failed to save schedule triggers.');
     } finally {
       setFormSubmitting(false);
     }
   };
-
-  // Compute trigger counts per location & vendor combination
-  const triggerCountMap = schedules.reduce((acc, s) => {
-    const key = `${s.locationId}-${s.vendorId}`;
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
   return (
     <AdminGuard>
@@ -271,12 +339,7 @@ export default function SchedulesPage() {
             <option value="all">All Vendors</option>
             {vendors.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
           </select>
-          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
-            <option value="location">Sort: Location</option>
-            <option value="vendor">Sort: Vendor</option>
-            <option value="time">Sort: Time</option>
-          </select>
-          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginLeft: 'auto' }}>
             <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 15.75v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
             </button>
@@ -303,19 +366,57 @@ export default function SchedulesPage() {
           </div>
         ) : (
           (() => {
-            const filtered = schedules
-              .filter(s => {
-                if (locationFilter !== 'all' && s.locationId !== locationFilter) return false;
-                if (vendorFilter !== 'all' && s.vendorId !== vendorFilter) return false;
-                return true;
-              })
-              .sort((a, b) => {
-                if (sortBy === 'location') return (a.location?.name || '').localeCompare(b.location?.name || '');
-                if (sortBy === 'vendor') return (a.vendor?.displayName || '').localeCompare(b.vendor?.displayName || '');
-                return a.triggerTime.localeCompare(b.triggerTime);
-              });
+            const filtered = schedules.filter(s => {
+              if (locationFilter !== 'all' && s.locationId !== locationFilter) return false;
+              if (vendorFilter !== 'all' && s.vendorId !== vendorFilter) return false;
+              return true;
+            });
 
-            if (filtered.length === 0) return (
+            // Group schedules by locationId & vendorId combination
+            const groupedMap = new Map<string, ScheduleGroup>();
+
+            filtered.forEach(s => {
+              const key = `${s.locationId}-${s.vendorId}`;
+              if (!groupedMap.has(key)) {
+                groupedMap.set(key, {
+                  key,
+                  locationId: s.locationId,
+                  vendorId: s.vendorId,
+                  locationName: s.location?.name || 'Unknown Location',
+                  vendorName: s.vendor?.displayName || 'Unknown Vendor',
+                  items: []
+                });
+              }
+              groupedMap.get(key)!.items.push(s);
+            });
+
+            const groups = Array.from(groupedMap.values()).sort((a, b) => {
+              let cmp = 0;
+              if (sortColumn === 'location') {
+                cmp = a.locationName.localeCompare(b.locationName);
+              } else if (sortColumn === 'vendor') {
+                cmp = a.vendorName.localeCompare(b.vendorName);
+              } else if (sortColumn === 'type') {
+                const typeA = a.items[0]?.scheduleType || '';
+                const typeB = b.items[0]?.scheduleType || '';
+                cmp = typeA.localeCompare(typeB);
+              } else if (sortColumn === 'time') {
+                const timeA = a.items[0]?.triggerTime || '';
+                const timeB = b.items[0]?.triggerTime || '';
+                cmp = timeA.localeCompare(timeB);
+              } else if (sortColumn === 'slack') {
+                const slackA = a.items[0]?.slackChannel || '';
+                const slackB = b.items[0]?.slackChannel || '';
+                cmp = slackA.localeCompare(slackB);
+              } else if (sortColumn === 'status') {
+                const statusA = a.items.some(i => i.isActive) ? 'Active' : 'Inactive';
+                const statusB = b.items.some(i => i.isActive) ? 'Active' : 'Inactive';
+                cmp = statusA.localeCompare(statusB);
+              }
+              return sortDir === 'asc' ? cmp : -cmp;
+            });
+
+            if (groups.length === 0) return (
               <div className="card" style={{ padding: '48px 24px' }}>
                 <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
               </div>
@@ -324,14 +425,13 @@ export default function SchedulesPage() {
             return viewMode === 'tile' ? (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
                 gap: '24px'
               }} className="stagger">
-                {filtered.map((schedule) => {
-                  const pairCount = triggerCountMap[`${schedule.locationId}-${schedule.vendorId}`] || 1;
+                {groups.map((group) => {
                   return (
                     <div
-                      key={schedule.id}
+                      key={group.key}
                       className="card card-hover"
                       style={{
                         padding: '24px',
@@ -357,137 +457,89 @@ export default function SchedulesPage() {
                         pointerEvents: 'none'
                       }} />
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
-                            {schedule.scheduleType}
-                          </span>
-                          {pairCount > 1 && (
-                            <span className="badge badge-purple" title="Multiple triggers set for this location & vendor">
-                              {pairCount} Triggers
-                            </span>
-                          )}
-                        </div>
-                        <span className={`badge ${schedule.isActive ? 'badge-green' : 'badge-neutral'}`}>
-                          <span className="badge-dot" style={{ backgroundColor: schedule.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
-                          {schedule.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                           <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STORE LOCATION</span>
-                          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
-                            {schedule.location?.name || 'Unknown Location'}
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                            {group.locationName}
+                          </h3>
+                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px', display: 'block' }}>WHOLESALE VENDOR</span>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--accent)', marginTop: '2px' }}>
+                            {group.vendorName}
                           </h3>
                         </div>
-
-                        <div>
-                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>WHOLESALE VENDOR</span>
-                          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--accent)', marginTop: '2px' }}>
-                            {schedule.vendor?.displayName || 'Unknown Vendor'}
-                          </h3>
-                        </div>
-
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '12px',
-                          paddingTop: '12px',
-                          borderTop: '1px solid var(--border-subtle)'
-                        }}>
-                          <div>
-                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Time</span>
-                            <p className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
-                              {schedule.triggerTime.substring(0, 5)}
-                            </p>
-                          </div>
-                          {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
-                            <div>
-                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Trigger Day</span>
-                              <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '2px' }}>
-                                {DAYS_OF_WEEK[schedule.dayOfWeek]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {schedule.slackChannel && (
-                          <div style={{
-                            paddingTop: '12px',
-                            borderTop: '1px solid var(--border-subtle)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}>
-                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Slack:</span>
-                            <span className="mono" style={{
-                              color: 'var(--accent)',
-                              backgroundColor: 'var(--accent-subtle)',
-                              padding: '1px 6px',
-                              borderRadius: '4px',
-                              border: '1px solid var(--accent-border)',
-                              fontSize: '0.75rem'
-                            }}>
-                              #{schedule.slackChannel}
-                            </span>
-                          </div>
-                        )}
+                        <span className="badge badge-purple" style={{ fontSize: '0.75rem', flexShrink: 0 }}>
+                          {group.items.length} {group.items.length === 1 ? 'Trigger' : 'Triggers'}
+                        </span>
                       </div>
 
-                      <div style={{
-                        paddingTop: '12px',
-                        borderTop: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: '8px'
-                      }}>
-                        <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
-                          ID: {schedule.id.substring(0, 8)}
-                        </span>
-
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <button
-                            onClick={() => handleOpenEditModal(schedule)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            title="Edit Trigger"
+                      {/* Triggers list summary */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Configured Triggers</span>
+                        {group.items.map((schedule) => (
+                          <div
+                            key={schedule.id}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: 'var(--radius-sm)',
+                              backgroundColor: 'var(--bg-base)',
+                              border: '1px solid var(--border-subtle)',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
                           >
-                            ✏️ Edit
-                          </button>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`} style={{ fontSize: '0.6875rem' }}>
+                                {schedule.scheduleType}
+                              </span>
+                              <span className="mono" style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {schedule.triggerTime.substring(0, 5)}
+                                {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && ` (${DAYS_OF_WEEK[schedule.dayOfWeek]})`}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {schedule.slackChannel && (
+                                <span className="mono" style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-subtle)', padding: '1px 4px', borderRadius: '3px', fontSize: '0.6875rem' }}>
+                                  #{schedule.slackChannel}
+                                </span>
+                              )}
+                              <span className={`badge ${schedule.isActive ? 'badge-green' : 'badge-neutral'}`} style={{ fontSize: '0.6875rem' }}>
+                                <span className="badge-dot" style={{ backgroundColor: schedule.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
+                                {schedule.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
 
+                      {/* Single Action Bar for Group */}
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
                           <button
-                            onClick={() => handleDeleteSchedule(schedule.id)}
+                            onClick={() => handleOpenGroupEditModal(group)}
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--red)' }}
-                            title="Delete Trigger"
+                            style={{ padding: '6px 12px', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+                          >
+                            ✏️ Edit Triggers
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGroup(group)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px 10px', fontSize: '0.8125rem', color: 'var(--red)' }}
+                            title="Delete all triggers for this vendor"
                           >
                             🗑️
                           </button>
-
-                          <button
-                            onClick={() => handleTriggerSchedule(schedule.id)}
-                            disabled={triggeringId === schedule.id}
-                            className="btn btn-secondary btn-sm"
-                            style={{
-                              padding: '4px 10px',
-                              fontSize: '0.75rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              background: 'var(--accent-subtle)',
-                              border: '1px solid var(--accent-border)',
-                              color: 'var(--accent)',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                            </svg>
-                            {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
-                          </button>
                         </div>
+                        <button
+                          onClick={() => handleTriggerGroup(group)}
+                          disabled={triggeringId === group.items[0]?.id}
+                          className="btn btn-primary btn-sm"
+                          style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
+                        >
+                          ⚡ {triggeringId === group.items[0]?.id ? 'Triggering...' : 'Trigger Now'}
+                        </button>
                       </div>
                     </div>
                   );
@@ -499,75 +551,130 @@ export default function SchedulesPage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th style={{ paddingLeft: '24px' }}>Store Location</th>
-                        <th>Wholesale Vendor</th>
-                        <th>Schedule Type</th>
-                        <th>Trigger Time</th>
-                        <th>Slack Channel</th>
-                        <th>Status</th>
+                        <th
+                          onClick={() => handleSort('location')}
+                          style={{ paddingLeft: '24px', cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          Store Location {sortColumn === 'location' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th
+                          onClick={() => handleSort('vendor')}
+                          style={{ cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          Wholesale Vendor {sortColumn === 'vendor' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th
+                          onClick={() => handleSort('type')}
+                          style={{ cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          Schedule Triggers {sortColumn === 'type' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th
+                          onClick={() => handleSort('time')}
+                          style={{ cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          Trigger Time {sortColumn === 'time' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th
+                          onClick={() => handleSort('slack')}
+                          style={{ cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          Slack Channel {sortColumn === 'slack' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
+                        <th
+                          onClick={() => handleSort('status')}
+                          style={{ cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          Status {sortColumn === 'status' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                        </th>
                         <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((schedule) => {
-                        const pairCount = triggerCountMap[`${schedule.locationId}-${schedule.vendorId}`] || 1;
+                      {groups.map((group) => {
                         return (
-                          <tr key={schedule.id}>
+                          <tr key={group.key}>
                             <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {schedule.location?.name || 'Unknown Location'}
+                              {group.locationName}
                             </td>
                             <td style={{ color: 'var(--accent)', fontWeight: 500 }}>
-                              {schedule.vendor?.displayName || 'Unknown Vendor'}
-                              {pairCount > 1 && (
+                              {group.vendorName}
+                              {group.items.length > 1 && (
                                 <span className="badge badge-purple" style={{ marginLeft: '8px', fontSize: '0.6875rem' }}>
-                                  {pairCount} Triggers
+                                  {group.items.length} Triggers
                                 </span>
                               )}
                             </td>
                             <td>
-                              <span className={`badge ${schedule.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`}>
-                                {schedule.scheduleType}
-                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {group.items.map(s => (
+                                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span className={`badge ${s.scheduleType === 'DAILY' ? 'badge-amber' : 'badge-teal'}`} style={{ fontSize: '0.6875rem' }}>
+                                      {s.scheduleType}
+                                    </span>
+                                    {s.scheduleType === 'WEEKLY' && s.dayOfWeek !== undefined && (
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                        {DAYS_OF_WEEK[s.dayOfWeek]}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </td>
                             <td className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                              {schedule.triggerTime.substring(0, 5)}
-                              {schedule.scheduleType === 'WEEKLY' && schedule.dayOfWeek !== undefined && (
-                                <span style={{ marginLeft: '8px', color: 'var(--text-secondary)', fontWeight: 400 }}>
-                                  ({DAYS_OF_WEEK[schedule.dayOfWeek]})
-                                </span>
-                              )}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {group.items.map(s => (
+                                  <div key={s.id}>
+                                    {s.triggerTime.substring(0, 5)}
+                                  </div>
+                                ))}
+                              </div>
                             </td>
                             <td className="mono" style={{ fontSize: '0.8125rem' }}>
-                              {schedule.slackChannel ? `#${schedule.slackChannel}` : '-'}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {group.items.map(s => (
+                                  <div key={s.id}>
+                                    {s.slackChannel ? `#${s.slackChannel}` : '-'}
+                                  </div>
+                                ))}
+                              </div>
                             </td>
                             <td>
-                              <span className={`badge ${schedule.isActive ? 'badge-green' : 'badge-neutral'}`}>
-                                <span className="badge-dot" style={{ backgroundColor: schedule.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
-                                {schedule.isActive ? 'Active' : 'Inactive'}
-                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {group.items.map(s => (
+                                  <div key={s.id}>
+                                    <span className={`badge ${s.isActive ? 'badge-green' : 'badge-neutral'}`} style={{ fontSize: '0.6875rem' }}>
+                                      <span className="badge-dot" style={{ backgroundColor: s.isActive ? 'var(--green)' : 'var(--text-tertiary)' }} />
+                                      {s.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </td>
                             <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 <button
-                                  onClick={() => handleOpenEditModal(schedule)}
+                                  onClick={() => handleOpenGroupEditModal(group)}
                                   className="btn btn-secondary btn-sm"
-                                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
                                 >
-                                  ✏️ Edit
+                                  ✏️ Edit Triggers
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteSchedule(schedule.id)}
+                                  onClick={() => handleDeleteGroup(group)}
                                   className="btn btn-secondary btn-sm"
                                   style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--red)' }}
+                                  title="Delete triggers"
                                 >
                                   🗑️
                                 </button>
                                 <button
-                                  onClick={() => handleTriggerSchedule(schedule.id)}
-                                  disabled={triggeringId === schedule.id}
+                                  onClick={() => handleTriggerGroup(group)}
+                                  disabled={triggeringId === group.items[0]?.id}
                                   className="btn btn-secondary btn-sm"
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
                                 >
-                                  {triggeringId === schedule.id ? 'Triggering...' : 'Trigger Now'}
+                                  ⚡ {triggeringId === group.items[0]?.id ? 'Triggering...' : 'Trigger Now'}
                                 </button>
                               </div>
                             </td>
@@ -582,10 +689,10 @@ export default function SchedulesPage() {
           })()
         )}
 
-        {/* Modal Form */}
+        {/* Modal Form for Editing Triggers in One Go */}
         {showModal && (
           <div className="modal-backdrop">
-            <div className="modal-panel modal-panel-sm">
+            <div className="modal-panel modal-panel-md" style={{ maxWidth: '580px' }}>
               <button
                 onClick={() => setShowModal(false)}
                 className="modal-close"
@@ -597,8 +704,8 @@ export default function SchedulesPage() {
               </button>
 
               <div className="modal-header">
-                <h2>{editingSchedule ? 'Edit Schedule Trigger' : 'Create Schedule Trigger'}</h2>
-                <p>Configure automated pings to coordinate storefront employee inventory tasks.</p>
+                <h2>{editingGroup ? `Edit Triggers - ${editingGroup.vendorName}` : 'Create Schedule Triggers'}</h2>
+                <p>Manage all automated notification triggers for this store location & vendor in one place.</p>
               </div>
 
               {error && (
@@ -615,98 +722,146 @@ export default function SchedulesPage() {
                   Please ensure you have created both Locations and Vendors before configuring schedules.
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div>
-                    <label className="label" htmlFor="sched-loc">Store Location *</label>
-                    <select
-                      id="sched-loc"
-                      value={locationId}
-                      onChange={(e) => setLocationId(e.target.value)}
-                      className="input"
-                    >
-                      {locations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="label" htmlFor="sched-vendor">Supplier/Vendor *</label>
-                    <select
-                      id="sched-vendor"
-                      value={vendorId}
-                      onChange={(e) => setVendorId(e.target.value)}
-                      className="input"
-                    >
-                      {vendors.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.displayName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
+                <form onSubmit={handleSubmitGroup} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label className="label" htmlFor="sched-type">Schedule Type *</label>
+                      <label className="label" htmlFor="sched-loc">Store Location *</label>
                       <select
-                        id="sched-type"
-                        value={scheduleType}
-                        onChange={(e) => setScheduleType(e.target.value as any)}
+                        id="sched-loc"
+                        value={locationId}
+                        disabled={!!editingGroup}
+                        onChange={(e) => setLocationId(e.target.value)}
                         className="input"
                       >
-                        <option value="DAILY">Daily</option>
-                        <option value="WEEKLY">Weekly</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="label" htmlFor="sched-time">Trigger Time *</label>
-                      <input
-                        id="sched-time"
-                        type="time"
-                        required
-                        value={triggerTime}
-                        onChange={(e) => setTriggerTime(e.target.value)}
-                        className="input mono"
-                      />
-                    </div>
-                  </div>
-
-                  {scheduleType === 'WEEKLY' && (
-                    <div>
-                      <label className="label" htmlFor="sched-day">Day of Week *</label>
-                      <select
-                        id="sched-day"
-                        value={dayOfWeek}
-                        onChange={(e) => setDayOfWeek(Number(e.target.value))}
-                        className="input"
-                      >
-                        {DAYS_OF_WEEK.map((day, idx) => (
-                          <option key={idx} value={idx}>
-                            {day}
+                        {locations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>
+                            {loc.name}
                           </option>
                         ))}
                       </select>
                     </div>
-                  )}
 
-                  {editingSchedule && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        id="sched-active"
-                        type="checkbox"
-                        checked={isActive}
-                        onChange={(e) => setIsActive(e.target.checked)}
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                      />
-                      <label htmlFor="sched-active" style={{ fontSize: '0.875rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                        Active Schedule
-                      </label>
+                    <div>
+                      <label className="label" htmlFor="sched-vendor">Supplier/Vendor *</label>
+                      <select
+                        id="sched-vendor"
+                        value={vendorId}
+                        disabled={!!editingGroup}
+                        onChange={(e) => setVendorId(e.target.value)}
+                        className="input"
+                      >
+                        {vendors.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.displayName}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  )}
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="label" style={{ marginBottom: 0 }}>Configured Triggers ({groupTriggers.filter(t => !t.isDeleted).length})</span>
+                      <button
+                        type="button"
+                        onClick={handleAddTriggerRow}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        + Add Another Trigger
+                      </button>
+                    </div>
+
+                    {groupTriggers.map((t, idx) => {
+                      if (t.isDeleted) return null;
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '12px',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border-default)',
+                            backgroundColor: 'var(--bg-subtle)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Trigger #{idx + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTriggerRow(idx)}
+                              style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '0.875rem', padding: '2px 4px' }}
+                              title="Remove trigger"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: t.scheduleType === 'WEEKLY' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px', alignItems: 'end' }}>
+                            <div>
+                              <label className="label" style={{ fontSize: '0.75rem' }}>Schedule Type</label>
+                              <select
+                                value={t.scheduleType}
+                                onChange={(e) => handleUpdateTriggerRow(idx, { scheduleType: e.target.value as any })}
+                                className="input"
+                                style={{ fontSize: '0.8125rem', padding: '6px 10px' }}
+                              >
+                                <option value="DAILY">Daily</option>
+                                <option value="WEEKLY">Weekly</option>
+                              </select>
+                            </div>
+
+                            {t.scheduleType === 'WEEKLY' && (
+                              <div>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Day of Week</label>
+                                <select
+                                  value={t.dayOfWeek}
+                                  onChange={(e) => handleUpdateTriggerRow(idx, { dayOfWeek: Number(e.target.value) })}
+                                  className="input"
+                                  style={{ fontSize: '0.8125rem', padding: '6px 10px' }}
+                                >
+                                  {DAYS_OF_WEEK.map((day, dIdx) => (
+                                    <option key={dIdx} value={dIdx}>
+                                      {day}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="label" style={{ fontSize: '0.75rem' }}>Trigger Time</label>
+                              <input
+                                type="time"
+                                required
+                                value={t.triggerTime}
+                                onChange={(e) => handleUpdateTriggerRow(idx, { triggerTime: e.target.value })}
+                                className="input mono"
+                                style={{ fontSize: '0.8125rem', padding: '6px 10px' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
+                            <input
+                              id={`active-${idx}`}
+                              type="checkbox"
+                              checked={t.isActive}
+                              onChange={(e) => handleUpdateTriggerRow(idx, { isActive: e.target.checked })}
+                              style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                            />
+                            <label htmlFor={`active-${idx}`} style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                              Active Trigger
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                     <button
@@ -723,7 +878,7 @@ export default function SchedulesPage() {
                       className="btn btn-primary"
                       style={{ flex: 1 }}
                     >
-                      {formSubmitting ? 'Saving...' : (editingSchedule ? 'Update Trigger' : 'Set Schedule')}
+                      {formSubmitting ? 'Saving All...' : 'Save All Triggers'}
                     </button>
                   </div>
                 </form>

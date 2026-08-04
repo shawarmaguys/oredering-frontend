@@ -49,7 +49,17 @@ export default function ReportsPage() {
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc'>('date_desc');
+  const [sortColumn, setSortColumn] = useState<string>('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (col: string) => {
+    if (sortColumn === col) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      setSortDir('asc');
+    }
+  };
 
   useEffect(() => {
     fetchInitialData();
@@ -192,10 +202,6 @@ export default function ReportsPage() {
               <option value="CANCELLED">Cancelled</option>
             </select>
           )}
-          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
-            <option value="date_desc">Sort: Newest First</option>
-            <option value="date_asc">Sort: Oldest First</option>
-          </select>
           <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 15.75v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
@@ -221,9 +227,12 @@ export default function ReportsPage() {
                 if (statusFilter !== 'all' && po.status !== statusFilter) return false;
                 return true;
               }).sort((a, b) => {
-                return sortBy === 'date_desc'
-                  ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                  : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                let cmp = 0;
+                if (sortColumn === 'vendor') cmp = (a.vendor?.displayName || '').localeCompare(b.vendor?.displayName || '');
+                else if (sortColumn === 'location') cmp = (a.location?.name || '').localeCompare(b.location?.name || '');
+                else if (sortColumn === 'status') cmp = a.status.localeCompare(b.status);
+                else cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                return sortDir === 'asc' ? cmp : -cmp;
               });
 
               if (filtered.length === 0) return (
@@ -293,10 +302,10 @@ export default function ReportsPage() {
                       <thead>
                         <tr>
                           <th style={{ paddingLeft: '24px' }}>PO ID</th>
-                          <th>Vendor</th>
-                          <th>Location</th>
-                          <th>Status</th>
-                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Created</th>
+                          <th onClick={() => handleSort('vendor')} style={{ cursor: 'pointer', userSelect: 'none' }}>Vendor {sortColumn === 'vendor' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                          <th onClick={() => handleSort('location')} style={{ cursor: 'pointer', userSelect: 'none' }}>Location {sortColumn === 'location' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                          <th onClick={() => handleSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>Status {sortColumn === 'status' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                          <th onClick={() => handleSort('createdAt')} style={{ textAlign: 'right', paddingRight: '24px', cursor: 'pointer', userSelect: 'none' }}>Created {sortColumn === 'createdAt' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -329,9 +338,12 @@ export default function ReportsPage() {
                 if (q && !sr.location?.name?.toLowerCase().includes(q) && !sr.submittedBy?.toLowerCase().includes(q)) return false;
                 return true;
               }).sort((a, b) => {
-                return sortBy === 'date_desc'
-                  ? new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-                  : new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
+                let cmp = 0;
+                if (sortColumn === 'location') cmp = (a.location?.name || '').localeCompare(b.location?.name || '');
+                else if (sortColumn === 'submittedBy') cmp = (a.submittedBy || '').localeCompare(b.submittedBy || '');
+                else if (sortColumn === 'status') cmp = (a.isCompleted ? 1 : 0) - (b.isCompleted ? 1 : 0);
+                else cmp = new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
+                return sortDir === 'asc' ? cmp : -cmp;
               });
 
               if (filtered.length === 0) return (
@@ -398,10 +410,10 @@ export default function ReportsPage() {
                       <thead>
                         <tr>
                           <th style={{ paddingLeft: '24px' }}>Record ID</th>
-                          <th>Store Location</th>
-                          <th>Submitted By</th>
-                          <th>Status</th>
-                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Timestamp</th>
+                          <th onClick={() => handleSort('location')} style={{ cursor: 'pointer', userSelect: 'none' }}>Store Location {sortColumn === 'location' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                          <th onClick={() => handleSort('submittedBy')} style={{ cursor: 'pointer', userSelect: 'none' }}>Submitted By {sortColumn === 'submittedBy' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                          <th onClick={() => handleSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>Status {sortColumn === 'status' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                          <th onClick={() => handleSort('submittedAt')} style={{ textAlign: 'right', paddingRight: '24px', cursor: 'pointer', userSelect: 'none' }}>Timestamp {sortColumn === 'submittedAt' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         </tr>
                       </thead>
                       <tbody>
