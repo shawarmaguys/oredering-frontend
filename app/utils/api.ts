@@ -10,6 +10,7 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
   };
 
   const response = await fetch(`${API_URL}/v1${path}`, {
+    cache: 'no-store',
     ...options,
     headers,
   });
