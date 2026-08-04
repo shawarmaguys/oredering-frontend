@@ -396,7 +396,9 @@ export default function PODetailsPage() {
                           {!isManager && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px 16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                               <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
-                              <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
+                              {user?.role === 'ADMIN' && (
+                                <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
+                              )}
                               <div>Par: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
                               <div>Suggested PO: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
                             </div>
