@@ -23,6 +23,9 @@ interface POItem {
     baseUnitName: string;
     displayUnitName: string;
     multiplier: number;
+    productCode?: string;
+    note?: string;
+    spanishName?: string;
   };
 }
 
@@ -32,13 +35,23 @@ interface PurchaseOrder {
   vendor?: {
     displayName: string;
     email?: string;
+    address1?: string;
+    address2?: string;
+    address3?: string;
+    phone?: string;
   };
   locationId: string;
   location?: {
     name: string;
+    address?: string;
+    email?: string;
+    phone?: string;
   };
   status: string;
   createdAt: string;
+  approvedAt?: string;
+  createdBy?: string;
+  approvedBy?: string;
   notes?: string;
   pdfUrl?: string;
   emailsSent?: string;
@@ -46,6 +59,7 @@ interface PurchaseOrder {
   approver?: {
     fullName: string;
     email: string;
+    role?: string;
   };
 }
 
@@ -63,6 +77,7 @@ export default function PODetailsPage() {
 
   // Editable purchase order quantities state
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
+  const [isEditingDraft, setIsEditingDraft] = useState(false);
 
   // Modals state
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
@@ -133,6 +148,7 @@ export default function PODetailsPage() {
         items: payloadItems
       });
       await fetchPODetails();
+      setIsEditingDraft(false);
     } catch (err: any) {
       setError(err.message || 'Failed to update purchase order.');
     } finally {
@@ -167,9 +183,13 @@ export default function PODetailsPage() {
 
       const approved = await api.purchaseOrders.approve(po.id);
 
-      const poIdShort = approved.id.slice(0, 8);
+      const poIdShort = approved.id.slice(0, 8).toUpperCase();
       const locationName = approved.location?.name || 'Store';
-      const vendorEmails = (approved.vendor?.email || '').split(',').map((e: string) => e.trim()).filter((e: string) => e.length > 0);
+      const vendorEmails = (approved.vendor?.email || '')
+        .split(',')
+        .map((e: string) => e.trim())
+        .filter((e: string) => e.length > 0);
+
       setSendEmailState({
         isOpen: true,
         poId: approved.id,
@@ -193,9 +213,13 @@ export default function PODetailsPage() {
 
   const handleTriggerSendEmail = () => {
     if (!po) return;
-    const poIdShort = po.id.slice(0, 8);
+    const poIdShort = po.id.slice(0, 8).toUpperCase();
     const locationName = po.location?.name || 'Store';
-    const vendorEmails = (po.vendor?.email || '').split(',').map((e: string) => e.trim()).filter((e: string) => e.length > 0);
+    const vendorEmails = (po.vendor?.email || '')
+      .split(',')
+      .map((e: string) => e.trim())
+      .filter((e: string) => e.length > 0);
+
     setSendEmailState({
       isOpen: true,
       poId: po.id,
@@ -244,264 +268,790 @@ export default function PODetailsPage() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const pdfDownloadUrl = po ? api.purchaseOrders.getPdfUrl(po.id) : '#';
+
+  const isDraft = po?.status === 'DRAFT';
+  const activeItems = (po?.items || []).filter(item => {
+    if (isDraft) return true;
+    return Number(item.quantity || 0) > 0;
+  });
+
+  const totalUnits = activeItems.reduce((acc, item) => {
+    const qty = isDraft ? (editedQuantities[item.itemId] ?? Number(item.quantity)) : Number(item.quantity);
+    return acc + Number(qty || 0);
+  }, 0);
+
+  const shortPoId = po?.id ? po.id.slice(0, 8).toUpperCase() : 'N/A';
+  const vendorAddressParts = [po?.vendor?.address1, po?.vendor?.address2, po?.vendor?.address3].filter(Boolean);
+
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '840px', margin: '0 auto' }}>
-        {/* Navigation Breadcrumbs */}
-        <div className="breadcrumb">
-          <Link href="/dashboard">Dashboard</Link>
-          <span className="breadcrumb-sep">/</span>
-          <Link href="/dashboard/admin/reports">Purchase Orders and Stock records</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Purchase Order</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '920px', margin: '0 auto' }}>
+        {/* Navigation Breadcrumbs & Actions Bar (Hidden on Print) */}
+        <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="breadcrumb" style={{ margin: 0 }}>
+            <Link href="/dashboard">Dashboard</Link>
+            <span className="breadcrumb-sep">/</span>
+            <Link href="/dashboard/admin/reports">Purchase Orders</Link>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-current">PO #{shortPoId}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Back to Reports
+            </Link>
+
+            {po && (
+              <>
+
+
+                <a
+                  href={pdfDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-secondary btn-sm"
+                  title="Open or download official PDF"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Official PDF
+                </a>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Back Link */}
-        {/* <div style={{ alignSelf: 'flex-start' }}>
-          <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-            ← Back to Purchase Orders and Stock records
-          </Link>
-        </div> */}
-
+        {/* Loading State */}
         {loading ? (
-          <div className="card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div className="skeleton" style={{ height: '32px', width: '30%' }} />
-            <div className="skeleton" style={{ height: '16px', width: '100%' }} />
-            <div className="skeleton" style={{ height: '16px', width: '80%' }} />
+          <div className="card" style={{ padding: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            <div className="skeleton" style={{ height: '36px', width: '40%' }} />
+            <div className="skeleton" style={{ height: '18px', width: '75%' }} />
+            <div className="skeleton" style={{ height: '240px', width: '100%' }} />
           </div>
         ) : error && !po ? (
-          <div className="card" style={{ padding: '24px', border: '1px solid var(--red-border)', backgroundColor: 'var(--red-subtle)', color: 'var(--red)' }}>
+          <div className="card" style={{ padding: '24px', border: '1px solid var(--danger-border)', backgroundColor: 'var(--danger-subtle)', color: 'var(--danger)' }}>
             ⚠️ {error}
           </div>
         ) : po ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header Card */}
-            <div className="card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderTop: '3px solid var(--accent)' }}>
-              <div>
-                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>PO ID: {po.id}</span>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0 8px 0' }}>
-                  {po.vendor?.displayName || 'Supplier Wholesaler'}
-                </h1>
-
-                <div style={{ display: 'flex', gap: '24px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                  <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>Location: </span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{po.location?.name}</strong>
+          <>
+            {/* Top Status & Controls Notification (Hidden on Print) */}
+            <div
+              className="no-print"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                padding: '12px 18px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: isDraft ? 'rgba(217, 119, 6, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                border: `1px solid ${isDraft ? 'rgba(217, 119, 6, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    backgroundColor: isDraft ? '#d97706' : '#10b981',
+                    color: '#fff',
+                    fontSize: '0.875rem',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {isDraft ? '📝' : '✓'}
+                </span>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Purchase Order Status: <strong style={{ color: isDraft ? '#d97706' : '#10b981' }}>{po.status}</strong>
                   </div>
-                  <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>Date: </span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{new Date(po.createdAt).toLocaleDateString()}</strong>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {isDraft
+                      ? 'Review and adjust line item quantities before approving.'
+                      : po.approvedBy || po.approver
+                        ? `Approved by ${po.approver?.fullName || po.approvedBy || 'Manager'}${po.approvedAt ? ` on ${new Date(po.approvedAt).toLocaleDateString()}` : ''}`
+                        : 'Completed & verified purchase order document.'}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Stage / Status</span>
-                <span className={`badge ${po.status === 'SENT' ? 'badge-success' :
-                  po.status === 'GENERATED' ? 'badge-success' :
-                    po.status === 'APPROVED' ? 'badge-success' :
-                      'badge-amber'
-                  }`} style={{ fontSize: '0.875rem', padding: '6px 12px' }}>
-                  <span className="badge-dot" />
-                  {po.status}
-                </span>
-                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                  "{po.notes}"
-                </span>
-              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {isDraft && (
+                  <>
+                    {isModified && (
+                      <button
+                        onClick={handleSaveDraft}
+                        disabled={actionLoading}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '8px 16px' }}
+                      >
+                        💾 {actionLoading ? 'Saving...' : 'Save Draft'}
+                      </button>
+                    )}
 
+                    <button
+                      onClick={handleApproveClick}
+                      disabled={actionLoading}
+                      className="btn btn-primary btn-sm"
+                      style={{ padding: '8px 20px', backgroundColor: '#C0212F', borderColor: '#C0212F' }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      {actionLoading ? 'Approving...' : isModified ? 'Save & Approve PO' : 'Approve Purchase Order'}
+                    </button>
+                  </>
+                )}
+
+                {!isDraft && (
+                  <button
+                    onClick={handleTriggerSendEmail}
+                    disabled={actionLoading}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      backgroundColor: 'var(--accent-subtle)',
+                      borderColor: 'var(--accent-border)',
+                      color: 'var(--accent)',
+                      padding: '8px 16px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✉️ {po.emailsSent ? 'Re-email Supplier' : 'Email Order to Supplier'}
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* Dispatched Notification Card */}
             {po.emailsSent && (
-              <div className="card" style={{ padding: '16px 20px', borderLeft: '3px solid var(--green)', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  ✉️ Dispatched Recipients
-                </span>
-                <span>This purchase order was emailed to: <strong>{po.emailsSent}</strong></span>
+              <div
+                className="no-print card"
+                style={{
+                  padding: '14px 20px',
+                  borderLeft: '4px solid #10b981',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'var(--bg-surface)',
+                }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>📬</span>
+                <div>
+                  <strong style={{ color: 'var(--text-primary)' }}>Dispatched to Supplier:</strong>
+                  <span style={{ color: 'var(--text-secondary)', marginLeft: '6px' }}>{po.emailsSent}</span>
+                </div>
               </div>
             )}
 
-            {/* Error Banner */}
+            {/* Error Notification */}
             {error && (
-              <div style={{ fontSize: '0.8125rem', color: 'var(--red)', backgroundColor: 'var(--red-subtle)', border: '1px solid var(--red-border)', padding: '10px 14px', borderRadius: 'var(--radius-sm)' }}>
+              <div
+                className="no-print"
+                style={{
+                  fontSize: '0.8125rem',
+                  color: 'var(--danger)',
+                  backgroundColor: 'var(--danger-subtle)',
+                  border: '1px solid var(--danger-border)',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                }}
+              >
                 ⚠️ {error}
               </div>
             )}
 
-            {/* Main PO Items Grid */}
-            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-                Ordered Items Breakdown
-              </h3> */}
+            {/* ========================================================================= */}
+            {/* REALISTIC PHYSICAL PURCHASE ORDER DOCUMENT SHEET (MATCHES PDF EXACTLY)   */}
+            {/* ========================================================================= */}
+            <div
+              className="po-document-sheet"
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#1f2937',
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+                overflow: 'hidden',
+                position: 'relative',
+                margin: '0 auto',
+                width: '100%',
+                maxWidth: '860px',
+                fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+              }}
+            >
+              {/* Top Crimson Red Accent Bar */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '12px',
+                  backgroundColor: '#C0212F',
+                }}
+              />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} className="flex-1 max-h-[400px] overflow-y-auto pr-1">
-                {po.items?.length === 0 ? (
-                  <p style={{ fontStyle: 'italic', color: 'var(--text-tertiary)', fontSize: '0.875rem', textAlign: 'center', paddingTop: '24px', paddingBottom: '24px' }}>
-                    No items in this purchase order.
-                  </p>
-                ) : (
-                  po.items.map((item) => {
-                    const displayUnit = item.item?.displayUnitName;
-                    const baseUnit = item.item?.baseUnitName;
-                    if (!baseUnit) {
-                      return (
-                        <div key={item.id} style={{ padding: '16px', backgroundColor: 'var(--bg-sunken)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)' }}>
-                          <strong style={{ fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                            {item.item?.displayName || 'Item'}
-                          </strong>
-                          <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                            ⚠️ Base unit information is missing for this item.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    let countedStr = '';
-                    if (baseUnit) {
-                      if (displayUnit) {
-                        countedStr = `${Number(item.secondaryQuantity).toFixed(0)} ${displayUnit} + ${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
-                      } else {
-                        countedStr = `${Number(item.basicQuantity).toFixed(1)} ${baseUnit}`;
-                      }
-                    }
-                    else {
-                      countedStr = `N/A`;
-                    }
-
-                    return (
-                      <div
-                        key={item.id}
+              <div style={{ padding: '36px 44px 44px 44px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {/* Document Header Section */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+                  {/* Brand & Logo */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '10px',
+                        backgroundColor: '#C0212F',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '1.25rem',
+                        letterSpacing: '-0.03em',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 4px rgba(192, 33, 47, 0.25)',
+                      }}
+                    >
+                      SG
+                    </div>
+                    <div>
+                      <h2
                         style={{
-                          padding: '16px',
-                          backgroundColor: 'var(--bg-sunken)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-lg)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: '24px',
-                          flexWrap: 'wrap'
+                          margin: 0,
+                          fontSize: '1.375rem',
+                          fontWeight: 800,
+                          color: '#C0212F',
+                          letterSpacing: '-0.02em',
+                          lineHeight: 1.1,
                         }}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '240px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <strong style={{ fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                              {item.item?.displayName || 'Item'}
-                            </strong>
-                            <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>
-                              Unit: {displayUnit || baseUnit}
-                            </span>
-                          </div>
-
-                          {!isManager && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px 16px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              <div>Counted: <strong style={{ color: 'var(--text-primary)' }}>{countedStr}</strong></div>
-                              {user?.role === 'ADMIN' && (
-                                <div>Normalized: <strong style={{ color: 'var(--text-primary)' }}>{item.normalizedQuantity !== null ? `${item.normalizedQuantity}` : 'N/A'}</strong></div>
-                              )}
-                              <div>Par: <strong style={{ color: 'var(--text-primary)' }}>{item.parLevel !== null ? `${item.parLevel}` : 'N/A'}</strong></div>
-                              <div>Suggested PO: <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.suggestedQuantity !== null ? `${item.suggestedQuantity}` : 'N/A'}</strong></div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '20px' }}>
-                          {po.status === 'DRAFT' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Order Qty</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={editedQuantities[item.itemId] ?? Number(item.quantity)}
-                                onChange={(e) => handleQtyChange(item.itemId, parseFloat(e.target.value) || 0)}
-                                style={{
-                                  width: '100px',
-                                  padding: '8px 12px',
-                                  fontSize: '0.875rem',
-                                  backgroundColor: 'var(--bg-elevated)',
-                                  color: 'var(--text-primary)',
-                                  border: '1px solid var(--border-subtle)',
-                                  borderRadius: 'var(--radius-md)',
-                                  outline: 'none',
-                                  fontWeight: 'bold',
-                                  textAlign: 'center'
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Ordered Qty</span>
-                              <strong style={{ fontSize: '1.125rem', color: 'var(--green)' }}>{item.quantity} {displayUnit}</strong>
-                            </div>
-                          )}
-                        </div>
+                        SHAWARMA GUYS
+                      </h2>
+                      <div
+                        style={{
+                          fontSize: '0.625rem',
+                          fontWeight: 600,
+                          color: '#6b7280',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          marginTop: '4px',
+                        }}
+                      >
+                        AUTOMATED INVENTORY AUDIT CONTROL SYSTEM
                       </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Action Toolbar */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '20px', marginTop: '12px' }}>
-                {po.status === 'DRAFT' && (
-                  <button
-                    onClick={handleApproveClick}
-                    disabled={actionLoading}
-                    className="btn btn-primary"
-                    style={{ padding: '10px 24px' }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 18, height: 18, marginRight: 4 }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
-                    </svg>
-                    {actionLoading ? 'Approving...' : (isModified ? 'Save & Approve Purchase Order' : 'Approve Purchase Order')}
-                  </button>
-                )}
-
-                {po.status !== 'DRAFT' && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '0.8125rem',
-                    color: '#047857',
-                    backgroundColor: '#ecfdf5',
-                    border: '1px solid #10b981',
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-md)',
-                    fontWeight: 600
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 16, height: 16, color: '#10b981' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.068-1.593 3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12z" />
-                    </svg>
-                    <span>Already approved by: <strong>{po.approver?.fullName || 'Manager'}</strong></span>
+                    </div>
                   </div>
-                )}
 
-                {po.status !== 'DRAFT' && (
-                  <button
-                    onClick={handleTriggerSendEmail}
-                    disabled={actionLoading}
-                    className="btn btn-secondary"
-                    style={{ backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent)', padding: '10px 20px' }}
-                  >
-                    ✉️ Email Order to Supplier
-                  </button>
-                )}
+                  {/* Document Title & Status on the Right */}
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                    <div
+                      style={{
+                        fontSize: '1.25rem',
+                        fontWeight: 800,
+                        color: '#111827',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      PURCHASE ORDER
+                    </div>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        fontSize: '0.6875rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        backgroundColor: isDraft ? '#fffbeb' : '#ecfdf5',
+                        color: isDraft ? '#b45309' : '#047857',
+                        border: `1px solid ${isDraft ? '#fde68a' : '#a7f3d0'}`,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          backgroundColor: 'currentColor',
+                        }}
+                      />
+                      {po.status}
+                    </span>
+                  </div>
+                </div>
 
-                {po.pdfUrl && (
-                  <a
-                    href={po.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-secondary"
-                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '10px 20px' }}
+                {/* Accent Separator Line */}
+                <div
+                  style={{
+                    width: '100%',
+                    height: '2px',
+                    backgroundColor: '#E03E4B',
+                    margin: '0',
+                  }}
+                />
+
+                {/* Two-Column Address Grid (FROM / TO) */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                    gap: '32px',
+                    padding: '8px 0',
+                  }}
+                >
+                  {/* Left Column: FROM (Location / Store) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        color: '#C0212F',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      FROM:
+                    </div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827' }}>
+                      {po.location?.name || 'Shawarma Guys Store'}
+                    </div>
+                    {po.location?.address && (
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563', lineHeight: 1.4 }}>
+                        {po.location.address}
+                      </div>
+                    )}
+                    {po.location?.phone && (
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
+                        <span style={{ color: '#9ca3af' }}>Phone:</span> {po.location.phone}
+                      </div>
+                    )}
+                    {po.location?.email && (
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
+                        <span style={{ color: '#9ca3af' }}>Email:</span> {po.location.email}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: TO (Vendor / Supplier) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        color: '#C0212F',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      TO:
+                    </div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827' }}>
+                      {po.vendor?.displayName || 'Supplier Wholesaler'}
+                    </div>
+                    {vendorAddressParts.length > 0 && (
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563', lineHeight: 1.4, whiteSpace: 'pre-line' }}>
+                        {vendorAddressParts.join('\n')}
+                      </div>
+                    )}
+                    {po.vendor?.phone && (
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
+                        <span style={{ color: '#9ca3af' }}>Phone:</span> {po.vendor.phone}
+                      </div>
+                    )}
+                    {po.vendor?.email && (
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
+                        <span style={{ color: '#9ca3af' }}>Email:</span> {po.vendor.email}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Divider Line */}
+                <div style={{ width: '100%', height: '1px', backgroundColor: '#e5e7eb' }} />
+
+                {/* Metadata Grid (4-Column Info Card) */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '16px',
+                    padding: '14px 18px',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '8px',
+                    border: '1px solid #f3f4f6',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      PO ID:
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', fontFamily: 'monospace', marginTop: '2px' }}>
+                      #{shortPoId}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Date Generated:
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', marginTop: '2px' }}>
+                      {po.createdAt ? new Date(po.createdAt).toLocaleDateString() : 'N/A'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Created By:
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', marginTop: '2px' }}>
+                      {po.createdBy || 'System'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Approved By:
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: po.approver || po.approvedBy ? '#047857' : '#9ca3af', marginTop: '2px' }}>
+                      {po.approver?.fullName || po.approvedBy || (isDraft ? 'Pending Approval' : 'Manager')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ordered Items Table (Matches PDF layout exactly) */}
+                <div>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: '0.875rem',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                    }}
                   >
-                    📄 View Order PDF
-                  </a>
-                )}
+                    <thead>
+                      <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                        <th
+                          style={{
+                            padding: '10px 14px',
+                            textAlign: 'left',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#1f2937',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            width: '20%',
+                            borderRight: '1px solid #e5e7eb',
+                          }}
+                        >
+                          Product Code
+                        </th>
+                        <th
+                          style={{
+                            padding: '10px 14px',
+                            textAlign: 'left',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#1f2937',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            width: '45%',
+                            borderRight: '1px solid #e5e7eb',
+                          }}
+                        >
+                          Item Name
+                        </th>
+                        <th
+                          style={{
+                            padding: '10px 14px',
+                            textAlign: 'left',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#1f2937',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            width: '18%',
+                            borderRight: '1px solid #e5e7eb',
+                          }}
+                        >
+                          Ordering Unit
+                        </th>
+                        <th
+                          style={{
+                            padding: '10px 14px',
+                            textAlign: 'right',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#1f2937',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            width: '17%',
+                          }}
+                        >
+                          Order Quantity
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic' }}>
+                            No items included in this purchase order.
+                          </td>
+                        </tr>
+                      ) : (
+                        activeItems.map((poItem, idx) => {
+                          const item = poItem.item;
+                          const code = item?.productCode || 'N/A';
+                          const name = item?.displayName || 'Unknown Item';
+                          const unit = poItem.unitName || item?.displayUnitName || item?.baseUnitName || '';
+                          const isAlt = idx % 2 === 1;
+
+                          const currentQty = isDraft
+                            ? editedQuantities[poItem.itemId] ?? Number(poItem.quantity)
+                            : Number(poItem.quantity);
+
+                          return (
+                            <tr
+                              key={poItem.id}
+                              style={{
+                                backgroundColor: isAlt ? '#fafafa' : '#ffffff',
+                                borderBottom: '1px solid #e5e7eb',
+                              }}
+                            >
+                              {/* Product Code */}
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  fontSize: '0.8125rem',
+                                  color: '#4b5563',
+                                  fontFamily: 'monospace',
+                                  borderRight: '1px solid #e5e7eb',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                {code}
+                              </td>
+
+                              {/* Item Name */}
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  color: '#111827',
+                                  fontWeight: 600,
+                                  borderRight: '1px solid #e5e7eb',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                <div>{name}</div>
+                                {item?.spanishName && (
+                                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>
+                                    {item.spanishName}
+                                  </div>
+                                )}
+                                {item?.note && (
+                                  <div style={{ fontSize: '0.6875rem', color: '#9ca3af', fontWeight: 400 }}>
+                                    {item.note}
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Ordering Unit */}
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  fontSize: '0.8125rem',
+                                  color: '#4b5563',
+                                  borderRight: '1px solid #e5e7eb',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: 'inline-block',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#f3f4f6',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    color: '#374151',
+                                  }}
+                                >
+                                  {unit}
+                                </span>
+                              </td>
+
+                              {/* Order Quantity */}
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  textAlign: 'right',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                {isDraft ? (
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      className="no-print"
+                                      onClick={() => handleQtyChange(poItem.itemId, Math.max(0, currentQty - 1))}
+                                      style={{
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '4px',
+                                        border: '1px solid #d1d5db',
+                                        backgroundColor: '#ffffff',
+                                        color: '#374151',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.875rem',
+                                      }}
+                                    >
+                                      -
+                                    </button>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={currentQty}
+                                      onChange={(e) => handleQtyChange(poItem.itemId, parseFloat(e.target.value) || 0)}
+                                      style={{
+                                        width: '65px',
+                                        padding: '4px 6px',
+                                        textAlign: 'center',
+                                        fontWeight: 700,
+                                        fontSize: '0.9375rem',
+                                        color: '#111827',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#ffffff',
+                                        outline: 'none',
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      className="no-print"
+                                      onClick={() => handleQtyChange(poItem.itemId, currentQty + 1)}
+                                      style={{
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '4px',
+                                        border: '1px solid #d1d5db',
+                                        backgroundColor: '#ffffff',
+                                        color: '#374151',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.875rem',
+                                      }}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span
+                                    style={{
+                                      fontSize: '1rem',
+                                      fontWeight: 800,
+                                      color: '#111827',
+                                      letterSpacing: '-0.02em',
+                                    }}
+                                  >
+                                    {Number(poItem.quantity || 0).toFixed(0)}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+
+                    {/* Table Footer Total */}
+                    <tfoot>
+                      <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #e5e7eb' }}>
+                        <td colSpan={2} style={{ padding: '10px 14px', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+                          Total Line Items: {activeItems.length}
+                        </td>
+                        <td style={{ padding: '10px 14px', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+                          Total Quantity:
+                        </td>
+                        <td style={{ padding: '10px 14px', textAlign: 'right', fontSize: '1rem', fontWeight: 800, color: '#C0212F' }}>
+                          {totalUnits.toFixed(0)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Notes / Dispatch Instructions Section (Matches PDF Notes Box) */}
+                {po.notes ? (
+                  <div
+                    style={{
+                      padding: '16px 20px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#111827' }}>
+                      Notes / Dispatch Instructions:
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: '#4b5563', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                      {po.notes}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Document Legal Footer (Matches PDF Footer exactly) */}
+                <div
+                  style={{
+                    textAlign: 'center',
+                    paddingTop: '20px',
+                    borderTop: '1px solid #f3f4f6',
+                    fontSize: '0.75rem',
+                    color: '#9ca3af',
+                    fontStyle: 'italic',
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  This purchase order is generated electronically and represents an official ordering commitment.
+                </div>
               </div>
             </div>
-          </div>
+          </>
         ) : null}
 
         {/* Approve Confirmation Modal */}
@@ -513,40 +1063,44 @@ export default function PODetailsPage() {
           onCancel={() => setApproveConfirmOpen(false)}
         />
 
-
         {/* Send Purchase Order Email Modal */}
         {sendEmailState && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '16px'
-          }}>
-            <div className="card" style={{
-              width: '100%',
-              maxWidth: '520px',
-              padding: '24px',
-              backgroundColor: 'var(--bg-elevated)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-xl)',
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              backdropFilter: 'blur(6px)',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '16px'
-            }}>
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '16px',
+            }}
+          >
+            <div
+              className="card"
+              style={{
+                width: '100%',
+                maxWidth: '520px',
+                padding: '24px',
+                backgroundColor: 'var(--bg-elevated)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-xl)',
+                boxShadow: 'var(--shadow-modal)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+              }}
+            >
               <div>
                 <h3 style={{ margin: '0 0 4px 0', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Email Purchase Order
                 </h3>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
                   Send official PDF purchase order to <strong>{sendEmailState.vendorName}</strong>.
                 </p>
               </div>
@@ -557,7 +1111,7 @@ export default function PODetailsPage() {
 
                   {sendEmailState.vendorEmails.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Vendor Emails:</span>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Vendor Default Emails:</span>
                       {sendEmailState.vendorEmails.map(email => (
                         <label key={email} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
                           <input
@@ -594,12 +1148,10 @@ export default function PODetailsPage() {
                       color: 'var(--text-primary)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: 'var(--radius-md)',
-                      outline: 'none'
+                      outline: 'none',
                     }}
                   />
                 </div>
-
-
 
                 {/* PDF Custom Note */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -621,10 +1173,9 @@ export default function PODetailsPage() {
                       borderRadius: 'var(--radius-md)',
                       outline: 'none',
                       resize: 'vertical',
-                      fontFamily: 'inherit'
+                      fontFamily: 'inherit',
                     }}
                   />
-
                 </div>
               </div>
 
@@ -641,7 +1192,7 @@ export default function PODetailsPage() {
                   onClick={handleSendEmail}
                   disabled={actionLoading}
                   className="btn btn-primary"
-                  style={{ padding: '8px 20px' }}
+                  style={{ padding: '8px 20px', backgroundColor: '#C0212F', borderColor: '#C0212F' }}
                 >
                   {actionLoading ? 'Sending...' : '✉️ Send Purchase Order'}
                 </button>
@@ -650,6 +1201,36 @@ export default function PODetailsPage() {
           </div>
         )}
       </div>
+
+      {/* Print Styles for High-Quality Physical PO Printing */}
+      <style jsx global>{`
+        @media print {
+          .no-print,
+          nav,
+          header,
+          .navbar,
+          .breadcrumb,
+          button,
+          aside {
+            display: none !important;
+          }
+          body,
+          main,
+          #__next {
+            background-color: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .po-document-sheet {
+            box-shadow: none !important;
+            border: none !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+        }
+      `}</style>
     </AdminGuard>
   );
 }

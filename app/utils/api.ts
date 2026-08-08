@@ -123,7 +123,12 @@ export const api = {
     create: (data: any) => request<any>('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/purchase-orders/${id}`, { method: 'POST', body: JSON.stringify(data) }),
     approve: (id: string) => request<any>(`/purchase-orders/${id}/approve`, { method: 'POST' }),
-    send: (id: string, data: { emails: string[]; subject?: string; body?: string; notes?: string }) => 
+    send: (id: string, data: { emails: string[]; subject?: string; body?: string; notes?: string }) =>
       request<any>(`/purchase-orders/${id}/send`, { method: 'POST', body: JSON.stringify(data) }),
+    getPdfUrl: (id: string) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+      return `${API_URL}/v1/purchase-orders/${id}/pdf${tokenParam}`;
+    },
   },
 };
