@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
@@ -79,15 +80,22 @@ export default function ItemsPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <AdminGuard>
-      <div className="page-content animate-fade-up">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Navigation Breadcrumbs */}
+        <div className="breadcrumb">
+          <Link href="/dashboard">Dashboard</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span className="breadcrumb-current">Product Catalog</span>
+        </div>
+
         {/* Header */}
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h1 className="page-title">Product Catalog</h1>
-            <p className="page-subtitle">Manage and organize your full product SKU library with vendor assignments and unit conversions.</p>
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1>Product Catalog</h1>
+            <p>Manage and organize your full product SKU library with vendor assignments and unit conversions.</p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)} style={{ flexShrink: 0 }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 14, height: 14 }}>
+          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             New Product

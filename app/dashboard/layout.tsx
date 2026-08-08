@@ -39,9 +39,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <div className="navbar-sep" />
               <span className="navbar-context">{t('stock_count_audit')}</span>
             </div>
-            <div className="navbar-actions">
+            {/* <div className="navbar-actions">
               <LanguageSwitcher />
-            </div>
+            </div> */}
           </div>
         </nav>
         <main style={{ flex: 1, overflow: 'auto', width: '100%' }}>
@@ -75,7 +75,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Right side */}
           <div className="navbar-actions">
             {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* <LanguageSwitcher /> */}
 
             {/* User info — hidden on mobile */}
             <div className="hidden sm:block" style={{ textAlign: 'right', marginLeft: '6px' }}>
