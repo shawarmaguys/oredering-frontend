@@ -5,24 +5,14 @@ import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { useLocations, StoreLocation } from '../../../context/LocationsContext';
 
-interface Location {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  slackBotToken?: string;
-  slackUserToken?: string;
-  createdAt: string;
-}
+// Location type is defined in LocationsContext as StoreLocation
 
 export default function LocationsPage() {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { locations, locationsLoading: loading, refreshLocations } = useLocations();
 
-  // View / filter / sort state
+  const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
   const [search, setSearch] = useState('');
   const [slackFilter, setSlackFilter] = useState<'all' | 'configured' | 'not-configured'>('all');
@@ -39,7 +29,7 @@ export default function LocationsPage() {
   const [showModal, setShowModal] = useState(false);
 
   // Edit Form State
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<StoreLocation | null>(null);
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -233,24 +223,12 @@ export default function LocationsPage() {
   };
 
   useEffect(() => {
-    fetchLocations();
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       setViewMode('tile');
     }
   }, []);
 
-  const fetchLocations = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.locations.list();
-      setLocations(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load locations.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Removed local fetchLocations - data comes from LocationsContext
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,7 +244,7 @@ export default function LocationsPage() {
       setSlackBotToken('');
       setSlackUserToken('');
       setShowModal(false);
-      fetchLocations();
+      await refreshLocations();
     } catch (err: any) {
       setError(err.message || 'Failed to create location.');
     } finally {
@@ -291,7 +269,7 @@ export default function LocationsPage() {
       });
       setShowEditModal(false);
       setSelectedLocation(null);
-      fetchLocations();
+      await refreshLocations();
     } catch (err: any) {
       setError(err.message || 'Failed to update location.');
     } finally {

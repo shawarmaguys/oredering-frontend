@@ -5,38 +5,14 @@ import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { useVendors, Vendor } from '../../../context/VendorsContext';
 
-interface Vendor {
-  id: string;
-  displayName: string;
-  channelName?: string;
-  email?: string;
-  address1?: string;
-  address2?: string;
-  address3?: string;
-  phone?: string;
-  departmentId: string;
-  department?: {
-    id: string;
-    code: string;
-    fullName: string;
-  };
-  createdAt: string;
-}
-
-interface Department {
-  id: string;
-  code: string;
-  fullName: string;
-}
+// Vendor and Department types are imported from VendorsContext
 
 export default function VendorsPage() {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { vendors, departments, vendorsLoading: loading, refreshVendors } = useVendors();
 
-  // Onboard (Create) Form State
+  const [error, setError] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [channelName, setChannelName] = useState('');
   const [email, setEmail] = useState('');
@@ -73,32 +49,7 @@ export default function VendorsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  useEffect(() => {
-    fetchInitialData();
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      setViewMode('tile');
-    }
-  }, []);
-
-  const fetchInitialData = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [vendorsData, deptsData] = await Promise.all([
-        api.vendors.list(),
-        api.vendors.departments(),
-      ]);
-      setVendors(vendorsData);
-      setDepartments(deptsData);
-      if (deptsData.length > 0) {
-        setDepartmentId(deptsData[0].id);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load initial vendor data.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Removed local fetchInitialData - data comes from VendorsContext
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,10 +81,7 @@ export default function VendorsPage() {
       }
 
       setShowModal(false);
-
-      // Re-fetch list
-      const vendorsData = await api.vendors.list();
-      setVendors(vendorsData);
+      await refreshVendors();
     } catch (err: any) {
       setError(err.message || 'Failed to onboard vendor.');
     } finally {
@@ -161,10 +109,7 @@ export default function VendorsPage() {
 
       setShowEditModal(false);
       setSelectedVendor(null);
-
-      // Re-fetch list
-      const vendorsData = await api.vendors.list();
-      setVendors(vendorsData);
+      await refreshVendors();
     } catch (err: any) {
       setError(err.message || 'Failed to update vendor.');
     } finally {
@@ -182,15 +127,12 @@ export default function VendorsPage() {
     const { id } = vendorToDelete;
     setDeleteConfirmOpen(false);
     setVendorToDelete(null);
-
-    setLoading(true);
     setError('');
     try {
       await api.vendors.delete(id);
-      fetchInitialData();
+      await refreshVendors();
     } catch (err: any) {
       setError(err.message || 'Failed to delete vendor.');
-      setLoading(false);
     }
   };
 

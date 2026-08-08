@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { useVendors } from '../../../context/VendorsContext';
+import { useItems } from '../../../context/ItemsContext';
 
 import { useItemsStore } from './useItemsStore';
 import { ItemsToolbar } from './ItemsToolbar';
@@ -14,7 +16,9 @@ import { CreateItemModal, EditItemModal } from './ItemFormModal';
 import type { Item, ViewMode } from './types';
 
 export default function ItemsPage() {
-  const store = useItemsStore();
+  const { vendors: contextVendors } = useVendors();
+  const { allItems, itemsReady, refreshAllItems } = useItems();
+  const store = useItemsStore(contextVendors, allItems, itemsReady);
   const {
     vendors, items, loading, error, setError,
     currentPage, totalItems, totalPages, setCurrentPage, PAGE_SIZE,
@@ -52,6 +56,7 @@ export default function ItemsPage() {
       const newPage = items.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
       setCurrentPage(newPage);
       refreshItems();
+      refreshAllItems();
     } catch (err: any) {
       setError(err.message || 'Failed to delete product.');
     }
@@ -62,12 +67,14 @@ export default function ItemsPage() {
     invalidateCache();
     setCurrentPage(1);
     refreshItems();
+    refreshAllItems();
   };
 
   const handleUpdated = () => {
     setEditItem(null);
     invalidateCache();
     refreshItems();
+    refreshAllItems();
   };
 
   // ─── Loading skeleton ──────────────────────────────────────────────────────

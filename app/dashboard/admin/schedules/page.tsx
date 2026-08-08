@@ -4,16 +4,11 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
+import { useVendors } from '../../../context/VendorsContext';
+import { useLocations } from '../../../context/LocationsContext';
+import { useSchedules } from '../../../context/SchedulesContext';
 
-interface Location {
-  id: string;
-  name: string;
-}
-
-interface Vendor {
-  id: string;
-  displayName: string;
-}
+// Location and Vendor types now come from shared contexts
 
 interface Schedule {
   id: string;
@@ -62,10 +57,10 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function SchedulesPage() {
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { vendors, vendorsLoading } = useVendors();
+  const { locations, locationsLoading } = useLocations();
+  const { schedules, schedulesLoading, refreshSchedules } = useSchedules();
+
   const [error, setError] = useState('');
 
   // Group Form State
@@ -98,54 +93,18 @@ export default function SchedulesPage() {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    fetchInitialData();
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       setViewMode('tile');
     }
   }, []);
 
-  const fetchInitialData = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [schedulesData, locationsData, vendorsData] = await Promise.all([
-        api.schedules.list(),
-        api.locations.list(),
-        api.vendors.list(),
-      ]);
-
-      const mappedSchedules = schedulesData.map((s: any) => ({
-        id: s.id,
-        locationId: s.locationId || s.location_id,
-        location: s.location,
-        vendorId: s.vendorId || s.vendor_id,
-        vendor: s.vendor,
-        scheduleType: s.scheduleType || s.schedule_type,
-        dayOfWeek: s.dayOfWeek !== undefined ? s.dayOfWeek : s.day_of_week,
-        triggerTime: s.triggerTime || s.trigger_time,
-        slackChannel: s.slackChannel || s.slack_channel,
-        isActive: s.isActive !== undefined ? s.isActive : s.is_active !== undefined ? s.is_active : true,
-        createdAt: s.createdAt || s.created_at,
-      }));
-
-      setSchedules(mappedSchedules);
-      setLocations(locationsData);
-      setVendors(vendorsData);
-
-      if (locationsData.length > 0 && !locationId) setLocationId(locationsData[0].id);
-      if (vendorsData.length > 0 && !vendorId) setVendorId(vendorsData[0].id);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load schedules.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // schedules data comes from SchedulesContext — no local fetch needed
 
   const handleOpenCreateModal = () => {
     setEditingGroup(null);
     setError('');
     const defaultLoc = locations[0]?.id || '';
-    const defaultVendor = vendors[0]?.id || '';
+    const defaultVendor = (vendors[0] as any)?.id || '';
     setLocationId(defaultLoc);
     setVendorId(defaultVendor);
     setGroupTriggers([
@@ -198,7 +157,7 @@ export default function SchedulesPage() {
       await Promise.all(group.items.map(s => api.schedules.delete(s.id)));
       setSuccessMessage('Schedules deleted successfully.');
       setTimeout(() => setSuccessMessage(''), 4000);
-      fetchInitialData();
+      await refreshSchedules();
     } catch (err: any) {
       setError(err.message || 'Failed to delete schedules.');
     }
@@ -276,7 +235,7 @@ export default function SchedulesPage() {
       setSuccessMessage('All schedule triggers saved successfully.');
       setTimeout(() => setSuccessMessage(''), 4000);
       setShowModal(false);
-      fetchInitialData();
+      await refreshSchedules();
     } catch (err: any) {
       setError(err.message || 'Failed to save schedule triggers.');
     } finally {
@@ -350,7 +309,7 @@ export default function SchedulesPage() {
         </div>
 
         {/* Schedules list */}
-        {loading ? (
+        {schedulesLoading ? (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',

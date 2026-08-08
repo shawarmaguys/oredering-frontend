@@ -5,21 +5,14 @@ import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { useUsers, User } from '../../../context/UsersContext';
+import { useLocations } from '../../../context/LocationsContext';
 
-interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  role: 'WORKER' | 'MANAGER' | 'ADMIN' | 'SUPER_MANAGER';
-  isActive: boolean;
-  createdAt: string;
-  locationIds?: string[];
-}
+// User type is imported from UsersContext
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [locationsList, setLocationsList] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { users, usersLoading: loading, refreshUsers } = useUsers();
+  const { locations: locationsList } = useLocations();
   const [error, setError] = useState('');
 
   // Form State
@@ -59,45 +52,12 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
-    fetchLocations();
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       setViewMode('tile');
     }
   }, []);
 
-  const fetchLocations = async () => {
-    try {
-      const data = await api.locations.list();
-      setLocationsList(data);
-    } catch (err: any) {
-      console.error('Failed to load locations:', err);
-    }
-  };
-
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.users.list();
-
-      const mapped = data.map((u: any) => ({
-        id: u.id,
-        fullName: u.full_name || u.fullName,
-        email: u.email,
-        role: u.role,
-        isActive: u.is_active !== undefined ? u.is_active : u.isActive !== undefined ? u.isActive : true,
-        createdAt: u.created_at || u.createdAt,
-        locationIds: u.locationIds || []
-      }));
-
-      setUsers(mapped);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load users.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Data comes from UsersContext and LocationsContext — no local fetches needed
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +73,7 @@ export default function UsersPage() {
         locationIds: selectedLocationIds
       });
 
-      // Reset
+      // Reset form
       setFullName('');
       setEmail('');
       setPassword('');
@@ -121,7 +81,7 @@ export default function UsersPage() {
       setSelectedLocationIds([]);
 
       setShowModal(false);
-      fetchUsers();
+      await refreshUsers();
     } catch (err: any) {
       setError(err.message || 'Failed to create user account.');
     } finally {
@@ -145,7 +105,7 @@ export default function UsersPage() {
       setShowEditModal(false);
       setSelectedUser(null);
       setSelectedLocationIds([]);
-      fetchUsers();
+      await refreshUsers();
     } catch (err: any) {
       setError(err.message || 'Failed to update user account.');
     } finally {
@@ -167,7 +127,7 @@ export default function UsersPage() {
     setError('');
     try {
       await api.users.delete(id);
-      fetchUsers();
+      await refreshUsers();
     } catch (err: any) {
       setError(err.message || 'Failed to deactivate user.');
     }

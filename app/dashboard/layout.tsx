@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
+import { ContextPrefetcher } from './components/ContextPrefetcher';
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
@@ -103,6 +104,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Page Body */}
       <main style={{ flex: 1, overflow: 'auto', width: '100%' }}>
+        {/* Kick off all context fetches in the background as soon as the dashboard mounts */}
+        <ContextPrefetcher />
         <div className="dashboard-body animate-fade-up">
           {children}
         </div>

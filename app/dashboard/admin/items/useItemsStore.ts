@@ -58,8 +58,12 @@ function applyClientFilter(
   return { data, total, totalPages, page: safePage };
 }
 
-export function useItemsStore() {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+export function useItemsStore(
+  contextVendors: Vendor[] = [],
+  contextAllItems: Item[] = [],
+  contextItemsReady = false,
+) {
+  const [vendors, setVendors] = useState<Vendor[]>(contextVendors);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -74,8 +78,8 @@ export function useItemsStore() {
   const [sortCol, setSortCol] = useState<SortColumn>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  // All-items cache: once populated, vendor/search changes are client-side
-  const allItemsCache = useRef<Item[] | null>(null);
+  // All-items cache: now seeded from ItemsContext and kept in sync
+  const allItemsCache = useRef<Item[] | null>(contextItemsReady ? contextAllItems : null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
 
@@ -162,7 +166,8 @@ export function useItemsStore() {
       setLoading(true);
       setError('');
       try {
-        const vendorsData = await api.vendors.list();
+        // Use vendors from context (already loaded globally), no extra fetch needed
+        const vendorsData = contextVendors.length > 0 ? contextVendors : await api.vendors.list();
         setVendors(vendorsData);
 
         const saved = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null;
@@ -175,26 +180,18 @@ export function useItemsStore() {
         }
 
         setVendorFilterState(initialFilter);
-        await fetchFromServer(initialFilter, 1, '');
 
-        // Background: fetch ALL items for full client-side cache
-        api.items
-          .list({ limit: ALL_LIMIT, page: 1 })
-          .then((res) => {
-            // If there are more pages, fetch them all
-            const fetches: Promise<any>[] = [];
-            for (let p = 2; p <= res.totalPages; p++) {
-              fetches.push(api.items.list({ limit: ALL_LIMIT, page: p }));
-            }
-            return Promise.all(fetches).then((rest) => {
-              allItemsCache.current = [
-                ...res.data,
-                ...rest.flatMap((r) => r.data),
-              ];
-            });
-          })
-          .catch(() => { /* silently ignore */ });
-
+        // If context cache is already ready, use it immediately (no server call)
+        if (contextItemsReady && contextAllItems.length > 0) {
+          allItemsCache.current = contextAllItems;
+          const result = applyClientFilter(contextAllItems, initialFilter, '', 1, 'name', 'asc');
+          setItems(result.data);
+          setTotalItems(result.total);
+          setTotalPages(result.totalPages);
+          setLoading(false);
+        } else {
+          await fetchFromServer(initialFilter, 1, '');
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load initial data.');
         setLoading(false);
@@ -203,6 +200,24 @@ export function useItemsStore() {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keep vendors in sync if context provides them after mount
+  useEffect(() => {
+    if (contextVendors.length > 0) {
+      setVendors(contextVendors);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextVendors.length]);
+
+  // Sync the global items cache into the local ref whenever ItemsContext resolves
+  useEffect(() => {
+    if (contextItemsReady && contextAllItems.length > 0) {
+      allItemsCache.current = contextAllItems;
+      // Re-apply current filter / page / search against the now-populated cache
+      applyFromCache(vendorFilter, currentPage, debouncedSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextItemsReady, contextAllItems.length]);
 
   // ----- React to filter / page / search changes -----
   useEffect(() => {
@@ -225,20 +240,8 @@ export function useItemsStore() {
   }, []);
 
   const refreshItems = useCallback(() => {
+    allItemsCache.current = null;
     loadItems(vendorFilter, currentPage, debouncedSearch);
-    // Rebuild background cache
-    api.items
-      .list({ limit: ALL_LIMIT, page: 1 })
-      .then((res) => {
-        const fetches: Promise<any>[] = [];
-        for (let p = 2; p <= res.totalPages; p++) {
-          fetches.push(api.items.list({ limit: ALL_LIMIT, page: p }));
-        }
-        return Promise.all(fetches).then((rest) => {
-          allItemsCache.current = [...res.data, ...rest.flatMap((r) => r.data)];
-        });
-      })
-      .catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendorFilter, currentPage, debouncedSearch, loadItems]);
 
