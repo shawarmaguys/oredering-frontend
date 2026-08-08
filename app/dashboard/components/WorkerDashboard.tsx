@@ -1,10 +1,9 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useLocationFilter } from '../../context/LocationFilterContext';
 
 interface StockRecordItem {
   id: string;
@@ -32,17 +31,15 @@ interface StockRecord {
 
 export default function WorkerDashboard() {
   const [records, setRecords] = useState<StockRecord[]>([]);
-  const [locations, setLocations] = useState<any[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { selectedLocationId, setSelectedLocationId, allowedLocations } = useLocationFilter();
 
   useEffect(() => {
     fetchRecords();
-    fetchLocations();
   }, [user]);
 
   const fetchRecords = async () => {
@@ -59,28 +56,16 @@ export default function WorkerDashboard() {
     }
   };
 
-  const fetchLocations = async () => {
-    try {
-      const data = await api.locations.list();
-      const filtered = user?.role === 'ADMIN' 
-        ? data 
-        : data.filter((loc: any) => user?.locationIds?.includes(loc.id));
-      
-      setLocations(filtered);
-      if (filtered.length > 0) {
-        setSelectedLocation(filtered[0].id);
-      }
-    } catch (err: any) {
-      console.error('Failed to load locations:', err);
-    }
-  };
-
   const handleStartSubmission = (recordId: string) => {
     router.push(`/dashboard?recordId=${recordId}`);
   };
 
-  const drafts = records.filter(r => !r.isCompleted && (!selectedLocation || r.locationId === selectedLocation));
-  const completed = records.filter(r => r.isCompleted && (!selectedLocation || r.locationId === selectedLocation));
+  const drafts = records.filter(
+    r => !r.isCompleted && (selectedLocationId === 'all' || r.locationId === selectedLocationId)
+  );
+  const completed = records.filter(
+    r => r.isCompleted && (selectedLocationId === 'all' || r.locationId === selectedLocationId)
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -100,38 +85,37 @@ export default function WorkerDashboard() {
         </div>
       )}
 
-      {/* Location Selector Card at the Top */}
-      <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-        <div>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{t('active_store_location')}</h3>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{t('filter_pending_audits')}</p>
-        </div>
-        <div style={{ width: '100%', maxWidth: '280px' }}>
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              fontSize: '0.875rem',
-              backgroundColor: 'var(--bg-sunken)',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            {locations.length === 0 ? (
-              <option value="">{t('no_locations_assigned')}</option>
-            ) : (
-              locations.map((loc) => (
+      {/* If the user has multiple locations, show location switcher that is synced with navbar */}
+      {allowedLocations.length > 1 && (
+        <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{t('active_store_location')}</h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{t('filter_pending_audits')}</p>
+          </div>
+          <div style={{ width: '100%', maxWidth: '280px' }}>
+            <select
+              value={selectedLocationId}
+              onChange={(e) => setSelectedLocationId(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: '0.875rem',
+                backgroundColor: 'var(--bg-sunken)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">{t('all_locations', undefined, 'All Locations')}</option>
+              {allowedLocations.map((loc) => (
                 <option key={loc.id} value={loc.id}>{t(loc.name, undefined, loc.name)}</option>
-              ))
-            )}
-          </select>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content - Inventory Audits */}
       <div className="card animate-fade-up" style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>

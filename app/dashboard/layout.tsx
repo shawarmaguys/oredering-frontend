@@ -6,10 +6,12 @@ import { useEffect, Suspense } from 'react';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
 import { ContextPrefetcher } from './components/ContextPrefetcher';
+import { useLocationFilter } from '../context/LocationFilterContext';
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
+  const { selectedLocationId, setSelectedLocationId, allowedLocations } = useLocationFilter();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -72,6 +74,86 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="navbar-sep" />
             <span className="navbar-context">{t('operations_portal')}</span>
           </div>
+
+          {/* Location filter dropdown — center / left of actions */}
+          {allowedLocations.length > 1 && (
+            <div style={{ flex: '0 1 220px', minWidth: 0 }}>
+              <div style={{ position: 'relative' }}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.75}
+                  stroke="currentColor"
+                  style={{
+                    width: 13,
+                    height: 13,
+                    position: 'absolute',
+                    left: 9,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--accent)',
+                    pointerEvents: 'none',
+                    flexShrink: 0,
+                  }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                <select
+                  id="navbar-location-filter"
+                  value={selectedLocationId}
+                  onChange={e => setSelectedLocationId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    paddingLeft: 28,
+                    paddingRight: 28,
+                    paddingTop: 6,
+                    paddingBottom: 6,
+                    fontSize: '0.8125rem',
+                    fontWeight: 500,
+                    backgroundColor: 'var(--bg-sunken)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="Filter all views by location"
+                >
+                  <option value="all">All Locations</option>
+                  {allowedLocations.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+                {/* Chevron icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  style={{
+                    width: 11,
+                    height: 11,
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </div>
+            </div>
+          )}
 
           {/* Right side */}
           <div className="navbar-actions">

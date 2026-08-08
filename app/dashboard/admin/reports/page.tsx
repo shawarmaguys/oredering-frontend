@@ -5,6 +5,8 @@ import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocations } from '../../../context/LocationsContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
 
 interface StockRecord {
   id: string;
@@ -39,6 +41,8 @@ interface PurchaseOrder {
 
 export default function ReportsPage() {
   const router = useRouter();
+  const { locations } = useLocations();
+  const { selectedLocationId } = useLocationFilter();
   const [activeTab, setActiveTab] = useState<'pos' | 'stock'>('pos');
   const [pos, setPos] = useState<PurchaseOrder[]>([]);
   const [stockRecords, setStockRecords] = useState<StockRecord[]>([]);
@@ -188,6 +192,15 @@ export default function ReportsPage() {
 
         {/* Filter / Sort / View Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          {selectedLocationId !== 'all' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 500 }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              {locations.find(l => l.id === selectedLocationId)?.name || 'Selected Location'}
+            </div>
+          )}
           <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -227,6 +240,7 @@ export default function ReportsPage() {
                 const q = search.toLowerCase();
                 if (q && !po.vendor?.displayName?.toLowerCase().includes(q) && !po.location?.name?.toLowerCase().includes(q)) return false;
                 if (statusFilter !== 'all' && po.status !== statusFilter) return false;
+                if (selectedLocationId !== 'all' && po.locationId !== selectedLocationId) return false;
                 return true;
               }).sort((a, b) => {
                 let cmp = 0;
@@ -338,6 +352,7 @@ export default function ReportsPage() {
               const filtered = stockRecords.filter(sr => {
                 const q = search.toLowerCase();
                 if (q && !sr.location?.name?.toLowerCase().includes(q) && !sr.submittedBy?.toLowerCase().includes(q)) return false;
+                if (selectedLocationId !== 'all' && sr.locationId !== selectedLocationId) return false;
                 return true;
               }).sort((a, b) => {
                 let cmp = 0;

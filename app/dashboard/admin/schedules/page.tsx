@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useVendors } from '../../../context/VendorsContext';
 import { useLocations } from '../../../context/LocationsContext';
 import { useSchedules } from '../../../context/SchedulesContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
 
 // Location and Vendor types now come from shared contexts
 
@@ -60,6 +61,7 @@ export default function SchedulesPage() {
   const { vendors, vendorsLoading } = useVendors();
   const { locations, locationsLoading } = useLocations();
   const { schedules, schedulesLoading, refreshSchedules } = useSchedules();
+  const { selectedLocationId } = useLocationFilter();
 
   const [error, setError] = useState('');
 
@@ -74,7 +76,7 @@ export default function SchedulesPage() {
 
   // View / filter / sort state
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
-  const [locationFilter, setLocationFilter] = useState('all');
+  // locationFilter is now driven by the global navbar dropdown (selectedLocationId)
   const [vendorFilter, setVendorFilter] = useState('all');
   const [sortColumn, setSortColumn] = useState<string>('location');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -290,10 +292,16 @@ export default function SchedulesPage() {
 
         {/* Filter / Sort / View Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          <select className="input" style={{ flex: '1 1 200px', minWidth: '180px' }} value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
-            <option value="all">All Locations</option>
-            {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-          </select>
+          {/* Location is filtered globally from the navbar dropdown */}
+          {selectedLocationId !== 'all' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 500 }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              {locations.find(l => l.id === selectedLocationId)?.name || 'Selected Location'}
+            </div>
+          )}
           <select className="input" style={{ flex: '1 1 200px', minWidth: '180px' }} value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}>
             <option value="all">All Vendors</option>
             {vendors.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
@@ -326,7 +334,7 @@ export default function SchedulesPage() {
         ) : (
           (() => {
             const filtered = schedules.filter(s => {
-              if (locationFilter !== 'all' && s.locationId !== locationFilter) return false;
+              if (selectedLocationId !== 'all' && s.locationId !== selectedLocationId) return false;
               if (vendorFilter !== 'all' && s.vendorId !== vendorFilter) return false;
               return true;
             });

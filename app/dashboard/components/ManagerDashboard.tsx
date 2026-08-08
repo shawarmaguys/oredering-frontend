@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../../utils/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useLocationFilter } from '../../context/LocationFilterContext';
 
 export default function ManagerDashboard() {
   const [pendingReviews, setPendingReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
+  const { selectedLocationId } = useLocationFilter();
 
   useEffect(() => {
     async function loadPendingReviews() {
@@ -25,6 +27,10 @@ export default function ManagerDashboard() {
     }
     loadPendingReviews();
   }, []);
+
+  const displayedReviews = pendingReviews.filter(
+    (po) => selectedLocationId === 'all' || po.locationId === selectedLocationId
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -58,7 +64,7 @@ export default function ManagerDashboard() {
               </div>
               <span className="badge badge-amber">
                 <span className="badge-dot" />
-                {pendingReviews.length} {t('action_needed')}
+                {displayedReviews.length} {t('action_needed')}
               </span>
             </div>
 
@@ -68,8 +74,8 @@ export default function ManagerDashboard() {
                   <div className="skeleton" style={{ height: '72px', width: '100%' }} />
                   <div className="skeleton" style={{ height: '72px', width: '100%' }} />
                 </div>
-              ) : pendingReviews.length > 0 ? (
-                pendingReviews.map((po) => (
+              ) : displayedReviews.length > 0 ? (
+                displayedReviews.map((po) => (
                   <div
                     key={po.id}
                     style={{
