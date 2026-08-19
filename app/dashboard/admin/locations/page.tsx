@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useLocations, StoreLocation } from '../../../context/LocationsContext';
+import { useItems } from '../../../context/ItemsContext';
 
 // Location type is defined in LocationsContext as StoreLocation
 
 export default function LocationsPage() {
   const { locations, locationsLoading: loading, refreshLocations } = useLocations();
+  const { allItems } = useItems();
+  const locationProductsCache = useRef<Record<string, any[]>>({});
 
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
@@ -72,10 +75,36 @@ export default function LocationsPage() {
   const [deptToDelete, setDeptToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const fetchLocationItems = async (locationId: string) => {
-    setProductsLoading(true);
+    // If already cached, show instantly without skeletons
+    if (locationProductsCache.current[locationId]) {
+      setLocationItems(locationProductsCache.current[locationId]);
+      setProductsLoading(false);
+    } else if (allItems.length > 0) {
+      // Seed with allItems from context so UI displays immediately
+      const initialItems = allItems.map((item) => ({
+        id: item.id,
+        displayName: item.displayName,
+        productCode: item.productCode,
+        baseUnitName: item.baseUnitName,
+        displayUnitName: item.displayUnitName,
+        multiplier: Number(item.multiplier) || 1,
+        vendor: item.vendor,
+        assigned: false,
+        parLevel: 0,
+        displayOrder: 0,
+        isActive: false,
+      }));
+      setLocationItems(initialItems);
+      setProductsLoading(false);
+    } else {
+      setProductsLoading(true);
+    }
+
     try {
       const data = await api.locations.getItems(locationId);
-      setLocationItems(data);
+      const rawList = Array.isArray(data) ? data : (data as any)?.data || [];
+      locationProductsCache.current[locationId] = rawList;
+      setLocationItems(rawList);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch products for location.');
     } finally {
@@ -86,19 +115,28 @@ export default function LocationsPage() {
   const handleToggleProduct = async (item: any) => {
     if (!selectedLocation) return;
     setSavingItemId(item.id);
+    const locId = selectedLocation.id;
     try {
       if (item.assigned) {
         // Toggle OFF (unassign)
-        await api.locations.removeItem(selectedLocation.id, item.id);
-        setLocationItems(prev => prev.map(x => x.id === item.id ? { ...x, assigned: false, isActive: false } : x));
+        await api.locations.removeItem(locId, item.id);
+        const updater = (prev: any[]) => prev.map(x => x.id === item.id ? { ...x, assigned: false, isActive: false } : x);
+        setLocationItems(updater);
+        if (locationProductsCache.current[locId]) {
+          locationProductsCache.current[locId] = updater(locationProductsCache.current[locId]);
+        }
       } else {
         // Toggle ON (assign)
-        await api.locations.addOrUpdateItem(selectedLocation.id, {
+        await api.locations.addOrUpdateItem(locId, {
           itemId: item.id,
           parLevel: item.parLevel || 0,
           isActive: true
         });
-        setLocationItems(prev => prev.map(x => x.id === item.id ? { ...x, assigned: true, isActive: true } : x));
+        const updater = (prev: any[]) => prev.map(x => x.id === item.id ? { ...x, assigned: true, isActive: true } : x);
+        setLocationItems(updater);
+        if (locationProductsCache.current[locId]) {
+          locationProductsCache.current[locId] = updater(locationProductsCache.current[locId]);
+        }
       }
     } catch (err: any) {
       alert(err.message || 'Failed to update assignment.');
@@ -110,13 +148,18 @@ export default function LocationsPage() {
   const handleUpdateDetails = async (item: any, parLevel: number) => {
     if (!selectedLocation) return;
     setSavingItemId(item.id);
+    const locId = selectedLocation.id;
     try {
-      await api.locations.addOrUpdateItem(selectedLocation.id, {
+      await api.locations.addOrUpdateItem(locId, {
         itemId: item.id,
         parLevel,
         isActive: item.isActive
       });
-      setLocationItems(prev => prev.map(x => x.id === item.id ? { ...x, parLevel } : x));
+      const updater = (prev: any[]) => prev.map(x => x.id === item.id ? { ...x, parLevel } : x);
+      setLocationItems(updater);
+      if (locationProductsCache.current[locId]) {
+        locationProductsCache.current[locId] = updater(locationProductsCache.current[locId]);
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to update item details.');
     } finally {
