@@ -131,31 +131,6 @@ export default function PODetailsPage() {
     return Number(item.quantity) !== (editedQuantities[item.itemId] ?? 0);
   });
 
-  const handleSaveDraft = async () => {
-    if (!po) return;
-    setActionLoading(true);
-    setError('');
-    try {
-      const payloadItems = Object.keys(editedQuantities).map(itemId => {
-        const item = po.items?.find((i: POItem) => i.itemId === itemId);
-        return {
-          itemId,
-          quantity: editedQuantities[itemId],
-          displayUnitName: item?.item?.displayUnitName || item?.unitName || ''
-        };
-      });
-      await api.purchaseOrders.update(po.id, {
-        items: payloadItems
-      });
-      await fetchPODetails();
-      setIsEditingDraft(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update purchase order.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleApproveClick = () => {
     setApproveConfirmOpen(true);
   };
@@ -272,6 +247,38 @@ export default function PODetailsPage() {
     window.print();
   };
 
+  const getCountedDisplay = (poItem: POItem) => {
+    const displayUnit = poItem.item?.displayUnitName;
+    const baseUnit = poItem.item?.baseUnitName;
+
+    if (poItem.basicQuantity === null && poItem.secondaryQuantity === null) {
+      return null;
+    }
+
+    const sec = poItem.secondaryQuantity !== null ? Number(poItem.secondaryQuantity) : 0;
+    const basic = poItem.basicQuantity !== null ? Number(poItem.basicQuantity) : 0;
+
+    const formatNum = (num: number) => {
+      const rounded = Math.round(num * 10) / 10;
+      return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
+    };
+
+    if (displayUnit && baseUnit) {
+      if (sec > 0 && basic > 0) {
+        return `${formatNum(sec)} ${displayUnit} + ${formatNum(basic)} ${baseUnit}`;
+      } else if (sec > 0) {
+        return `${formatNum(sec)} ${displayUnit}`;
+      } else {
+        return `${formatNum(basic)} ${baseUnit}`;
+      }
+    } else if (baseUnit) {
+      return `${formatNum(basic)} ${baseUnit}`;
+    } else if (displayUnit) {
+      return `${formatNum(sec)} ${displayUnit}`;
+    }
+    return null;
+  };
+
   const pdfDownloadUrl = po ? api.purchaseOrders.getPdfUrl(po.id) : '#';
 
   const isDraft = po?.status === 'DRAFT';
@@ -280,7 +287,12 @@ export default function PODetailsPage() {
     return Number(item.quantity || 0) > 0;
   });
 
-  const totalUnits = activeItems.reduce((acc, item) => {
+  const totalSuggestedUnits = activeItems.reduce((acc, item) => {
+    const suggested = item.suggestedQuantity !== null ? Number(item.suggestedQuantity) : Number(item.quantity || 0);
+    return acc + suggested;
+  }, 0);
+
+  const totalOrderedUnits = activeItems.reduce((acc, item) => {
     const qty = isDraft ? (editedQuantities[item.itemId] ?? Number(item.quantity)) : Number(item.quantity);
     return acc + Number(qty || 0);
   }, 0);
@@ -290,29 +302,28 @@ export default function PODetailsPage() {
 
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '920px', margin: '0 auto' }}>
-        {/* Navigation Breadcrumbs & Actions Bar (Hidden on Print) */}
-        <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div className="breadcrumb" style={{ margin: 0 }}>
-            <Link href="/dashboard">Dashboard</Link>
-            <span className="breadcrumb-sep">/</span>
-            <Link href="/dashboard/admin/reports">Purchase Orders</Link>
-            <span className="breadcrumb-sep">/</span>
-            <span className="breadcrumb-current">PO #{shortPoId}</span>
-          </div>
+      <div className="po-page-wrapper">
+        {/* Navigation Breadcrumbs & Top Status Bar (Pinned at top, Hidden on Print) */}
+        <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
+          {/* Navigation Breadcrumbs & Actions Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div className="breadcrumb" style={{ margin: 0 }}>
+              <Link href="/dashboard">Dashboard</Link>
+              <span className="breadcrumb-sep">/</span>
+              <Link href="/dashboard/admin/reports">Purchase Orders</Link>
+              <span className="breadcrumb-sep">/</span>
+              <span className="breadcrumb-current">PO #{shortPoId}</span>
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Back to Reports
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link href="/dashboard/admin/reports" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Reports
+              </Link>
 
-            {po && (
-              <>
-
-
+              {po && (
                 <a
                   href={pdfDownloadUrl}
                   target="_blank"
@@ -330,34 +341,20 @@ export default function PODetailsPage() {
                   </svg>
                   Official PDF
                 </a>
-              </>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Loading State */}
-        {loading ? (
-          <div className="card" style={{ padding: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-            <div className="skeleton" style={{ height: '36px', width: '40%' }} />
-            <div className="skeleton" style={{ height: '18px', width: '75%' }} />
-            <div className="skeleton" style={{ height: '240px', width: '100%' }} />
-          </div>
-        ) : error && !po ? (
-          <div className="card" style={{ padding: '24px', border: '1px solid var(--danger-border)', backgroundColor: 'var(--danger-subtle)', color: 'var(--danger)' }}>
-            ⚠️ {error}
-          </div>
-        ) : po ? (
-          <>
-            {/* Top Status & Controls Notification (Hidden on Print) */}
+          {/* Top Status & Controls Notification */}
+          {po && (
             <div
-              className="no-print"
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 flexWrap: 'wrap',
                 gap: '12px',
-                padding: '12px 18px',
+                padding: '10px 16px',
                 borderRadius: 'var(--radius-lg)',
                 backgroundColor: isDraft ? 'rgba(217, 119, 6, 0.08)' : 'rgba(16, 185, 129, 0.08)',
                 border: `1px solid ${isDraft ? 'rgba(217, 119, 6, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
@@ -386,7 +383,7 @@ export default function PODetailsPage() {
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                     {isDraft
-                      ? 'Review and adjust line item quantities before approving.'
+                      ? 'Review stock audit breakdown and adjust line item quantities before approving.'
                       : po.approvedBy || po.approver
                         ? `Approved by ${po.approver?.fullName || po.approvedBy || 'Manager'}${po.approvedAt ? ` on ${new Date(po.approvedAt).toLocaleDateString()}` : ''}`
                         : 'Completed & verified purchase order document.'}
@@ -396,90 +393,102 @@ export default function PODetailsPage() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 {isDraft && (
-                  <>
-                    {isModified && (
-                      <button
-                        onClick={handleSaveDraft}
-                        disabled={actionLoading}
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '8px 16px' }}
-                      >
-                        💾 {actionLoading ? 'Saving...' : 'Save Draft'}
-                      </button>
-                    )}
-
-                    <button
-                      onClick={handleApproveClick}
-                      disabled={actionLoading}
-                      className="btn btn-primary btn-sm"
-                      style={{ padding: '8px 20px', backgroundColor: '#C0212F', borderColor: '#C0212F' }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                      {actionLoading ? 'Approving...' : isModified ? 'Save & Approve PO' : 'Approve Purchase Order'}
-                    </button>
-                  </>
+                  <button
+                    onClick={handleApproveClick}
+                    disabled={actionLoading}
+                    className="btn btn-primary btn-sm"
+                    style={{ padding: '8px 20px', backgroundColor: '#C0212F', borderColor: '#C0212F' }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    {actionLoading ? 'Approving...' : 'Approve Purchase Order'}
+                  </button>
                 )}
 
-                {!isDraft && (
+                {/* Re-Email / Dispatch Action Button */}
+                {po.status !== 'DRAFT' && (
                   <button
-                    onClick={handleTriggerSendEmail}
+                    onClick={() => {
+                      const vendorEmails = po.vendor?.email
+                        ? po.vendor.email.split(',').map(e => e.trim()).filter(Boolean)
+                        : [];
+                      setSendEmailState({
+                        isOpen: true,
+                        poId: po.id,
+                        vendorName: po.vendor?.displayName || 'Supplier',
+                        vendorEmails: vendorEmails,
+                        selectedVendorEmails: vendorEmails,
+                        customEmails: '',
+                        subject: `Purchase Order #${shortPoId}`,
+                        body: '',
+                        notes: po.notes || '',
+                      });
+                    }}
                     disabled={actionLoading}
                     className="btn btn-secondary btn-sm"
-                    style={{
-                      backgroundColor: 'var(--accent-subtle)',
-                      borderColor: 'var(--accent-border)',
-                      color: 'var(--accent)',
-                      padding: '8px 16px',
-                      fontWeight: 600,
-                    }}
+                    style={{ padding: '8px 16px' }}
+                    title="Send or resend this Purchase Order via email"
                   >
                     ✉️ {po.emailsSent ? 'Re-email Supplier' : 'Email Order to Supplier'}
                   </button>
                 )}
               </div>
             </div>
+          )}
 
-            {/* Dispatched Notification Card */}
-            {po.emailsSent && (
-              <div
-                className="no-print card"
-                style={{
-                  padding: '14px 20px',
-                  borderLeft: '4px solid #10b981',
-                  fontSize: '0.875rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  backgroundColor: 'var(--bg-surface)',
-                }}
-              >
-                <span style={{ fontSize: '1.25rem' }}>📬</span>
-                <div>
-                  <strong style={{ color: 'var(--text-primary)' }}>Dispatched to Supplier:</strong>
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: '6px' }}>{po.emailsSent}</span>
-                </div>
+          {/* Dispatched Notification Card */}
+          {po?.emailsSent && (
+            <div
+              className="card"
+              style={{
+                padding: '10px 16px',
+                borderLeft: '4px solid #10b981',
+                fontSize: '0.8125rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: 'var(--bg-surface)',
+              }}
+            >
+              <span style={{ fontSize: '1.125rem' }}>📬</span>
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>Dispatched to Supplier:</strong>
+                <span style={{ color: 'var(--text-secondary)', marginLeft: '6px' }}>{po.emailsSent}</span>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Error Notification */}
-            {error && (
-              <div
-                className="no-print"
-                style={{
-                  fontSize: '0.8125rem',
-                  color: 'var(--danger)',
-                  backgroundColor: 'var(--danger-subtle)',
-                  border: '1px solid var(--danger-border)',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
-                }}
-              >
-                ⚠️ {error}
-              </div>
-            )}
+          {/* Error Notification */}
+          {error && (
+            <div
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--danger)',
+                backgroundColor: 'var(--danger-subtle)',
+                border: '1px solid var(--danger-border)',
+                padding: '8px 12px',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              ⚠️ {error}
+            </div>
+          )}
+        </div>
 
+        {/* Loading State */}
+        {loading ? (
+          <div className="card" style={{ padding: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            <div className="skeleton" style={{ height: '36px', width: '40%' }} />
+            <div className="skeleton" style={{ height: '18px', width: '75%' }} />
+            <div className="skeleton" style={{ height: '240px', width: '100%' }} />
+          </div>
+        ) : error && !po ? (
+          <div className="card" style={{ padding: '24px', border: '1px solid var(--danger-border)', backgroundColor: 'var(--danger-subtle)', color: 'var(--danger)' }}>
+            ⚠️ {error}
+          </div>
+        ) : po ? (
+          <div className="po-scroll-container">
             {/* ========================================================================= */}
             {/* REALISTIC PHYSICAL PURCHASE ORDER DOCUMENT SHEET (MATCHES PDF EXACTLY)   */}
             {/* ========================================================================= */}
@@ -508,135 +517,92 @@ export default function PODetailsPage() {
                 }}
               />
 
-              <div style={{ padding: '36px 44px 44px 44px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {/* Document Header Section */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
-                  {/* Brand & Logo */}
+              <div style={{ padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                {/* Header: Brand, Title & Status Badge */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #f3f4f6', paddingBottom: '24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div
                       style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '10px',
+                        width: '52px',
+                        height: '52px',
+                        borderRadius: '12px',
                         backgroundColor: '#C0212F',
+                        color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#ffffff',
-                        fontWeight: 800,
+                        fontWeight: 900,
                         fontSize: '1.25rem',
-                        letterSpacing: '-0.03em',
-                        flexShrink: 0,
-                        boxShadow: '0 2px 4px rgba(192, 33, 47, 0.25)',
+                        letterSpacing: '-0.02em',
+                        boxShadow: '0 4px 6px -1px rgba(192, 33, 47, 0.2)',
                       }}
                     >
                       SG
                     </div>
                     <div>
-                      <h2
-                        style={{
-                          margin: 0,
-                          fontSize: '1.375rem',
-                          fontWeight: 800,
-                          color: '#C0212F',
-                          letterSpacing: '-0.02em',
-                          lineHeight: 1.1,
-                        }}
-                      >
+                      <h2 style={{ fontSize: '1.375rem', fontWeight: 900, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
                         SHAWARMA GUYS
                       </h2>
-                      <div
-                        style={{
-                          fontSize: '0.625rem',
-                          fontWeight: 600,
-                          color: '#6b7280',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          marginTop: '4px',
-                        }}
-                      >
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', color: '#9ca3af', textTransform: 'uppercase', marginTop: '2px' }}>
                         AUTOMATED INVENTORY AUDIT CONTROL SYSTEM
                       </div>
                     </div>
                   </div>
 
-                  {/* Document Title & Status on the Right */}
-                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                    <div
-                      style={{
-                        fontSize: '1.25rem',
-                        fontWeight: 800,
-                        color: '#111827',
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
                       PURCHASE ORDER
                     </div>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        padding: '3px 10px',
-                        borderRadius: '999px',
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        backgroundColor: isDraft ? '#fffbeb' : '#ecfdf5',
-                        color: isDraft ? '#b45309' : '#047857',
-                        border: `1px solid ${isDraft ? '#fde68a' : '#a7f3d0'}`,
-                      }}
-                    >
+                    <div style={{ display: 'inline-block', marginTop: '6px' }}>
                       <span
                         style={{
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          backgroundColor: 'currentColor',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
+                          backgroundColor: isDraft ? '#fef3c7' : '#d1fae5',
+                          color: isDraft ? '#92400e' : '#065f46',
+                          border: `1px solid ${isDraft ? '#fde68a' : '#a7f3d0'}`,
                         }}
-                      />
-                      {po.status}
-                    </span>
+                      >
+                        <span
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: isDraft ? '#d97706' : '#10b981',
+                          }}
+                        />
+                        {po.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Accent Separator Line */}
-                <div
-                  style={{
-                    width: '100%',
-                    height: '2px',
-                    backgroundColor: '#E03E4B',
-                    margin: '0',
-                  }}
-                />
-
-                {/* Two-Column Address Grid (FROM / TO) */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                    gap: '32px',
-                    padding: '8px 0',
-                  }}
-                >
-                  {/* Left Column: FROM (Location / Store) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 800,
-                        color: '#C0212F',
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      FROM:
+                {/* Primary Info Cards: Location (FROM) & Vendor (TO) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {/* FROM / BUYER: Restaurant Location */}
+                  <div
+                    style={{
+                      padding: '16px 18px',
+                      borderRadius: '8px',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Buyer / Store Location
                     </div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827' }}>
-                      {po.location?.name || 'Shawarma Guys Store'}
+                    <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>
+                      {po.location?.name || 'Restaurant Branch'}
                     </div>
                     {po.location?.address && (
                       <div style={{ fontSize: '0.8125rem', color: '#4b5563', lineHeight: 1.4 }}>
@@ -644,120 +610,110 @@ export default function PODetailsPage() {
                       </div>
                     )}
                     {po.location?.phone && (
-                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
-                        <span style={{ color: '#9ca3af' }}>Phone:</span> {po.location.phone}
-                      </div>
-                    )}
-                    {po.location?.email && (
-                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
-                        <span style={{ color: '#9ca3af' }}>Email:</span> {po.location.email}
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '4px' }}>
+                        Tel: <span style={{ color: '#374151', fontWeight: 500 }}>{po.location.phone}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Right Column: TO (Vendor / Supplier) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 800,
-                        color: '#C0212F',
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      TO:
+                  {/* TO / SELLER: Vendor */}
+                  <div
+                    style={{
+                      padding: '16px 18px',
+                      borderRadius: '8px',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Supplier / Vendor
                     </div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827' }}>
-                      {po.vendor?.displayName || 'Supplier Wholesaler'}
+                    <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#111827', marginTop: '2px' }}>
+                      {po.vendor?.displayName || 'Supplier Name'}
                     </div>
                     {vendorAddressParts.length > 0 && (
-                      <div style={{ fontSize: '0.8125rem', color: '#4b5563', lineHeight: 1.4, whiteSpace: 'pre-line' }}>
-                        {vendorAddressParts.join('\n')}
+                      <div style={{ fontSize: '0.8125rem', color: '#4b5563', lineHeight: 1.4 }}>
+                        {vendorAddressParts.join(', ')}
                       </div>
                     )}
                     {po.vendor?.phone && (
-                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
-                        <span style={{ color: '#9ca3af' }}>Phone:</span> {po.vendor.phone}
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '4px' }}>
+                        Phone: <span style={{ color: '#374151', fontWeight: 500 }}>{po.vendor.phone}</span>
                       </div>
                     )}
                     {po.vendor?.email && (
-                      <div style={{ fontSize: '0.8125rem', color: '#4b5563' }}>
-                        <span style={{ color: '#9ca3af' }}>Email:</span> {po.vendor.email}
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
+                        Email: <span style={{ color: '#374151', fontWeight: 500 }}>{po.vendor.email}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Divider Line */}
-                <div style={{ width: '100%', height: '1px', backgroundColor: '#e5e7eb' }} />
-
-                {/* Metadata Grid (4-Column Info Card) */}
+                {/* Metadata Row: PO #, Generated Date, Created By, Approved By */}
                 <div
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                    gap: '16px',
+                    gap: '12px',
                     padding: '14px 18px',
-                    backgroundColor: '#f9fafb',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '8px',
-                    border: '1px solid #f3f4f6',
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      PO ID:
-                    </div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>PO Number</div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', fontFamily: 'monospace', marginTop: '2px' }}>
-                      #{shortPoId}
+                      {shortPoId}
                     </div>
                   </div>
-
                   <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Date Generated:
-                    </div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Date Generated</div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', marginTop: '2px' }}>
-                      {po.createdAt ? new Date(po.createdAt).toLocaleDateString() : 'N/A'}
+                      {po.createdAt ? new Date(po.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                     </div>
                   </div>
-
                   <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Created By:
-                    </div>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Created By</div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', marginTop: '2px' }}>
-                      {po.createdBy || 'System'}
+                      {po.createdBy || 'System Automated'}
                     </div>
                   </div>
-
                   <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Approved By:
-                    </div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: po.approver || po.approvedBy ? '#047857' : '#9ca3af', marginTop: '2px' }}>
-                      {po.approver?.fullName || po.approvedBy || (isDraft ? 'Pending Approval' : 'Manager')}
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Approved By</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: po.approvedBy || po.approver ? '#111827' : '#9ca3af', marginTop: '2px' }}>
+                      {po.approver?.fullName || po.approvedBy || (isDraft ? 'Pending Approval' : 'Verified')}
                     </div>
                   </div>
                 </div>
 
                 {/* Ordered Items Table (Matches PDF layout exactly) */}
-                <div>
+                <div
+                  style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    overflow: 'visible',
+                  }}
+                >
                   <table
                     style={{
                       width: '100%',
-                      borderCollapse: 'collapse',
-                      fontSize: '0.875rem',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
+                      borderCollapse: 'separate',
+                      borderSpacing: 0,
+                      textAlign: 'left',
                     }}
                   >
                     <thead>
                       <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                         <th
                           style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 5,
+                            backgroundColor: '#f9fafb',
                             padding: '10px 14px',
                             textAlign: 'left',
                             fontSize: '0.75rem',
@@ -765,14 +721,19 @@ export default function PODetailsPage() {
                             color: '#1f2937',
                             textTransform: 'uppercase',
                             letterSpacing: '0.04em',
-                            width: '20%',
+                            width: '13%',
                             borderRight: '1px solid #e5e7eb',
+                            borderBottom: '1px solid #e5e7eb',
                           }}
                         >
                           Product Code
                         </th>
                         <th
                           style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 5,
+                            backgroundColor: '#f9fafb',
                             padding: '10px 14px',
                             textAlign: 'left',
                             fontSize: '0.75rem',
@@ -780,14 +741,19 @@ export default function PODetailsPage() {
                             color: '#1f2937',
                             textTransform: 'uppercase',
                             letterSpacing: '0.04em',
-                            width: '45%',
+                            width: '39%',
                             borderRight: '1px solid #e5e7eb',
+                            borderBottom: '1px solid #e5e7eb',
                           }}
                         >
-                          Item Name
+                          Item & Stock Audit
                         </th>
                         <th
                           style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 5,
+                            backgroundColor: '#f9fafb',
                             padding: '10px 14px',
                             textAlign: 'left',
                             fontSize: '0.75rem',
@@ -795,14 +761,39 @@ export default function PODetailsPage() {
                             color: '#1f2937',
                             textTransform: 'uppercase',
                             letterSpacing: '0.04em',
-                            width: '18%',
+                            width: '14%',
                             borderRight: '1px solid #e5e7eb',
+                            borderBottom: '1px solid #e5e7eb',
                           }}
                         >
                           Ordering Unit
                         </th>
                         <th
                           style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 5,
+                            backgroundColor: '#f9fafb',
+                            padding: '10px 14px',
+                            textAlign: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#1f2937',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            width: '16%',
+                            borderRight: '1px solid #e5e7eb',
+                            borderBottom: '1px solid #e5e7eb',
+                          }}
+                        >
+                          Suggested
+                        </th>
+                        <th
+                          style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 5,
+                            backgroundColor: '#f9fafb',
                             padding: '10px 14px',
                             textAlign: 'right',
                             fontSize: '0.75rem',
@@ -810,7 +801,8 @@ export default function PODetailsPage() {
                             color: '#1f2937',
                             textTransform: 'uppercase',
                             letterSpacing: '0.04em',
-                            width: '17%',
+                            width: '18%',
+                            borderBottom: '1px solid #e5e7eb',
                           }}
                         >
                           Order Quantity
@@ -820,7 +812,7 @@ export default function PODetailsPage() {
                     <tbody>
                       {activeItems.length === 0 ? (
                         <tr>
-                          <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic' }}>
+                          <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic' }}>
                             No items included in this purchase order.
                           </td>
                         </tr>
@@ -835,6 +827,11 @@ export default function PODetailsPage() {
                           const currentQty = isDraft
                             ? editedQuantities[poItem.itemId] ?? Number(poItem.quantity)
                             : Number(poItem.quantity);
+
+                          const countedStr = getCountedDisplay(poItem);
+                          const hasSuggested = poItem.suggestedQuantity !== null;
+                          const suggestedNum = hasSuggested ? Number(poItem.suggestedQuantity) : null;
+                          const isDiffFromSuggested = hasSuggested && currentQty !== suggestedNum;
 
                           return (
                             <tr
@@ -858,7 +855,7 @@ export default function PODetailsPage() {
                                 {code}
                               </td>
 
-                              {/* Item Name */}
+                              {/* Item & Stock Audit */}
                               <td
                                 style={{
                                   padding: '11px 14px',
@@ -868,17 +865,80 @@ export default function PODetailsPage() {
                                   verticalAlign: 'middle',
                                 }}
                               >
-                                <div>{name}</div>
+                                <div style={{ fontSize: '0.9375rem', color: '#111827' }}>{name}</div>
                                 {item?.spanishName && (
-                                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>
+                                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400, marginTop: '1px' }}>
                                     {item.spanishName}
                                   </div>
                                 )}
                                 {item?.note && (
-                                  <div style={{ fontSize: '0.6875rem', color: '#9ca3af', fontWeight: 400 }}>
+                                  <div style={{ fontSize: '0.6875rem', color: '#9ca3af', fontWeight: 400, fontStyle: 'italic', marginTop: '1px' }}>
                                     {item.note}
                                   </div>
                                 )}
+
+                                {/* Stock Audit Details (Counted, Par, Normalized) */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px', alignItems: 'center' }}>
+                                  {countedStr && (
+                                    <span
+                                      title="Physical stock counted during store audit"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '2px 7px',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#f3f4f6',
+                                        border: '1px solid #e5e7eb',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        color: '#374151',
+                                      }}
+                                    >
+                                      <span style={{ color: '#9ca3af', fontWeight: 500 }}>Counted:</span> {countedStr}
+                                    </span>
+                                  )}
+
+                                  {poItem.parLevel !== null && (
+                                    <span
+                                      title="Configured store target par level"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '2px 7px',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#f3f4f6',
+                                        border: '1px solid #e5e7eb',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        color: '#374151',
+                                      }}
+                                    >
+                                      <span style={{ color: '#9ca3af', fontWeight: 500 }}>Par:</span> {poItem.parLevel}
+                                    </span>
+                                  )}
+
+                                  {user?.role === 'ADMIN' && poItem.normalizedQuantity !== null && (
+                                    <span
+                                      title="Total stock normalized in base units (Admin audit)"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '2px 7px',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#f3f4f6',
+                                        border: '1px solid #e5e7eb',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        color: '#4b5563',
+                                      }}
+                                    >
+                                      <span style={{ color: '#9ca3af', fontWeight: 500 }}>Norm:</span> {Number(poItem.normalizedQuantity).toFixed(1)} {item?.baseUnitName || ''}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* Ordering Unit */}
@@ -906,6 +966,36 @@ export default function PODetailsPage() {
                                 </span>
                               </td>
 
+                              {/* Suggested Quantity */}
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  textAlign: 'center',
+                                  verticalAlign: 'middle',
+                                  borderRight: '1px solid #e5e7eb',
+                                }}
+                              >
+
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '3px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 700,
+                                    backgroundColor: '#eff6ff',
+                                    color: '#1d4ed8',
+                                    border: '1px solid #bfdbfe',
+                                    minWidth: '38px',
+                                  }}
+                                  title="System recommended purchase quantity (Par Level - Counted Stock)"
+                                >
+                                  {suggestedNum !== null ? suggestedNum.toFixed(0) : '—'}
+                                </span>
+                              </td>
+
                               {/* Order Quantity */}
                               <td
                                 style={{
@@ -915,14 +1005,14 @@ export default function PODetailsPage() {
                                 }}
                               >
                                 {isDraft ? (
-                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                     <button
                                       type="button"
                                       className="no-print"
                                       onClick={() => handleQtyChange(poItem.itemId, Math.max(0, currentQty - 1))}
                                       style={{
-                                        width: '24px',
-                                        height: '24px',
+                                        width: '26px',
+                                        height: '26px',
                                         borderRadius: '4px',
                                         border: '1px solid #d1d5db',
                                         backgroundColor: '#ffffff',
@@ -943,14 +1033,14 @@ export default function PODetailsPage() {
                                       value={currentQty}
                                       onChange={(e) => handleQtyChange(poItem.itemId, parseFloat(e.target.value) || 0)}
                                       style={{
-                                        width: '65px',
+                                        width: '60px',
                                         padding: '4px 6px',
-                                        textAlign: 'center',
-                                        fontWeight: 700,
-                                        fontSize: '0.9375rem',
-                                        color: '#111827',
-                                        border: '1px solid #d1d5db',
+                                        textAlign: 'right',
                                         borderRadius: '4px',
+                                        border: '1px solid #d1d5db',
+                                        fontSize: '0.9375rem',
+                                        fontWeight: 700,
+                                        color: '#111827',
                                         backgroundColor: '#ffffff',
                                         outline: 'none',
                                       }}
@@ -960,8 +1050,8 @@ export default function PODetailsPage() {
                                       className="no-print"
                                       onClick={() => handleQtyChange(poItem.itemId, currentQty + 1)}
                                       style={{
-                                        width: '24px',
-                                        height: '24px',
+                                        width: '26px',
+                                        height: '26px',
                                         borderRadius: '4px',
                                         border: '1px solid #d1d5db',
                                         backgroundColor: '#ffffff',
@@ -978,15 +1068,8 @@ export default function PODetailsPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <span
-                                    style={{
-                                      fontSize: '1rem',
-                                      fontWeight: 800,
-                                      color: '#111827',
-                                      letterSpacing: '-0.02em',
-                                    }}
-                                  >
-                                    {Number(poItem.quantity || 0).toFixed(0)}
+                                  <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#C0212F' }}>
+                                    {currentQty.toFixed(0)}
                                   </span>
                                 )}
                               </td>
@@ -996,17 +1079,30 @@ export default function PODetailsPage() {
                       )}
                     </tbody>
 
-                    {/* Table Footer Total */}
+                    {/* Table Totals Footer (Matches PDF Table Summary) */}
                     <tfoot>
                       <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #e5e7eb' }}>
-                        <td colSpan={2} style={{ padding: '10px 14px', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
-                          Total Line Items: {activeItems.length}
+                        <td colSpan={2} style={{ padding: '12px 14px', fontSize: '0.8125rem', fontWeight: 600, color: '#4b5563' }}>
+                          Total Items: <strong style={{ color: '#111827' }}>{activeItems.length}</strong>
                         </td>
-                        <td style={{ padding: '10px 14px', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
-                          Total Quantity:
+                        <td style={{ padding: '12px 14px', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+                          Totals:
                         </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right', fontSize: '1rem', fontWeight: 800, color: '#C0212F' }}>
-                          {totalUnits.toFixed(0)}
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.625rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>
+                            Suggested
+                          </div>
+                          <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#1d4ed8' }}>
+                            {totalSuggestedUnits.toFixed(0)}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.625rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>
+                            Ordered
+                          </div>
+                          <div style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#C0212F' }}>
+                            {totalOrderedUnits.toFixed(0)}
+                          </div>
                         </td>
                       </tr>
                     </tfoot>
@@ -1051,7 +1147,7 @@ export default function PODetailsPage() {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         ) : null}
 
         {/* Approve Confirmation Modal */}
@@ -1202,9 +1298,68 @@ export default function PODetailsPage() {
         )}
       </div>
 
-      {/* Print Styles for High-Quality Physical PO Printing */}
+      {/* Scroll and Print Styles for High-Quality Physical PO & Pinned Toolbar */}
       <style jsx global>{`
+        .po-page-wrapper {
+          display: flex;
+          flex-direction: column;
+          height: calc(100dvh - 112px);
+          max-width: 920px;
+          margin: 0 auto;
+          gap: 12px;
+          overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+          .po-page-wrapper {
+            height: calc(100dvh - 96px);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .po-page-wrapper {
+            height: calc(100dvh - 88px);
+          }
+        }
+
+        .po-scroll-container {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0;
+          padding: 4px 6px 32px 4px;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+        }
+
+        .po-scroll-container::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .po-scroll-container::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .po-scroll-container::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.4);
+          border-radius: 999px;
+        }
+
+        .po-scroll-container::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.7);
+        }
+
         @media print {
+          .po-page-wrapper {
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          .po-scroll-container {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+            padding: 0 !important;
+          }
           .no-print,
           nav,
           header,
