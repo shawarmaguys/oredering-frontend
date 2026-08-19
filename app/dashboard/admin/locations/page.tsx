@@ -279,114 +279,121 @@ export default function LocationsPage() {
 
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {/* Navigation Breadcrumbs */}
-        <div className="breadcrumb">
-          <Link href="/dashboard">Dashboard</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Locations</span>
-        </div>
+      <div className="page-container">
+        {/* Pinned Top Bar */}
+        <div className="page-header-sticky">
+          {/* Navigation Breadcrumbs */}
+          <div className="breadcrumb">
+            <Link href="/dashboard">Dashboard</Link>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-current">Locations</span>
+          </div>
 
-        {/* Header */}
-        <div className="page-header">
-          <div className="page-header-text">
-            <h1>Store Locations</h1>
-            <p>Onboard and manage franchise store branches, contact credentials, and delivery directions.</p>
-          </div>
-          <div className='d-flex flex-column flex-md-row gap-5'>
-            <button
-              onClick={() => {
-                setError('');
-                setShowGlobalDeptsModal(true);
-                fetchGlobalDepts();
-              }}
-              className="btn btn-secondary mr-3 mb-3"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-              Manage Departments
-            </button>
-            <button
-              onClick={() => {
-                setError('');
-                setShowModal(true);
-              }}
-              className="btn btn-primary"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Add Location
-            </button>
-          </div>
-        </div>
-
-        {error && !showModal && !showEditModal && (
-          <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            {error}
-          </div>
-        )}
-
-        {/* Filter / Sort / View Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input className="input" style={{ paddingLeft: 32 }} placeholder="Search locations..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={slackFilter} onChange={e => setSlackFilter(e.target.value as any)}>
-            <option value="all">All Slack</option>
-            <option value="configured">Slack Configured</option>
-            <option value="not-configured">Slack Missing</option>
-          </select>
-
-          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-            <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
-            </button>
-            <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Locations List */}
-        {loading ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-            gap: '24px'
-          }}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '200px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="skeleton" style={{ height: '24px', width: '50%' }} />
-                <div className="skeleton" style={{ height: '14px', width: '80%' }} />
-                <div className="skeleton" style={{ height: '14px', width: '40%' }} />
-              </div>
-            ))}
-          </div>
-        ) : locations.length === 0 ? (
-          <div className="card" style={{ padding: '48px 24px' }}>
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
-              </div>
-              <h3>No store locations yet</h3>
-              <p>Onboard your franchise storefront branches to organize inventory sheets and audits.</p>
+          {/* Header */}
+          <div className="page-header">
+            <div className="page-header-text">
+              <h1>Store Locations</h1>
+              <p>Onboard and manage franchise store branches, contact credentials, and delivery directions.</p>
+            </div>
+            <div className='d-flex flex-column flex-md-row gap-5'>
               <button
-                onClick={() => setShowModal(true)}
+                onClick={() => {
+                  setError('');
+                  setShowGlobalDeptsModal(true);
+                  fetchGlobalDepts();
+                }}
+                className="btn btn-secondary mr-3 mb-3"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
+                Manage Departments
+              </button>
+              <button
+                onClick={() => {
+                  setError('');
+                  setShowModal(true);
+                }}
                 className="btn btn-primary"
               >
-                Add First Location
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Location
               </button>
+            </div>
+          </div>
+
+          {error && !showModal && !showEditModal && (
+            <div className="alert alert-error">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          {/* Filter / Sort / View Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input className="input" style={{ paddingLeft: 32 }} placeholder="Search locations..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={slackFilter} onChange={e => setSlackFilter(e.target.value as any)}>
+              <option value="all">All Slack</option>
+              <option value="configured">Slack Configured</option>
+              <option value="not-configured">Slack Missing</option>
+            </select>
+
+            <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+              <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+              </button>
+              <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Locations List Content */}
+        {loading ? (
+          <div className="page-content-scroll">
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+              gap: '24px'
+            }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '200px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="skeleton" style={{ height: '24px', width: '50%' }} />
+                  <div className="skeleton" style={{ height: '14px', width: '80%' }} />
+                  <div className="skeleton" style={{ height: '14px', width: '40%' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : locations.length === 0 ? (
+          <div className="page-content-scroll">
+            <div className="card" style={{ padding: '48px 24px' }}>
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                  </svg>
+                </div>
+                <h3>No store locations yet</h3>
+                <p>Onboard your franchise storefront branches to organize inventory sheets and audits.</p>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="btn btn-primary"
+                >
+                  Add First Location
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -420,16 +427,19 @@ export default function LocationsPage() {
                 return locSortDir === 'asc' ? valA - valB : valB - valA;
               });
             if (filtered.length === 0) return (
-              <div className="card" style={{ padding: '48px 24px' }}>
-                <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+              <div className="page-content-scroll">
+                <div className="card" style={{ padding: '48px 24px' }}>
+                  <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+                </div>
               </div>
             );
             return viewMode === 'tile' ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-                gap: '24px'
-              }} className="stagger">
+              <div className="page-content-scroll">
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+                  gap: '24px'
+                }} className="stagger">
                 {filtered.map((loc) => (
                   <div
                     key={loc.id}
@@ -575,9 +585,10 @@ export default function LocationsPage() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             ) : (
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="table-scroll-container">
                 <div className="table-responsive-wrap">
                   <table className="data-table">
                     <thead><tr>

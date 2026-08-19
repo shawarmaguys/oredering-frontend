@@ -106,7 +106,7 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
   );
 
   return (
-    <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
+    <div className="table-scroll-container">
       <div className="table-responsive-wrap">
         <table className="data-table">
           <thead>

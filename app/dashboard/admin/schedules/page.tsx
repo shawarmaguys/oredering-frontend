@@ -247,89 +247,94 @@ export default function SchedulesPage() {
 
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Navigation Breadcrumbs */}
-        <div className="breadcrumb">
-          <Link href="/dashboard">Dashboard</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Schedules & Triggers</span>
-        </div>
-
-        {/* Header */}
-        <div className="page-header">
-          <div className="page-header-text">
-            <h1>Ordering Schedules & Triggers</h1>
-            <p>Configure automated Slack notification schedules and multiple triggers for storefront stock audits.</p>
+      <div className="page-container">
+        {/* Pinned Top Bar */}
+        <div className="page-header-sticky">
+          {/* Navigation Breadcrumbs */}
+          <div className="breadcrumb">
+            <Link href="/dashboard">Dashboard</Link>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-current">Schedules & Triggers</span>
           </div>
-          <button
-            onClick={handleOpenCreateModal}
-            className="btn btn-primary"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Add New Trigger
-          </button>
-        </div>
 
-        {error && !showModal && (
-          <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            {error}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="alert alert-success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {successMessage}
-          </div>
-        )}
-
-        {/* Filter / Sort / View Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          {/* Location is filtered globally from the navbar dropdown */}
-          {selectedLocationId !== 'all' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 500 }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+          {/* Header */}
+          <div className="page-header">
+            <div className="page-header-text">
+              <h1>Ordering Schedules & Triggers</h1>
+              <p>Configure automated Slack notification schedules and multiple triggers for storefront stock audits.</p>
+            </div>
+            <button
+              onClick={handleOpenCreateModal}
+              className="btn btn-primary"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {locations.find(l => l.id === selectedLocationId)?.name || 'Selected Location'}
+              Add New Trigger
+            </button>
+          </div>
+
+          {error && !showModal && (
+            <div className="alert alert-error">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {error}
             </div>
           )}
-          <select className="input" style={{ flex: '1 1 200px', minWidth: '180px' }} value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}>
-            <option value="all">All Vendors</option>
-            {vendors.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
-          </select>
-          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginLeft: 'auto' }}>
-            <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 15.75v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
-            </button>
-            <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
-            </button>
+
+          {successMessage && (
+            <div className="alert alert-success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {successMessage}
+            </div>
+          )}
+
+          {/* Filter / Sort / View Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Location is filtered globally from the navbar dropdown */}
+            {selectedLocationId !== 'all' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 500 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                {locations.find(l => l.id === selectedLocationId)?.name || 'Selected Location'}
+              </div>
+            )}
+            <select className="input" style={{ flex: '1 1 200px', minWidth: '180px' }} value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}>
+              <option value="all">All Vendors</option>
+              {vendors.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
+            </select>
+            <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginLeft: 'auto' }}>
+              <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 15.75v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+              </button>
+              <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Schedules list */}
         {schedulesLoading ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-            gap: '24px'
-          }}>
-            {[1, 2].map((i) => (
-              <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '220px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="skeleton" style={{ height: '20px', width: '30%' }} />
-                <div className="skeleton" style={{ height: '24px', width: '70%' }} />
-                <div className="skeleton" style={{ height: '14px', width: '50%' }} />
-              </div>
-            ))}
+          <div className="page-content-scroll">
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+              gap: '24px'
+            }}>
+              {[1, 2].map((i) => (
+                <div key={i} className="card animate-pulse" style={{ padding: '24px', height: '220px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="skeleton" style={{ height: '20px', width: '30%' }} />
+                  <div className="skeleton" style={{ height: '24px', width: '70%' }} />
+                  <div className="skeleton" style={{ height: '14px', width: '50%' }} />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           (() => {
@@ -384,17 +389,20 @@ export default function SchedulesPage() {
             });
 
             if (groups.length === 0) return (
-              <div className="card" style={{ padding: '48px 24px' }}>
-                <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+              <div className="page-content-scroll">
+                <div className="card" style={{ padding: '48px 24px' }}>
+                  <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+                </div>
               </div>
             );
 
             return viewMode === 'tile' ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
-                gap: '24px'
-              }} className="stagger">
+              <div className="page-content-scroll">
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
+                  gap: '24px'
+                }} className="stagger">
                 {groups.map((group) => {
                   return (
                     <div
@@ -511,9 +519,10 @@ export default function SchedulesPage() {
                     </div>
                   );
                 })}
+                </div>
               </div>
             ) : (
-              <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="table-scroll-container">
                 <div className="table-responsive-wrap">
                   <table className="data-table">
                     <thead>

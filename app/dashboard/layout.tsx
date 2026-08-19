@@ -47,7 +47,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div> */}
           </div>
         </nav>
-        <main style={{ flex: 1, overflow: 'auto', width: '100%' }}>
+        <main style={{ flex: 1, overflow: 'hidden', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div className="dashboard-body animate-fade-up">
             {children}
           </div>
@@ -185,7 +185,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Page Body */}
-      <main style={{ flex: 1, overflow: 'auto', width: '100%' }}>
+      <main style={{ flex: 1, overflow: 'hidden', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {/* Kick off all context fetches in the background as soon as the dashboard mounts */}
         <ContextPrefetcher />
         <div className="dashboard-body animate-fade-up">

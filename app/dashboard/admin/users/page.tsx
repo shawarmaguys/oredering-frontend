@@ -135,75 +135,80 @@ export default function UsersPage() {
 
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Navigation Breadcrumbs */}
-        <div className="breadcrumb">
-          <Link href="/dashboard">Dashboard</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Users</span>
-        </div>
-
-        {/* Header */}
-        <div className="page-header">
-          <div className="page-header-text">
-            <h1>User Accounts</h1>
-            <p>Manage employee dashboard roles, system access credentials, and portal activity.</p>
+      <div className="page-container">
+        {/* Pinned Top Bar */}
+        <div className="page-header-sticky">
+          {/* Navigation Breadcrumbs */}
+          <div className="breadcrumb">
+            <Link href="/dashboard">Dashboard</Link>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-current">Users</span>
           </div>
-          <button
-            onClick={() => {
-              setError('');
-              setSelectedLocationIds([]);
-              setShowModal(true);
-            }}
-            className="btn btn-primary"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-            </svg>
-            Register Account
-          </button>
-        </div>
 
-        {error && !showModal && !showEditModal && (
-          <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            {error}
-          </div>
-        )}
-
-        {/* Filter / Sort / View Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input className="input" style={{ paddingLeft: 32 }} placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
-            <option value="all">All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="SUPER_MANAGER">Super Manager</option>
-            <option value="MANAGER">Manager</option>
-            <option value="WORKER">Worker</option>
-          </select>
-          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-            <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+          {/* Header */}
+          <div className="page-header">
+            <div className="page-header-text">
+              <h1>User Accounts</h1>
+              <p>Manage employee dashboard roles, system access credentials, and portal activity.</p>
+            </div>
+            <button
+              onClick={() => {
+                setError('');
+                setSelectedLocationIds([]);
+                setShowModal(true);
+              }}
+              className="btn btn-primary"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+              </svg>
+              Register Account
             </button>
-            <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
-            </button>
+          </div>
+
+          {error && !showModal && !showEditModal && (
+            <div className="alert alert-error">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          {/* Filter / Sort / View Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input className="input" style={{ paddingLeft: 32 }} placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+              <option value="all">All Roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="SUPER_MANAGER">Super Manager</option>
+              <option value="MANAGER">Manager</option>
+              <option value="WORKER">Worker</option>
+            </select>
+            <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+              <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+              </button>
+              <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Users list / table */}
         {loading ? (
-          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="skeleton" style={{ height: '40px', width: '100%' }} />
-            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
-            <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+          <div className="page-content-scroll">
+            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="skeleton" style={{ height: '40px', width: '100%' }} />
+              <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+              <div className="skeleton" style={{ height: '32px', width: '100%' }} />
+            </div>
           </div>
         ) : (
           (() => {
@@ -224,17 +229,20 @@ export default function UsersPage() {
               });
 
             if (filtered.length === 0) return (
-              <div className="card" style={{ padding: '48px 24px' }}>
-                <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+              <div className="page-content-scroll">
+                <div className="card" style={{ padding: '48px 24px' }}>
+                  <div className="empty-state"><h3>No results found</h3><p>Try adjusting your search or filter.</p></div>
+                </div>
               </div>
             );
 
             return viewMode === 'tile' ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-                gap: '24px'
-              }} className="stagger">
+              <div className="page-content-scroll">
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+                  gap: '24px'
+                }} className="stagger">
                 {filtered.map((item) => (
                   <div
                     key={item.id}
@@ -340,9 +348,10 @@ export default function UsersPage() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             ) : (
-              <div className="card animate-fade-up" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="table-scroll-container">
                 <div className="table-responsive-wrap">
                   <table className="data-table">
                     <thead>

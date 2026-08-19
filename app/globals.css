@@ -475,6 +475,11 @@ code,
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-sunken);
+  z-index: 2;
+  box-shadow: 0 1px 0 var(--border-subtle);
 }
 
 .data-table thead th:first-child {
@@ -1073,21 +1078,109 @@ code,
 .dashboard-body {
   max-width: 1600px;
   width: 100%;
-  height: 92dvh;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   margin: 0 auto;
-  padding: 28px 32px;
+  padding: 20px 32px 24px;
+  box-sizing: border-box;
 }
 
 @media (max-width: 1024px) {
   .dashboard-body {
-    padding: 20px 20px;
+    padding: 16px 20px 20px;
   }
 }
 
 @media (max-width: 640px) {
   .dashboard-body {
-    padding: 16px 16px;
+    padding: 12px 14px 16px;
   }
+}
+
+/* ============================================================
+   PAGE LAYOUT SYSTEM — non-scrollable shell & internal scroll
+   ============================================================ */
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.page-header-sticky {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.page-content-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
+}
+
+.page-content-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.page-content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page-content-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.35);
+  border-radius: 999px;
+}
+
+.page-content-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.6);
+}
+
+.table-scroll-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
+}
+
+.table-scroll-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.35);
+  border-radius: 999px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.6);
 }
 
 /* ============================================================

@@ -71,102 +71,106 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1>{t('admin_portal')}</h1>
-          <p>{t('admin_desc')}</p>
+    <div className="page-container">
+      <div className="page-header-sticky">
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <div className="page-header-text">
+            <h1>{t('admin_portal')}</h1>
+            <p>{t('admin_desc')}</p>
+          </div>
         </div>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: '24px'
-      }} className="stagger">
-        {actions.map((action) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className="card card-hover"
-            style={{
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: '16px',
-              position: 'relative',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-          >
-            {/* Soft accent glow on hover */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '96px',
-              height: '96px',
-              background: 'var(--accent-subtle)',
-              borderRadius: '50%',
-              filter: 'blur(30px)',
-              marginRight: '-30px',
-              marginTop: '-30px',
-              pointerEvents: 'none'
-            }} />
+      <div className="page-content-scroll">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '24px'
+        }} className="stagger">
+          {actions.map((action) => (
+            <Link
+              key={action.href}
+              href={action.href}
+              className="card card-hover"
+              style={{
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '16px',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                textDecoration: 'none'
+              }}
+            >
+              {/* Soft accent glow on hover */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '96px',
+                height: '96px',
+                background: 'var(--accent-subtle)',
+                borderRadius: '50%',
+                filter: 'blur(30px)',
+                marginRight: '-30px',
+                marginTop: '-30px',
+                pointerEvents: 'none'
+              }} />
 
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--bg-sunken)',
-              border: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-secondary)'
-            }}>
-              {action.icon}
-            </div>
-
-            <div>
-              <h3 style={{
-                fontSize: '0.9375rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                marginBottom: '6px',
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--bg-sunken)',
+                border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                justifyContent: 'center',
+                color: 'var(--text-secondary)'
               }}>
-                {action.title}
-              </h3>
-              <p style={{
-                fontSize: '0.8125rem',
-                color: 'var(--text-tertiary)',
-                lineHeight: 1.5
-              }}>
-                {action.description}
-              </p>
-            </div>
+                {action.icon}
+              </div>
 
-            <div style={{
-              marginTop: 'auto',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: 'var(--accent)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              {t('manage_settings')}
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 10, height: 10 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </div>
-          </Link>
-        ))}
+              <div>
+                <h3 style={{
+                  fontSize: '0.9375rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  marginBottom: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  {action.title}
+                </h3>
+                <p style={{
+                  fontSize: '0.8125rem',
+                  color: 'var(--text-tertiary)',
+                  lineHeight: 1.5
+                }}>
+                  {action.description}
+                </p>
+              </div>
+
+              <div style={{
+                marginTop: 'auto',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                {t('manage_settings')}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 10, height: 10 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

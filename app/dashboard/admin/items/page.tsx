@@ -82,80 +82,93 @@ export default function ItemsPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <AdminGuard>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Navigation Breadcrumbs */}
-        <div className="breadcrumb">
-          <Link href="/dashboard">Dashboard</Link>
-          <span className="breadcrumb-sep">/</span>
-          <span className="breadcrumb-current">Product Catalog</span>
-        </div>
-
-        {/* Header */}
-        <div className="page-header">
-          <div className="page-header-text">
-            <h1>Product Catalog</h1>
-            <p>Manage and organize your full product SKU library with vendor assignments and unit conversions.</p>
+      <div className="page-container">
+        {/* Pinned Top Bar */}
+        <div className="page-header-sticky">
+          {/* Navigation Breadcrumbs */}
+          <div className="breadcrumb">
+            <Link href="/dashboard">Dashboard</Link>
+            <span className="breadcrumb-sep">/</span>
+            <span className="breadcrumb-current">Product Catalog</span>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            New Product
-          </button>
-        </div>
 
-        {/* Error banner */}
-        {error && (
-          <div className="alert alert-error" style={{ marginBottom: '8px' }}>
-            {error}
-            <button onClick={() => setError('')} style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>✕</button>
+          {/* Header */}
+          <div className="page-header">
+            <div className="page-header-text">
+              <h1>Product Catalog</h1>
+              <p>Manage and organize your full product SKU library with vendor assignments and unit conversions.</p>
+            </div>
+            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              New Product
+            </button>
           </div>
-        )}
 
-        {/* Toolbar */}
-        <ItemsToolbar
-          vendors={vendors}
-          search={search}
-          onSearchChange={handleSearchChange}
-          vendorFilter={vendorFilter}
-          onVendorFilterChange={setVendorFilter}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          totalItems={totalItems}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
+          {/* Error banner */}
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: '8px' }}>
+              {error}
+              <button onClick={() => setError('')} style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>✕</button>
+            </div>
+          )}
+
+          {/* Toolbar */}
+          <ItemsToolbar
+            vendors={vendors}
+            search={search}
+            onSearchChange={handleSearchChange}
+            vendorFilter={vendorFilter}
+            onVendorFilterChange={setVendorFilter}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            totalItems={totalItems}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
+        </div>
 
         {/* Content */}
         {loading ? (
-          <LoadingSkeleton />
+          <div className="page-content-scroll">
+            <LoadingSkeleton />
+          </div>
         ) : items.length === 0 ? (
-          <div className="card" style={{ padding: '48px 24px' }}>
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 28, height: 28 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                </svg>
+          <div className="page-content-scroll">
+            <div className="card" style={{ padding: '48px 24px' }}>
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 28, height: 28 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                  </svg>
+                </div>
+                <h3>No products found</h3>
+                <p>Try adjusting your search or filter, or add a new product.</p>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>Add First Product</button>
               </div>
-              <h3>No products found</h3>
-              <p>Try adjusting your search or filter, or add a new product.</p>
-              <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>Add First Product</button>
             </div>
           </div>
         ) : (
           <>
             {viewMode === 'tile' ? (
-              <ItemsTileView items={items} onEdit={handleEdit} onDelete={handleDeleteClick} />
+              <div className="page-content-scroll">
+                <ItemsTileView items={items} onEdit={handleEdit} onDelete={handleDeleteClick} />
+              </div>
             ) : (
               <ItemsTableView items={items} sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} onEdit={handleEdit} onDelete={handleDeleteClick} />
             )}
-            <ItemsPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={PAGE_SIZE}
-              onPageChange={setCurrentPage}
-            />
+            {totalPages > 1 && (
+              <div style={{ flexShrink: 0, borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)', padding: '0 4px' }}>
+                <ItemsPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </>
         )}
 

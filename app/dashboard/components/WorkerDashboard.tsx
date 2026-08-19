@@ -68,183 +68,187 @@ export default function WorkerDashboard() {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1>{t('store_portal')}</h1>
-          <p>{t('worker_desc')}</p>
+    <div className="page-container">
+      <div className="page-header-sticky">
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <div className="page-header-text">
+            <h1>{t('store_portal')}</h1>
+            <p>{t('worker_desc')}</p>
+          </div>
         </div>
+
+        {error && (
+          <div className="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {/* If the user has multiple locations, show location switcher that is synced with navbar */}
+        {allowedLocations.length > 1 && (
+          <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{t('active_store_location')}</h3>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{t('filter_pending_audits')}</p>
+            </div>
+            <div style={{ width: '100%', maxWidth: '280px' }}>
+              <select
+                value={selectedLocationId}
+                onChange={(e) => setSelectedLocationId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontSize: '0.875rem',
+                  backgroundColor: 'var(--bg-sunken)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">{t('all_locations', undefined, 'All Locations')}</option>
+                {allowedLocations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>{t(loc.name, undefined, loc.name)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="alert alert-error">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-          </svg>
-          {error}
-        </div>
-      )}
+      <div className="page-content-scroll">
+        {/* Main Content - Inventory Audits */}
+        <div className="card animate-fade-up" style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '200px',
+            height: '200px',
+            background: 'var(--accent-subtle)',
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+            marginRight: '-50px',
+            marginTop: '-50px',
+            pointerEvents: 'none'
+          }} />
 
-      {/* If the user has multiple locations, show location switcher that is synced with navbar */}
-      {allowedLocations.length > 1 && (
-        <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-          <div>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{t('active_store_location')}</h3>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{t('filter_pending_audits')}</p>
-          </div>
-          <div style={{ width: '100%', maxWidth: '280px' }}>
-            <select
-              value={selectedLocationId}
-              onChange={(e) => setSelectedLocationId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '0.875rem',
-                backgroundColor: 'var(--bg-sunken)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-subtle)',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">{t('all_locations', undefined, 'All Locations')}</option>
-              {allowedLocations.map((loc) => (
-                <option key={loc.id} value={loc.id}>{t(loc.name, undefined, loc.name)}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content - Inventory Audits */}
-      <div className="card animate-fade-up" style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '200px',
-          height: '200px',
-          background: 'var(--accent-subtle)',
-          borderRadius: '50%',
-          filter: 'blur(60px)',
-          marginRight: '-50px',
-          marginTop: '-50px',
-          pointerEvents: 'none'
-        }} />
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: drafts.length > 0 ? 'var(--warning-subtle)' : 'var(--accent-subtle)',
-              border: drafts.length > 0 ? '1px solid rgba(217,119,6,0.2)' : '1px solid var(--accent-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: drafts.length > 0 ? 'var(--warning)' : 'var(--accent)'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.008v.008H12v-.008z" />
-              </svg>
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {drafts.length > 0 ? t('action_required') : t('all_caught_up')}
-              </h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-                {drafts.length > 0 
-                  ? t('pending_counts_message', { count: drafts.length })
-                  : t('no_pending_counts')}
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div className="skeleton" style={{ height: '70px', borderRadius: 'var(--radius-xl)' }} />
-                <div className="skeleton" style={{ height: '70px', borderRadius: 'var(--radius-xl)' }} />
+                backgroundColor: drafts.length > 0 ? 'var(--warning-subtle)' : 'var(--accent-subtle)',
+                border: drafts.length > 0 ? '1px solid rgba(217,119,6,0.2)' : '1px solid var(--accent-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: drafts.length > 0 ? 'var(--warning)' : 'var(--accent)'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.008v.008H12v-.008z" />
+                </svg>
               </div>
-            ) : (
-              <>
-                {/* Active Drafts */}
-                {drafts.map((draft) => (
-                  <div
-                    key={draft.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '20px 24px',
-                      backgroundColor: 'var(--bg-sunken)',
-                      borderRadius: 'var(--radius-xl)',
-                      border: '1px solid var(--border-subtle)',
-                      gap: '16px',
-                      flexWrap: 'wrap'
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {t('pending_stock_audit')}: {t(draft.location?.name || 'Store Location', undefined, draft.location?.name)}
-                      </h3>
-                      <span className="badge badge-amber" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
-                        <span className="badge-dot" />
-                        {t('awaiting_count')}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleStartSubmission(draft.id)}
-                      className="btn btn-primary"
+              <div>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {drafts.length > 0 ? t('action_required') : t('all_caught_up')}
+                </h2>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
+                  {drafts.length > 0 
+                    ? t('pending_counts_message', { count: drafts.length })
+                    : t('no_pending_counts')}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="skeleton" style={{ height: '70px', borderRadius: 'var(--radius-xl)' }} />
+                  <div className="skeleton" style={{ height: '70px', borderRadius: 'var(--radius-xl)' }} />
+                </div>
+              ) : (
+                <>
+                  {/* Active Drafts */}
+                  {drafts.map((draft) => (
+                    <div
+                      key={draft.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '20px 24px',
+                        backgroundColor: 'var(--bg-sunken)',
+                        borderRadius: 'var(--radius-xl)',
+                        border: '1px solid var(--border-subtle)',
+                        gap: '16px',
+                        flexWrap: 'wrap'
+                      }}
                     >
-                      {t('start_submission')}
-                    </button>
-                  </div>
-                ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {t('pending_stock_audit')}: {t(draft.location?.name || 'Store Location', undefined, draft.location?.name)}
+                        </h3>
+                        <span className="badge badge-amber" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
+                          <span className="badge-dot" />
+                          {t('awaiting_count')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleStartSubmission(draft.id)}
+                        className="btn btn-primary"
+                      >
+                        {t('start_submission')}
+                      </button>
+                    </div>
+                  ))}
 
-                {/* Finished Audits */}
-                {completed.map((comp) => (
-                  <div
-                    key={comp.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '20px 24px',
-                      backgroundColor: 'var(--bg-surface)',
-                      borderRadius: 'var(--radius-xl)',
-                      border: '1px solid var(--border-subtle)',
-                      gap: '16px',
-                      flexWrap: 'wrap',
-                      opacity: 0.8
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {t('submitted_audit')}: {t(comp.location?.name || 'Store Location', undefined, comp.location?.name)}
-                      </h3>
-                      <span className="badge badge-green" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: 12, height: 12 }}>
-                          <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                        </svg>
-                        {t('submitted_at', { time: `${new Date(comp.submittedAt).toLocaleDateString()} ${new Date(comp.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` })}
+                  {/* Finished Audits */}
+                  {completed.map((comp) => (
+                    <div
+                      key={comp.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '20px 24px',
+                        backgroundColor: 'var(--bg-surface)',
+                        borderRadius: 'var(--radius-xl)',
+                        border: '1px solid var(--border-subtle)',
+                        gap: '16px',
+                        flexWrap: 'wrap',
+                        opacity: 0.8
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {t('submitted_audit')}: {t(comp.location?.name || 'Store Location', undefined, comp.location?.name)}
+                        </h3>
+                        <span className="badge badge-green" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: 12, height: 12 }}>
+                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                          </svg>
+                          {t('submitted_at', { time: `${new Date(comp.submittedAt).toLocaleDateString()} ${new Date(comp.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` })}
+                        </span>
+                      </div>
+                      <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        {t('completed')}
                       </span>
                     </div>
-                    <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                      {t('completed')}
-                    </span>
-                  </div>
-                ))}
+                  ))}
 
-                {!loading && drafts.length === 0 && completed.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
-                    {t('no_stock_history')}
-                  </div>
-                )}
-              </>
-            )}
+                  {!loading && drafts.length === 0 && completed.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+                      {t('no_stock_history')}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
