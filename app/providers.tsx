@@ -8,6 +8,7 @@ import { LocationFilterProvider } from './context/LocationFilterContext';
 import { UsersProvider } from './context/UsersContext';
 import { SchedulesProvider } from './context/SchedulesContext';
 import { ItemsProvider } from './context/ItemsContext';
+import { ReportsProvider } from './context/ReportsContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -19,7 +20,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
               <UsersProvider>
                 <SchedulesProvider>
                   <ItemsProvider>
-                    {children}
+                    <ReportsProvider>
+                      {children}
+                    </ReportsProvider>
                   </ItemsProvider>
                 </SchedulesProvider>
               </UsersProvider>

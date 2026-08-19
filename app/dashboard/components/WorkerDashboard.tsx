@@ -1,60 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLocationFilter } from '../../context/LocationFilterContext';
-
-interface StockRecordItem {
-  id: string;
-  itemId: string;
-  item?: {
-    id: string;
-    displayName: string;
-    baseUnitName: string;
-  };
-  enteredQuantity: number;
-  enteredUnit: string;
-}
-
-interface StockRecord {
-  id: string;
-  locationId: string;
-  location?: {
-    name: string;
-  };
-  submittedBy?: string;
-  submittedAt: string;
-  isCompleted: boolean;
-  items?: StockRecordItem[];
-}
+import { useStockRecords, StockRecord } from '../../context/ReportsContext';
 
 export default function WorkerDashboard() {
-  const [records, setRecords] = useState<StockRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { stockRecords: records, stockRecordsLoading: loading } = useStockRecords();
+  const [error] = useState('');
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
   const { selectedLocationId, setSelectedLocationId, allowedLocations } = useLocationFilter();
-
-  useEffect(() => {
-    fetchRecords();
-  }, [user]);
-
-  const fetchRecords = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.stockRecords.list();
-      const data = Array.isArray(res) ? res : res.data || [];
-      setRecords(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load stock records.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleStartSubmission = (recordId: string) => {
     router.push(`/dashboard?recordId=${recordId}`);

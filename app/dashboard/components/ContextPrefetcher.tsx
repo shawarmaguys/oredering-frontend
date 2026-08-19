@@ -12,6 +12,7 @@ import { useLocations } from '../../context/LocationsContext';
 import { useUsers } from '../../context/UsersContext';
 import { useSchedules } from '../../context/SchedulesContext';
 import { useItems } from '../../context/ItemsContext';
+import { useReports } from '../../context/ReportsContext';
 
 export function ContextPrefetcher() {
   useVendors();
@@ -19,6 +20,7 @@ export function ContextPrefetcher() {
   useUsers();
   useSchedules();
   useItems();
+  useReports();
 
   return null;
 }

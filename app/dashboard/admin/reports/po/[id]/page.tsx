@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ConfirmDialog } from '../../../../../components/ConfirmDialog';
 import { useAuth } from '../../../../../context/AuthContext';
+import { useReports } from '../../../../../context/ReportsContext';
 
 interface POItem {
   id: string;
@@ -68,6 +69,7 @@ export default function PODetailsPage() {
   const router = useRouter();
   const id = params.id as string;
   const { user } = useAuth();
+  const { refreshPurchaseOrders } = useReports();
   const isManager = user?.role === 'MANAGER';
 
   const [po, setPo] = useState<PurchaseOrder | null>(null);
@@ -177,8 +179,8 @@ export default function PODetailsPage() {
         notes: approved.notes || po.notes || ''
       });
 
-      // Reload details
-      await fetchPODetails();
+      // Reload details and update global context
+      await Promise.all([fetchPODetails(), refreshPurchaseOrders()]);
     } catch (err: any) {
       setError(err.message || 'Failed to approve purchase order.');
     } finally {
@@ -235,7 +237,7 @@ export default function PODetailsPage() {
       });
 
       setSendEmailState(null);
-      await fetchPODetails();
+      await Promise.all([fetchPODetails(), refreshPurchaseOrders()]);
     } catch (err: any) {
       setError(err.message || 'Failed to send purchase order email.');
     } finally {

@@ -7,47 +7,24 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocations } from '../../../context/LocationsContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
-
-interface StockRecord {
-  id: string;
-  locationId: string;
-  location?: {
-    name: string;
-  };
-  submittedBy: string;
-  slackMessageTs?: string;
-  submittedAt: string;
-  isCompleted?: boolean;
-}
-
-interface PurchaseOrder {
-  id: string;
-  vendorId: string;
-  vendor?: {
-    displayName: string;
-  };
-  locationId: string;
-  location?: {
-    name: string;
-  };
-  stockRecordId?: string;
-  createdBy: string;
-  status: 'DRAFT' | 'GENERATED' | 'SENT' | 'ACKNOWLEDGED' | 'CANCELLED' | 'APPROVED' | string;
-  pdfUrl?: string;
-  notes?: string;
-  emailsSent?: string;
-  createdAt: string;
-}
+import { useReports, PurchaseOrder, StockRecord } from '../../../context/ReportsContext';
 
 export default function ReportsPage() {
   const router = useRouter();
   const { locations } = useLocations();
   const { selectedLocationId } = useLocationFilter();
   const [activeTab, setActiveTab] = useState<'pos' | 'stock'>('pos');
-  const [pos, setPos] = useState<PurchaseOrder[]>([]);
-  const [stockRecords, setStockRecords] = useState<StockRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    purchaseOrders: pos,
+    stockRecords,
+    posLoading,
+    stockRecordsLoading,
+    refreshPurchaseOrders,
+    refreshStockRecords,
+  } = useReports();
   const [error, setError] = useState('');
+
+  const loading = activeTab === 'pos' ? posLoading : stockRecordsLoading;
 
   // View / filter / sort state
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
@@ -66,10 +43,6 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    fetchInitialData();
-  }, [activeTab]);
-
-  useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const poId = params.get('poId');
@@ -81,49 +54,6 @@ export default function ReportsPage() {
       }
     }
   }, []);
-
-  const fetchInitialData = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      if (activeTab === 'pos') {
-        const res = await api.purchaseOrders.list();
-        const rawList = Array.isArray(res) ? res : res.data || [];
-        const mapped = rawList.map((po: any) => ({
-          id: po.id,
-          vendorId: po.vendorId || po.vendor_id,
-          vendor: po.vendor,
-          locationId: po.locationId || po.location_id,
-          location: po.location,
-          stockRecordId: po.stockRecordId || po.stock_record_id,
-          createdBy: po.createdBy || po.created_by,
-          status: po.status,
-          pdfUrl: po.pdfUrl || po.pdf_url,
-          notes: po.notes,
-          emailsSent: po.emailsSent || po.emails_sent,
-          createdAt: po.createdAt || po.created_at,
-        }));
-        setPos(mapped);
-      } else {
-        const res = await api.stockRecords.list();
-        const rawList = Array.isArray(res) ? res : res.data || [];
-        const mapped = rawList.map((sr: any) => ({
-          id: sr.id,
-          locationId: sr.locationId || sr.location_id,
-          location: sr.location,
-          submittedBy: sr.submittedBy || sr.submitted_by || 'Worker',
-          slackMessageTs: sr.slackMessageTs || sr.slack_message_ts,
-          submittedAt: sr.submittedAt || sr.submitted_at,
-          isCompleted: sr.isCompleted ?? sr.is_completed ?? true,
-        }));
-        setStockRecords(mapped);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <AdminGuard>

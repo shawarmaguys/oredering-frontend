@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 
+import { useReports } from '../../context/ReportsContext';
+
 interface StockTakeFormProps {
   recordId: string;
   onClose: () => void;
@@ -41,6 +43,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [submitterName, setSubmitterName] = useState('');
   const [submitterNameError, setSubmitterNameError] = useState('');
   const { language, t } = useLanguage();
+  const { refreshAll } = useReports();
 
   useEffect(() => {
     if (recordId) {
@@ -131,6 +134,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         items: payloadItems,
         submitterName: trimmedSubmitterName,
       });
+      refreshAll().catch(() => {});
       setSuccess(true);
       setShowSubmitterModal(false);
       if (onSuccess) onSuccess();

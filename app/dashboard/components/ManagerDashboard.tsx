@@ -1,32 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { api } from '../../utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLocationFilter } from '../../context/LocationFilterContext';
+import { useReports } from '../../context/ReportsContext';
 
 export default function ManagerDashboard() {
-  const [pendingReviews, setPendingReviews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { pendingReviews, posLoading: loading } = useReports();
   const { t } = useLanguage();
   const { selectedLocationId } = useLocationFilter();
-
-  useEffect(() => {
-    async function loadPendingReviews() {
-      try {
-        const res = await api.purchaseOrders.list();
-        const data = Array.isArray(res) ? res : res.data || [];
-        const filtered = data.filter((po: any) => po.status === 'DRAFT' || po.status === 'GENERATED');
-        setPendingReviews(filtered);
-      } catch (err) {
-        console.error('Failed to load pending reviews:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadPendingReviews();
-  }, []);
 
   const displayedReviews = pendingReviews.filter(
     (po) => selectedLocationId === 'all' || po.locationId === selectedLocationId
