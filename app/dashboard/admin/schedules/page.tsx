@@ -166,20 +166,20 @@ export default function SchedulesPage() {
   };
 
   const handleTriggerGroup = async (group: ScheduleGroup) => {
-    const activeItems = group.items.filter(s => s.isActive);
-    if (activeItems.length === 0) {
-      setError('No active triggers found in this group.');
+    const targetSchedule = group.items.find(s => s.isActive) || group.items[0];
+    if (!targetSchedule) {
+      setError('No triggers found in this group.');
       return;
     }
-    setTriggeringId(group.items[0].id);
+    setTriggeringId(group.items[0]?.id || targetSchedule.id);
     setError('');
     setSuccessMessage('');
     try {
-      await Promise.all(activeItems.map(s => api.schedules.trigger(s.id)));
-      setSuccessMessage('Schedules manually triggered! Stock audit generated & Slack notification sent successfully.');
+      await api.schedules.trigger(targetSchedule.id);
+      setSuccessMessage(`Schedule manually triggered for ${group.vendorName}! Stock audit generated & Slack notification sent.`);
       setTimeout(() => setSuccessMessage(''), 6000);
     } catch (err: any) {
-      setError(err.message || 'Failed to trigger schedules.');
+      setError(err.message || 'Failed to trigger schedule.');
     } finally {
       setTriggeringId(null);
     }

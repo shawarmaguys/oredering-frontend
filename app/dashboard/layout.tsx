@@ -2,6 +2,7 @@
 
 import { useAuth } from '../context/AuthContext';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, Suspense } from 'react';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
@@ -67,10 +68,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="navbar-inner">
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <a href="/dashboard" className="navbar-brand">
+            <Link href="/dashboard" className="navbar-brand">
               <div className="navbar-logo">SG</div>
               <span className="navbar-wordmark">{t('brand_name')}</span>
-            </a>
+            </Link>
             <div className="navbar-sep" />
             <span className="navbar-context">{t('operations_portal')}</span>
           </div>

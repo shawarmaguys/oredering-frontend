@@ -1,38 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { api } from '../../../utils/api';
-import { Item, Vendor, SortColumn, SortDir } from './types';
+import { useState, useMemo, useCallback } from 'react';
+import { useItems } from '../../../context/ItemsContext';
+import { useVendors, Vendor } from '../../../context/VendorsContext';
+import { Item, SortColumn, SortDir } from './types';
 
 const PAGE_SIZE = 10;
 const LS_KEY = 'items_vendor_filter';
 
-export function useItemsStore(contextVendors: Vendor[] = []) {
-  const [vendors, setVendors] = useState<Vendor[]>(contextVendors);
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useItemsStore(_initialContextVendors?: Vendor[]) {
+  const { vendors } = useVendors();
+  const { allItems, itemsLoading, refreshAllItems } = useItems();
+
   const [error, setError] = useState('');
-
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const [vendorFilter, setVendorFilterState] = useState('all');
+  const [vendorFilter, setVendorFilterState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(LS_KEY) || 'all';
+    }
+    return 'all';
+  });
+
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortCol, setSortCol] = useState<SortColumn>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
-
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fetchCounterRef = useRef(0);
-  const isMountedRef = useRef(false);
-
-  // Sync vendors from context when available
-  useEffect(() => {
-    if (contextVendors.length > 0) {
-      setVendors(contextVendors);
-    }
-  }, [contextVendors]);
 
   // Sort toggle
   const toggleSort = useCallback((col: SortColumn) => {
@@ -47,14 +39,10 @@ export function useItemsStore(contextVendors: Vendor[] = []) {
     setCurrentPage(1);
   }, []);
 
-  // Debounced search
+  // Search
   const handleSearchChange = useCallback((val: string) => {
     setSearch(val);
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      setDebouncedSearch(val);
-      setCurrentPage(1);
-    }, 300);
+    setCurrentPage(1);
   }, []);
 
   // Vendor filter change
@@ -67,105 +55,113 @@ export function useItemsStore(contextVendors: Vendor[] = []) {
     }
   }, []);
 
-  // Fetch items from server
-  const fetchItems = useCallback(
-    async (filter: string, page: number, query: string, col: SortColumn, dir: SortDir) => {
-      const fetchId = ++fetchCounterRef.current;
-      setLoading(true);
-      setError('');
+  // Filtered & Sorted items computed in-memory from context
+  const filteredAndSortedItems = useMemo(() => {
+    let result = [...allItems];
 
-      try {
-        const res = await api.items.list({
-          vendorId: filter !== 'all' ? filter : undefined,
-          search: query.trim() || undefined,
-          page,
-          limit: PAGE_SIZE,
-          sortBy: col,
-          sortOrder: dir,
-        });
+    // 1. Vendor Filter
+    if (vendorFilter !== 'all') {
+      result = result.filter((item) => item.vendorId === vendorFilter);
+    }
 
-        // Ensure we only update state for the latest request
-        if (fetchId === fetchCounterRef.current) {
-          setItems(res.data || []);
-          setTotalItems(res.total || 0);
-          setTotalPages(res.totalPages || 1);
-        }
-      } catch (err: any) {
-        if (fetchId === fetchCounterRef.current) {
-          setError(err.message || 'Failed to load items.');
-        }
-      } finally {
-        if (fetchId === fetchCounterRef.current) {
-          setLoading(false);
-        }
+    // 2. Search Filter (searches displayName, spanishName, productCode, notes, vendor name)
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter((item) => {
+        const name = (item.displayName || '').toLowerCase();
+        const spanish = (item.spanishName || '').toLowerCase();
+        const code = (item.productCode || '').toLowerCase();
+        const note = (item.note || '').toLowerCase();
+        const vendorName = (item.vendor?.displayName || '').toLowerCase();
+        return (
+          name.includes(q) ||
+          spanish.includes(q) ||
+          code.includes(q) ||
+          note.includes(q) ||
+          vendorName.includes(q)
+        );
+      });
+    }
+
+    // 3. Sorting
+    result.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (sortCol) {
+        case 'name':
+          valA = a.displayName || '';
+          valB = b.displayName || '';
+          break;
+        case 'vendor':
+          valA = a.vendor?.displayName || '';
+          valB = b.vendor?.displayName || '';
+          break;
+        case 'code':
+          valA = a.productCode || '';
+          valB = b.productCode || '';
+          break;
+        case 'note':
+          valA = a.note || '';
+          valB = b.note || '';
+          break;
+        case 'pack':
+          valA = a.displayUnitName || '';
+          valB = b.displayUnitName || '';
+          break;
+        case 'baseUnit':
+          valA = a.baseUnitName || '';
+          valB = b.baseUnitName || '';
+          break;
+        case 'multiplier':
+          valA = Number(a.multiplier) || 1;
+          valB = Number(b.multiplier) || 1;
+          break;
+        case 'status':
+          valA = a.isActive ? 1 : 0;
+          valB = b.isActive ? 1 : 0;
+          break;
+        default:
+          valA = a.displayName || '';
+          valB = b.displayName || '';
       }
-    },
-    [],
-  );
 
-  // Initial load
-  useEffect(() => {
-    let active = true;
-
-    const init = async () => {
-      setLoading(true);
-      setError('');
-
-      try {
-        let vendorsList = contextVendors;
-        if (!vendorsList || vendorsList.length === 0) {
-          vendorsList = await api.vendors.list();
-          if (active) setVendors(vendorsList);
-        }
-
-        const saved = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null;
-        let initialFilter = 'all';
-        if (saved) {
-          const exists = vendorsList.some((v: Vendor) => v.id === saved);
-          if (exists) initialFilter = saved;
-        } else if (vendorsList.length > 0) {
-          initialFilter = vendorsList[0].id;
-        }
-
-        if (active) {
-          setVendorFilterState(initialFilter);
-          isMountedRef.current = true;
-          await fetchItems(initialFilter, 1, '', 'name', 'asc');
-        }
-      } catch (err: any) {
-        if (active) {
-          setError(err.message || 'Failed to load initial data.');
-          setLoading(false);
-        }
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortDir === 'asc' ? valA - valB : valB - valA;
       }
-    };
 
-    init();
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+      if (strA < strB) return sortDir === 'asc' ? -1 : 1;
+      if (strA > strB) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
 
-    return () => {
-      active = false;
-    };
-  }, [fetchItems, contextVendors]);
+    return result;
+  }, [allItems, vendorFilter, search, sortCol, sortDir]);
 
-  // Query triggers when dependencies change
-  useEffect(() => {
-    if (!isMountedRef.current) return;
-    fetchItems(vendorFilter, currentPage, debouncedSearch, sortCol, sortDir);
-  }, [fetchItems, vendorFilter, currentPage, debouncedSearch, sortCol, sortDir]);
+  const totalItems = filteredAndSortedItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  // Paged items for the active page
+  const items = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredAndSortedItems.slice(start, start + PAGE_SIZE);
+  }, [filteredAndSortedItems, currentPage]);
 
   const refreshItems = useCallback(() => {
-    fetchItems(vendorFilter, currentPage, debouncedSearch, sortCol, sortDir);
-  }, [fetchItems, vendorFilter, currentPage, debouncedSearch, sortCol, sortDir]);
+    refreshAllItems();
+  }, [refreshAllItems]);
 
   const invalidateCache = useCallback(() => {
-    // No-op for direct server-side data, provided for interface compatibility
-  }, []);
+    refreshAllItems();
+  }, [refreshAllItems]);
 
   return {
     // Data
     vendors,
     items,
-    loading,
+    loading: itemsLoading && allItems.length === 0,
     error,
     setError,
     // Pagination
@@ -188,4 +184,3 @@ export function useItemsStore(contextVendors: Vendor[] = []) {
     invalidateCache,
   };
 }
-
