@@ -23,7 +23,9 @@ export interface User {
 interface UsersContextType {
   users: User[];
   usersLoading: boolean;
+  initialized: boolean;
   refreshUsers: () => Promise<void>;
+  ensureLoaded: () => Promise<void>;
 }
 
 const UsersContext = createContext<UsersContextType | undefined>(undefined);
@@ -31,53 +33,69 @@ const UsersContext = createContext<UsersContextType | undefined>(undefined);
 export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const initialized = useRef(false);
-  const fetchingRef = useRef(false);
+  const initializedRef = useRef(false);
+  const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
+    if (inFlightPromise.current) return inFlightPromise.current;
+
     setUsersLoading(true);
-    try {
-      const data = await api.users.list();
-      const mapped: User[] = data.map((u: any) => ({
-        id: u.id,
-        fullName: u.full_name || u.fullName,
-        email: u.email,
-        role: u.role,
-        isActive:
-          u.is_active !== undefined
-            ? u.is_active
-            : u.isActive !== undefined
-              ? u.isActive
-              : true,
-        createdAt: u.created_at || u.createdAt,
-        locationIds: u.locationIds || [],
-      }));
-      setUsers(mapped);
-      initialized.current = true;
-    } catch (err) {
-      console.error('[UsersContext] Failed to load users:', err);
-    } finally {
-      setUsersLoading(false);
-      fetchingRef.current = false;
-    }
+    const promise = (async () => {
+      try {
+        const data = await api.users.list();
+        const mapped: User[] = data.map((u: any) => ({
+          id: u.id,
+          fullName: u.full_name || u.fullName,
+          email: u.email,
+          role: u.role,
+          isActive:
+            u.is_active !== undefined
+              ? u.is_active
+              : u.isActive !== undefined
+                ? u.isActive
+                : true,
+          createdAt: u.created_at || u.createdAt,
+          locationIds: u.locationIds || [],
+        }));
+        setUsers(mapped);
+        initializedRef.current = true;
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('[UsersContext] Failed to load users:', err);
+      } finally {
+        setUsersLoading(false);
+        inFlightPromise.current = null;
+      }
+    })();
+
+    inFlightPromise.current = promise;
+    return promise;
   }, []);
 
-  useEffect(() => {
-    if (!initialized.current) {
-      fetchAll();
+  const ensureLoaded = useCallback(async () => {
+    if (!initializedRef.current) {
+      return fetchAll();
     }
   }, [fetchAll]);
 
   const refreshUsers = useCallback(async () => {
-    initialized.current = false;
+    initializedRef.current = false;
+    setIsInitialized(false);
     await fetchAll();
   }, [fetchAll]);
 
   return (
-    <UsersContext.Provider value={{ users, usersLoading, refreshUsers }}>
+    <UsersContext.Provider
+      value={{
+        users,
+        usersLoading,
+        initialized: isInitialized,
+        refreshUsers,
+        ensureLoaded,
+      }}
+    >
       {children}
     </UsersContext.Provider>
   );
@@ -86,5 +104,11 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
 export function useUsers() {
   const ctx = useContext(UsersContext);
   if (!ctx) throw new Error('useUsers must be used within a UsersProvider');
+
+  useEffect(() => {
+    ctx.ensureLoaded();
+  }, [ctx]);
+
   return ctx;
 }
+

@@ -35,7 +35,9 @@ interface VendorsContextType {
   vendors: Vendor[];
   departments: Department[];
   vendorsLoading: boolean;
+  initialized: boolean;
   refreshVendors: () => Promise<void>;
+  ensureLoaded: () => Promise<void>;
 }
 
 const VendorsContext = createContext<VendorsContextType | undefined>(undefined);
@@ -44,45 +46,61 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const initialized = useRef(false);
-  const fetchingRef = useRef(false);
+  const initializedRef = useRef(false);
+  const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
+    if (inFlightPromise.current) return inFlightPromise.current;
+
     setVendorsLoading(true);
-    try {
-      const [vendorsData, deptsData] = await Promise.all([
-        api.vendors.list(),
-        api.vendors.departments(),
-      ]);
-      setVendors(vendorsData);
-      setDepartments(deptsData);
-      initialized.current = true;
-    } catch (err) {
-      console.error('[VendorsContext] Failed to load vendors/departments:', err);
-    } finally {
-      setVendorsLoading(false);
-      fetchingRef.current = false;
-    }
+    const promise = (async () => {
+      try {
+        const [vendorsData, deptsData] = await Promise.all([
+          api.vendors.list(),
+          api.vendors.departments(),
+        ]);
+        setVendors(vendorsData);
+        setDepartments(deptsData);
+        initializedRef.current = true;
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('[VendorsContext] Failed to load vendors/departments:', err);
+      } finally {
+        setVendorsLoading(false);
+        inFlightPromise.current = null;
+      }
+    })();
+
+    inFlightPromise.current = promise;
+    return promise;
   }, []);
 
-  // Fetch once on mount
-  useEffect(() => {
-    if (!initialized.current) {
-      fetchAll();
+  const ensureLoaded = useCallback(async () => {
+    if (!initializedRef.current) {
+      return fetchAll();
     }
   }, [fetchAll]);
 
   // Exposed refresh — call after any create / update / delete mutation
   const refreshVendors = useCallback(async () => {
-    initialized.current = false;
+    initializedRef.current = false;
+    setIsInitialized(false);
     await fetchAll();
   }, [fetchAll]);
 
   return (
-    <VendorsContext.Provider value={{ vendors, departments, vendorsLoading, refreshVendors }}>
+    <VendorsContext.Provider
+      value={{
+        vendors,
+        departments,
+        vendorsLoading,
+        initialized: isInitialized,
+        refreshVendors,
+        ensureLoaded,
+      }}
+    >
       {children}
     </VendorsContext.Provider>
   );
@@ -91,5 +109,11 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
 export function useVendors() {
   const ctx = useContext(VendorsContext);
   if (!ctx) throw new Error('useVendors must be used within a VendorsProvider');
+
+  useEffect(() => {
+    ctx.ensureLoaded();
+  }, [ctx]);
+
   return ctx;
 }
+

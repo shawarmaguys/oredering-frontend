@@ -69,12 +69,14 @@ export const api = {
     delete: (id: string) => request<any>(`/vendors/departments/${id}`, { method: 'DELETE' }),
   },
   items: {
-    list: (params?: { vendorId?: string; search?: string; page?: number; limit?: number }) => {
+    list: (params?: { vendorId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
       const q = new URLSearchParams();
       if (params?.vendorId) q.set('vendor_id', params.vendorId);
       if (params?.search) q.set('search', params.search);
       if (params?.page != null) q.set('page', String(params.page));
       if (params?.limit != null) q.set('limit', String(params.limit));
+      if (params?.sortBy) q.set('sortBy', params.sortBy);
+      if (params?.sortOrder) q.set('sortOrder', params.sortOrder);
       const query = q.toString() ? `?${q.toString()}` : '';
       return request<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(`/items${query}`);
     },

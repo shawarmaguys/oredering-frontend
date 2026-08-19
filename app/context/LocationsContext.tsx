@@ -24,7 +24,9 @@ export interface StoreLocation {
 interface LocationsContextType {
   locations: StoreLocation[];
   locationsLoading: boolean;
+  initialized: boolean;
   refreshLocations: () => Promise<void>;
+  ensureLoaded: () => Promise<void>;
 }
 
 const LocationsContext = createContext<LocationsContextType | undefined>(undefined);
@@ -32,41 +34,56 @@ const LocationsContext = createContext<LocationsContextType | undefined>(undefin
 export function LocationsProvider({ children }: { children: React.ReactNode }) {
   const [locations, setLocations] = useState<StoreLocation[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const initialized = useRef(false);
-  const fetchingRef = useRef(false);
+  const initializedRef = useRef(false);
+  const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
+    if (inFlightPromise.current) return inFlightPromise.current;
+
     setLocationsLoading(true);
-    try {
-      const data = await api.locations.list();
-      setLocations(data);
-      initialized.current = true;
-    } catch (err) {
-      console.error('[LocationsContext] Failed to load locations:', err);
-    } finally {
-      setLocationsLoading(false);
-      fetchingRef.current = false;
-    }
+    const promise = (async () => {
+      try {
+        const data = await api.locations.list();
+        setLocations(data);
+        initializedRef.current = true;
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('[LocationsContext] Failed to load locations:', err);
+      } finally {
+        setLocationsLoading(false);
+        inFlightPromise.current = null;
+      }
+    })();
+
+    inFlightPromise.current = promise;
+    return promise;
   }, []);
 
-  // Fetch once on mount
-  useEffect(() => {
-    if (!initialized.current) {
-      fetchAll();
+  const ensureLoaded = useCallback(async () => {
+    if (!initializedRef.current) {
+      return fetchAll();
     }
   }, [fetchAll]);
 
   // Exposed refresh — call after any create / update / delete mutation
   const refreshLocations = useCallback(async () => {
-    initialized.current = false;
+    initializedRef.current = false;
+    setIsInitialized(false);
     await fetchAll();
   }, [fetchAll]);
 
   return (
-    <LocationsContext.Provider value={{ locations, locationsLoading, refreshLocations }}>
+    <LocationsContext.Provider
+      value={{
+        locations,
+        locationsLoading,
+        initialized: isInitialized,
+        refreshLocations,
+        ensureLoaded,
+      }}
+    >
       {children}
     </LocationsContext.Provider>
   );
@@ -75,5 +92,11 @@ export function LocationsProvider({ children }: { children: React.ReactNode }) {
 export function useLocations() {
   const ctx = useContext(LocationsContext);
   if (!ctx) throw new Error('useLocations must be used within a LocationsProvider');
+
+  useEffect(() => {
+    ctx.ensureLoaded();
+  }, [ctx]);
+
   return ctx;
 }
+

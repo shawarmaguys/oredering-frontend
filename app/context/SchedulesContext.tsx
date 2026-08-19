@@ -27,7 +27,9 @@ export interface Schedule {
 interface SchedulesContextType {
   schedules: Schedule[];
   schedulesLoading: boolean;
+  initialized: boolean;
   refreshSchedules: () => Promise<void>;
+  ensureLoaded: () => Promise<void>;
 }
 
 const SchedulesContext = createContext<SchedulesContextType | undefined>(undefined);
@@ -58,39 +60,55 @@ function normalise(s: any): Schedule {
 export function SchedulesProvider({ children }: { children: React.ReactNode }) {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const initialized = useRef(false);
-  const fetchingRef = useRef(false);
+  const initializedRef = useRef(false);
+  const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
+    if (inFlightPromise.current) return inFlightPromise.current;
+
     setSchedulesLoading(true);
-    try {
-      const data = await api.schedules.list();
-      setSchedules(data.map(normalise));
-      initialized.current = true;
-    } catch (err) {
-      console.error('[SchedulesContext] Failed to load schedules:', err);
-    } finally {
-      setSchedulesLoading(false);
-      fetchingRef.current = false;
-    }
+    const promise = (async () => {
+      try {
+        const data = await api.schedules.list();
+        setSchedules(data.map(normalise));
+        initializedRef.current = true;
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('[SchedulesContext] Failed to load schedules:', err);
+      } finally {
+        setSchedulesLoading(false);
+        inFlightPromise.current = null;
+      }
+    })();
+
+    inFlightPromise.current = promise;
+    return promise;
   }, []);
 
-  useEffect(() => {
-    if (!initialized.current) {
-      fetchAll();
+  const ensureLoaded = useCallback(async () => {
+    if (!initializedRef.current) {
+      return fetchAll();
     }
   }, [fetchAll]);
 
   const refreshSchedules = useCallback(async () => {
-    initialized.current = false;
+    initializedRef.current = false;
+    setIsInitialized(false);
     await fetchAll();
   }, [fetchAll]);
 
   return (
-    <SchedulesContext.Provider value={{ schedules, schedulesLoading, refreshSchedules }}>
+    <SchedulesContext.Provider
+      value={{
+        schedules,
+        schedulesLoading,
+        initialized: isInitialized,
+        refreshSchedules,
+        ensureLoaded,
+      }}
+    >
       {children}
     </SchedulesContext.Provider>
   );
@@ -99,5 +117,11 @@ export function SchedulesProvider({ children }: { children: React.ReactNode }) {
 export function useSchedules() {
   const ctx = useContext(SchedulesContext);
   if (!ctx) throw new Error('useSchedules must be used within a SchedulesProvider');
+
+  useEffect(() => {
+    ctx.ensureLoaded();
+  }, [ctx]);
+
   return ctx;
 }
+
