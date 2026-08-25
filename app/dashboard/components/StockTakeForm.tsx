@@ -262,6 +262,28 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
         {/* Input area */}
         <div style={{ padding: '16px', backgroundColor: bgColor, border: `1px solid ${borderColor}`, margin: '12px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+          {item.displayUnitName && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  inputMode="decimal"
+                  value={(item[secField] as number) || ''}
+                  onChange={e => updateItem(item.itemId, secField, e.target.value)}
+                  className="input"
+                  placeholder="0"
+                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
+                />
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                  {t(item.displayUnitName, undefined, item.displayUnitName)}
+                </span>
+              </div>
+              <span style={{ color: 'var(--text-quaternary)', fontWeight: 700, fontSize: '1.25rem', paddingBottom: '20px' }}>+</span>
+            </>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
             <input
               type="number"
@@ -278,26 +300,6 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               {t(item.baseUnitName, undefined, item.baseUnitName)}
             </span>
           </div>
-
-          {item.displayUnitName &&
-            <><span style={{ color: 'var(--text-quaternary)', fontWeight: 700, fontSize: '1.25rem', paddingBottom: '20px' }}>+</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  inputMode="decimal"
-                  value={(item[secField] as number) || ''}
-                  onChange={e => updateItem(item.itemId, secField, e.target.value)}
-                  className="input"
-                  placeholder="0"
-                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
-                />
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                  {t(item.displayUnitName, undefined, item.displayUnitName)}
-                </span>
-              </div></>
-          }
         </div>
       </div>
     );
