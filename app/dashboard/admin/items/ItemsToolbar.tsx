@@ -11,8 +11,7 @@ interface ItemsToolbarProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   totalItems: number;
-  currentPage: number;
-  totalPages: number;
+  visibleItemsCount: number;
 }
 
 export function ItemsToolbar({
@@ -24,8 +23,7 @@ export function ItemsToolbar({
   viewMode,
   onViewModeChange,
   totalItems,
-  currentPage,
-  totalPages,
+  visibleItemsCount,
 }: ItemsToolbarProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -58,7 +56,7 @@ export function ItemsToolbar({
       {/* Results meta */}
       {totalItems > 0 && (
         <div style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-          {totalItems} product{totalItems !== 1 ? 's' : ''} · page {currentPage} of {totalPages}
+          Showing {Math.min(visibleItemsCount, totalItems)} of {totalItems} product{totalItems !== 1 ? 's' : ''}
         </div>
       )}
     </div>

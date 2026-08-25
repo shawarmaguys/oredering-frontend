@@ -9,7 +9,6 @@ import { useVendors } from '../../../context/VendorsContext';
 
 import { useItemsStore } from './useItemsStore';
 import { ItemsToolbar } from './ItemsToolbar';
-import { ItemsPagination } from './ItemsPagination';
 import { ItemsTileView, ItemsTableView } from './ItemsViews';
 import { CreateItemModal, EditItemModal } from './ItemFormModal';
 import type { Item, ViewMode } from './types';
@@ -19,7 +18,7 @@ export default function ItemsPage() {
   const store = useItemsStore(contextVendors);
   const {
     vendors, items, loading, error, setError,
-    currentPage, totalItems, totalPages, setCurrentPage, PAGE_SIZE,
+    visibleCount, totalItems, hasMore, loadMore,
     vendorFilter, setVendorFilter, search, handleSearchChange,
     sortCol, sortDir, toggleSort,
     refreshItems, invalidateCache,
@@ -51,8 +50,6 @@ export default function ItemsPage() {
     invalidateCache();
     try {
       await api.items.delete(id);
-      const newPage = items.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
-      setCurrentPage(newPage);
       refreshItems();
     } catch (err: any) {
       setError(err.message || 'Failed to delete product.');
@@ -62,7 +59,6 @@ export default function ItemsPage() {
   const handleCreated = () => {
     setShowCreate(false);
     invalidateCache();
-    setCurrentPage(1);
     refreshItems();
   };
 
@@ -124,8 +120,7 @@ export default function ItemsPage() {
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             totalItems={totalItems}
-            currentPage={currentPage}
-            totalPages={totalPages}
+            visibleItemsCount={visibleCount}
           />
         </div>
 
@@ -153,21 +148,10 @@ export default function ItemsPage() {
           <>
             {viewMode === 'tile' ? (
               <div className="page-content-scroll">
-                <ItemsTileView items={items} onEdit={handleEdit} onDelete={handleDeleteClick} />
+                <ItemsTileView items={items} onEdit={handleEdit} onDelete={handleDeleteClick} hasMore={hasMore} onLoadMore={loadMore} />
               </div>
             ) : (
-              <ItemsTableView items={items} sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} onEdit={handleEdit} onDelete={handleDeleteClick} />
-            )}
-            {totalPages > 1 && (
-              <div style={{ flexShrink: 0, borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)', padding: '0 4px' }}>
-                <ItemsPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalItems}
-                  pageSize={PAGE_SIZE}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
+              <ItemsTableView items={items} sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} onEdit={handleEdit} onDelete={handleDeleteClick} hasMore={hasMore} onLoadMore={loadMore} />
             )}
           </>
         )}

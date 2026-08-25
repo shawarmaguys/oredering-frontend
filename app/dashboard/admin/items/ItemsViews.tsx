@@ -1,6 +1,79 @@
-'use client';
-
+import { useEffect, useRef } from 'react';
 import { Item, SortColumn, SortDir } from './types';
+
+// ─── Infinite Scroll Sentinel ────────────────────────────────────────────────
+interface InfiniteScrollSentinelProps {
+  hasMore: boolean;
+  onLoadMore: () => void;
+}
+
+export function InfiniteScrollSentinel({ hasMore, onLoadMore }: InfiniteScrollSentinelProps) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '200px',
+        threshold: 0.1,
+      }
+    );
+
+    const el = sentinelRef.current;
+    if (el) observer.observe(el);
+
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [hasMore, onLoadMore]);
+
+  if (!hasMore) {
+    return (
+      <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-tertiary)', fontSize: '0.8125rem' }}>
+        ✓ All products loaded
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={sentinelRef}
+      style={{
+        textAlign: 'center',
+        padding: '16px 0',
+        color: 'var(--text-tertiary)',
+        fontSize: '0.8125rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+      }}
+    >
+      <svg
+        className="animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        style={{ width: 14, height: 14 }}
+      >
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }} />
+        <path
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          style={{ opacity: 0.75 }}
+        />
+      </svg>
+      <span>Loading more products...</span>
+    </div>
+  );
+}
 
 // ─── Tile Card ───────────────────────────────────────────────────────────────
 interface ItemTileCardProps {
@@ -72,14 +145,19 @@ interface ItemsTileViewProps {
   items: Item[];
   onEdit: (item: Item) => void;
   onDelete: (id: string, name: string) => void;
+  hasMore: boolean;
+  onLoadMore: () => void;
 }
 
-export function ItemsTileView({ items, onEdit, onDelete }: ItemsTileViewProps) {
+export function ItemsTileView({ items, onEdit, onDelete, hasMore, onLoadMore }: ItemsTileViewProps) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }} className="stagger">
-      {items.map(item => (
-        <ItemTileCard key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
-      ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }} className="stagger">
+        {items.map(item => (
+          <ItemTileCard key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
+        ))}
+      </div>
+      <InfiniteScrollSentinel hasMore={hasMore} onLoadMore={onLoadMore} />
     </div>
   );
 }
@@ -92,13 +170,15 @@ interface ItemsTableViewProps {
   onSort: (col: SortColumn) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string, name: string) => void;
+  hasMore: boolean;
+  onLoadMore: () => void;
 }
 
 function SortIndicator({ col, active, dir }: { col: string; active: boolean; dir: SortDir }) {
   return <>{active ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</>;
 }
 
-export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete }: ItemsTableViewProps) {
+export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete, hasMore, onLoadMore }: ItemsTableViewProps) {
   const th = (col: SortColumn, label: string, extraStyle?: React.CSSProperties) => (
     <th style={{ cursor: 'pointer', ...extraStyle }} onClick={() => onSort(col)}>
       {label}<SortIndicator col={col} active={sortCol === col} dir={sortDir} />
@@ -164,6 +244,7 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
           </tbody>
         </table>
       </div>
+      <InfiniteScrollSentinel hasMore={hasMore} onLoadMore={onLoadMore} />
     </div>
   );
 }

@@ -362,6 +362,18 @@ export default function SchedulesPage() {
               groupedMap.get(key)!.items.push(s);
             });
 
+            // Sort triggers chronologically within each group (Monday -> Sunday, then trigger time)
+            groupedMap.forEach(group => {
+              group.items.sort((a, b) => {
+                const dayA = a.dayOfWeek !== undefined ? (a.dayOfWeek === 0 ? 7 : a.dayOfWeek) : -1;
+                const dayB = b.dayOfWeek !== undefined ? (b.dayOfWeek === 0 ? 7 : b.dayOfWeek) : -1;
+                if (dayA !== dayB) {
+                  return dayA - dayB;
+                }
+                return (a.triggerTime || '').localeCompare(b.triggerTime || '');
+              });
+            });
+
             const groups = Array.from(groupedMap.values()).sort((a, b) => {
               let cmp = 0;
               if (sortColumn === 'location') {

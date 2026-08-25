@@ -5,7 +5,7 @@ import { useItems } from '../../../context/ItemsContext';
 import { useVendors, Vendor } from '../../../context/VendorsContext';
 import { Item, SortColumn, SortDir } from './types';
 
-const PAGE_SIZE = 10;
+const BATCH_SIZE = 25;
 const LS_KEY = 'items_vendor_filter';
 
 export function useItemsStore(_initialContextVendors?: Vendor[]) {
@@ -13,7 +13,7 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
   const { allItems, itemsLoading, refreshAllItems } = useItems();
 
   const [error, setError] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
   const [vendorFilter, setVendorFilterState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -36,19 +36,19 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
       setSortDir('asc');
       return col;
     });
-    setCurrentPage(1);
+    setVisibleCount(BATCH_SIZE);
   }, []);
 
   // Search
   const handleSearchChange = useCallback((val: string) => {
     setSearch(val);
-    setCurrentPage(1);
+    setVisibleCount(BATCH_SIZE);
   }, []);
 
   // Vendor filter change
   const setVendorFilter = useCallback((val: string) => {
     setVendorFilterState(val);
-    setCurrentPage(1);
+    setVisibleCount(BATCH_SIZE);
     if (typeof window !== 'undefined') {
       if (val !== 'all') localStorage.setItem(LS_KEY, val);
       else localStorage.removeItem(LS_KEY);
@@ -141,13 +141,16 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
   }, [allItems, vendorFilter, search, sortCol, sortDir]);
 
   const totalItems = filteredAndSortedItems.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const hasMore = visibleCount < totalItems;
 
-  // Paged items for the active page
+  // Visible items slice for infinite scrolling
   const items = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredAndSortedItems.slice(start, start + PAGE_SIZE);
-  }, [filteredAndSortedItems, currentPage]);
+    return filteredAndSortedItems.slice(0, visibleCount);
+  }, [filteredAndSortedItems, visibleCount]);
+
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filteredAndSortedItems.length));
+  }, [filteredAndSortedItems.length]);
 
   const refreshItems = useCallback(() => {
     refreshAllItems();
@@ -164,12 +167,12 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     loading: itemsLoading && allItems.length === 0,
     error,
     setError,
-    // Pagination
-    currentPage,
+    // Infinite Scroll
+    visibleCount,
     totalItems,
-    totalPages,
-    setCurrentPage,
-    PAGE_SIZE,
+    hasMore,
+    loadMore,
+    BATCH_SIZE,
     // Filters
     vendorFilter,
     setVendorFilter,
