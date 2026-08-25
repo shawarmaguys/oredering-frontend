@@ -89,7 +89,14 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{ minWidth: 0 }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.displayName}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.displayName}</h3>
+              {item.productType && (
+                <span className="badge" style={{ backgroundColor: item.productType.color ? `${item.productType.color}22` : 'var(--bg-tertiary)', color: item.productType.color || 'var(--text-secondary)', borderColor: item.productType.color || 'var(--border-default)', fontSize: '0.7rem' }}>
+                  {item.productType.name}
+                </span>
+              )}
+            </div>
             {item.spanishName && <span style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontStyle: 'italic', display: 'block' }}>🇪🇸 {item.spanishName}</span>}
             {item.vendor && <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{item.vendor.displayName}</span>}
           </div>
@@ -192,6 +199,7 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
           <thead>
             <tr>
               {th('name', 'Display Name', { paddingLeft: '24px' })}
+              {th('category', 'Category')}
               {th('vendor', 'Assigned Vendor')}
               {th('code', 'Product Code')}
               {th('note', 'Notes')}
@@ -212,6 +220,15 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                     <div style={{ fontSize: '0.75rem', color: item.spanishName ? 'var(--accent)' : 'transparent', fontWeight: 400, fontStyle: 'italic', marginTop: '2px', userSelect: item.spanishName ? 'auto' : 'none' }}>
                       {item.spanishName ? `🇪🇸 ${item.spanishName}` : '🇪🇸 placeholder'}
                     </div>
+                  </td>
+                  <td>
+                    {item.productType ? (
+                      <span className="badge" style={{ backgroundColor: item.productType.color ? `${item.productType.color}22` : 'var(--bg-tertiary)', color: item.productType.color || 'var(--text-secondary)', borderColor: item.productType.color || 'var(--border-default)', fontSize: '0.75rem' }}>
+                        {item.productType.name}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>—</span>
+                    )}
                   </td>
                   <td><span style={{ color: 'var(--text-secondary)' }}>{item.vendor?.displayName || 'Unknown Vendor'}</span></td>
                   <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.productCode || '—'}</td>

@@ -8,6 +8,7 @@ import { LocationFilterProvider } from './context/LocationFilterContext';
 import { UsersProvider } from './context/UsersContext';
 import { SchedulesProvider } from './context/SchedulesContext';
 import { ItemsProvider } from './context/ItemsContext';
+import { ProductTypesProvider } from './context/ProductTypesContext';
 import { ReportsProvider } from './context/ReportsContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -15,19 +16,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <LanguageProvider>
       <AuthProvider>
         <VendorsProvider>
-          <LocationsProvider>
-            <LocationFilterProvider>
-              <UsersProvider>
-                <SchedulesProvider>
-                  <ItemsProvider>
-                    <ReportsProvider>
-                      {children}
-                    </ReportsProvider>
-                  </ItemsProvider>
-                </SchedulesProvider>
-              </UsersProvider>
-            </LocationFilterProvider>
-          </LocationsProvider>
+          <ProductTypesProvider>
+            <LocationsProvider>
+              <LocationFilterProvider>
+                <UsersProvider>
+                  <SchedulesProvider>
+                    <ItemsProvider>
+                      <ReportsProvider>
+                        {children}
+                      </ReportsProvider>
+                    </ItemsProvider>
+                  </SchedulesProvider>
+                </UsersProvider>
+              </LocationFilterProvider>
+            </LocationsProvider>
+          </ProductTypesProvider>
         </VendorsProvider>
       </AuthProvider>
     </LanguageProvider>

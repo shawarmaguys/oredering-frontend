@@ -1,13 +1,17 @@
 'use client';
 
 import { Vendor, SortColumn, SortDir, ViewMode } from './types';
+import { ProductType } from '../../../context/ProductTypesContext';
 
 interface ItemsToolbarProps {
   vendors: Vendor[];
+  productTypes?: ProductType[];
   search: string;
   onSearchChange: (val: string) => void;
   vendorFilter: string;
   onVendorFilterChange: (val: string) => void;
+  productTypeFilter?: string;
+  onProductTypeFilterChange?: (val: string) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   totalItems: number;
@@ -16,10 +20,13 @@ interface ItemsToolbarProps {
 
 export function ItemsToolbar({
   vendors,
+  productTypes = [],
   search,
   onSearchChange,
   vendorFilter,
   onVendorFilterChange,
+  productTypeFilter = 'all',
+  onProductTypeFilterChange,
   viewMode,
   onViewModeChange,
   totalItems,
@@ -35,6 +42,19 @@ export function ItemsToolbar({
           </svg>
           <input className="input" style={{ paddingLeft: 32 }} placeholder="Search products..." value={search} onChange={e => onSearchChange(e.target.value)} />
         </div>
+
+        {/* Category / Product Type filter */}
+        {onProductTypeFilterChange && (
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={productTypeFilter} onChange={e => onProductTypeFilterChange(e.target.value)}>
+            <option value="all">All Categories</option>
+            {productTypes.map(pt => (
+              <option key={pt.id} value={pt.id}>
+                {pt.name}
+              </option>
+            ))}
+            <option value="none">Uncategorized</option>
+          </select>
+        )}
 
         {/* Vendor filter */}
         <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={vendorFilter} onChange={e => onVendorFilterChange(e.target.value)}>

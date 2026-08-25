@@ -24,6 +24,7 @@ interface FormItem {
   backBaseInput: number;
   frontSecondaryInput: number;
   frontBaseInput: number;
+  productType?: { id: string; name: string; color?: string | null } | null;
 }
 
 type Step = 'boh' | 'foh' | 'review';
@@ -39,6 +40,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [vendorName, setVendorName] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [formItems, setFormItems] = useState<FormItem[]>([]);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [step, setStep] = useState<Step>('boh');
   const [showSubmitterModal, setShowSubmitterModal] = useState(false);
   const [submitterName, setSubmitterName] = useState('');
@@ -86,6 +88,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           backBaseInput: Number(ri.basicQuantity) || 0,
           frontSecondaryInput: Number(ri.frontSecondaryQuantity) || 0,
           frontBaseInput: Number(ri.frontBasicQuantity) || 0,
+          productType: ri.item?.productType || null,
         };
       });
       setFormItems(initialItems);
@@ -249,13 +252,29 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         overflow: 'hidden',
       }}>
         {/* Item name header */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
-          </span>
-          {item.note && item.note.trim() !== '' && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, lineHeight: 1.35 }}>
-              {t(item.note, undefined, item.note)}
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
+            </span>
+            {item.note && item.note.trim() !== '' && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, lineHeight: 1.35 }}>
+                {t(item.note, undefined, item.note)}
+              </span>
+            )}
+          </div>
+          {item.productType && (
+            <span
+              className="badge"
+              style={{
+                backgroundColor: item.productType.color ? `${item.productType.color}22` : 'var(--bg-tertiary)',
+                color: item.productType.color || 'var(--text-secondary)',
+                borderColor: item.productType.color || 'var(--border-default)',
+                fontSize: '0.7rem',
+                flexShrink: 0,
+              }}
+            >
+              {item.productType.name}
             </span>
           )}
         </div>
@@ -410,6 +429,65 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           </div>
         )}
 
+        {/* Category Pills Filter */}
+        {(() => {
+          const availableCategories = Array.from(
+            new Map(
+              formItems
+                .map(i => i.productType)
+                .filter((pt): pt is { id: string; name: string; color?: string | null } => Boolean(pt))
+                .map(pt => [pt.id, pt])
+            ).values()
+          );
+          const hasUncategorized = formItems.some(i => !i.productType);
+          if (availableCategories.length === 0) return null;
+
+          return (
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryFilter('all')}
+                className={`badge ${selectedCategoryFilter === 'all' ? 'badge-indigo' : 'badge-neutral'}`}
+                style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem' }}
+              >
+                All ({formItems.length})
+              </button>
+              {availableCategories.map(cat => {
+                const count = formItems.filter(i => i.productType?.id === cat.id).length;
+                const isSelected = selectedCategoryFilter === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCategoryFilter(cat.id)}
+                    className="badge"
+                    style={{
+                      cursor: 'pointer',
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      backgroundColor: isSelected ? (cat.color || 'var(--accent)') : 'var(--bg-tertiary)',
+                      color: isSelected ? '#fff' : (cat.color || 'var(--text-secondary)'),
+                      borderColor: cat.color || 'var(--border-default)',
+                    }}
+                  >
+                    {cat.name} ({count})
+                  </button>
+                );
+              })}
+              {hasUncategorized && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryFilter('none')}
+                  className={`badge ${selectedCategoryFilter === 'none' ? 'badge-indigo' : 'badge-neutral'}`}
+                  style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem' }}
+                >
+                  Uncategorized ({formItems.filter(i => !i.productType).length})
+                </button>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Items list */}
         <div className="flex-1 max-h-[400px] overflow-y-auto pr-1">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
@@ -417,9 +495,23 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
                 {t('no_items_assigned')}
               </div>
-            ) : (
-              formItems.map(item => renderItemCard(item, step as 'boh' | 'foh'))
-            )}
+            ) : (() => {
+              const displayedFormItems = formItems.filter(item => {
+                if (selectedCategoryFilter === 'all') return true;
+                if (selectedCategoryFilter === 'none') return !item.productType;
+                return item.productType?.id === selectedCategoryFilter;
+              });
+
+              if (displayedFormItems.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+                    No items in this category.
+                  </div>
+                );
+              }
+
+              return displayedFormItems.map(item => renderItemCard(item, step as 'boh' | 'foh'));
+            })()}
           </div>
         </div>
 

@@ -68,10 +68,21 @@ export const api = {
     update: (id: string, data: any) => request<any>(`/vendors/departments/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => request<any>(`/vendors/departments/${id}`, { method: 'DELETE' }),
   },
+  productTypes: {
+    list: (includeInactive?: boolean) => {
+      const query = includeInactive ? '?includeInactive=true' : '';
+      return request<any[]>(`/product-types${query}`);
+    },
+    get: (id: string) => request<any>(`/product-types/${id}`),
+    create: (data: any) => request<any>('/product-types', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/product-types/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request<any>(`/product-types/${id}`, { method: 'DELETE' }),
+  },
   items: {
-    list: (params?: { vendorId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
+    list: (params?: { vendorId?: string; productTypeId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
       const q = new URLSearchParams();
       if (params?.vendorId) q.set('vendor_id', params.vendorId);
+      if (params?.productTypeId) q.set('product_type_id', params.productTypeId);
       if (params?.search) q.set('search', params.search);
       if (params?.page != null) q.set('page', String(params.page));
       if (params?.limit != null) q.set('limit', String(params.limit));

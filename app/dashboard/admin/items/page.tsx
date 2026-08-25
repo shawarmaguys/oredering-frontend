@@ -17,9 +17,10 @@ export default function ItemsPage() {
   const { vendors: contextVendors } = useVendors();
   const store = useItemsStore(contextVendors);
   const {
-    vendors, items, loading, error, setError,
+    vendors, productTypes, items, loading, error, setError,
     visibleCount, totalItems, hasMore, loadMore,
-    vendorFilter, setVendorFilter, search, handleSearchChange,
+    vendorFilter, setVendorFilter, productTypeFilter, setProductTypeFilter,
+    search, handleSearchChange,
     sortCol, sortDir, toggleSort,
     refreshItems, invalidateCache,
   } = store;
@@ -94,12 +95,21 @@ export default function ItemsPage() {
               <h1>Product Catalog</h1>
               <p>Manage and organize your full product SKU library with vendor assignments and unit conversions.</p>
             </div>
-            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              New Product
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <Link href="/dashboard/admin/product-types" className="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+                </svg>
+                Manage Categories
+              </Link>
+              <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                New Product
+              </button>
+            </div>
           </div>
 
           {/* Error banner */}
@@ -113,10 +123,13 @@ export default function ItemsPage() {
           {/* Toolbar */}
           <ItemsToolbar
             vendors={vendors}
+            productTypes={productTypes}
             search={search}
             onSearchChange={handleSearchChange}
             vendorFilter={vendorFilter}
             onVendorFilterChange={setVendorFilter}
+            productTypeFilter={productTypeFilter}
+            onProductTypeFilterChange={setProductTypeFilter}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             totalItems={totalItems}

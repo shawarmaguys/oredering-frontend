@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../utils/api';
 import { Item, Vendor } from './types';
+import { useProductTypes } from '../../../context/ProductTypesContext';
 
 // ─── Shared translation button ────────────────────────────────────────────────
 interface TranslateButtonProps {
@@ -78,9 +79,11 @@ interface CreateItemModalProps {
 }
 
 export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModalProps) {
+  const { productTypes } = useProductTypes();
   const [displayName, setDisplayName] = useState('');
   const [spanishName, setSpanishName] = useState('');
   const [vendorId, setVendorId] = useState(vendors[0]?.id ?? '');
+  const [productTypeId, setProductTypeId] = useState('');
   const [baseUnitName, setBaseUnitName] = useState('');
   const [displayUnitName, setDisplayUnitName] = useState('');
   const [multiplier, setMultiplier] = useState<number | ''>('');
@@ -104,6 +107,7 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
         displayName,
         spanishName: spanishName.trim() || undefined,
         vendorId,
+        productTypeId: productTypeId || undefined,
         baseUnitName,
         displayUnitName: hasSecondary ? displayUnitName : undefined,
         multiplier: hasSecondary ? Number(multiplier) : 1,
@@ -155,9 +159,18 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
                 </select>
               </div>
               <div>
-                <label className="label" htmlFor="create-code">Product Code (SKU)</label>
-                <input id="create-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" placeholder="e.g. SH-KIT-010" />
+                <label className="label" htmlFor="create-category">Product Type / Category</label>
+                <select id="create-category" value={productTypeId} onChange={e => setProductTypeId(e.target.value)} className="input">
+                  <option value="">No Category</option>
+                  {productTypes.filter(pt => pt.isActive).map(pt => (
+                    <option key={pt.id} value={pt.id}>{pt.name}</option>
+                  ))}
+                </select>
               </div>
+            </div>
+            <div>
+              <label className="label" htmlFor="create-code">Product Code (SKU)</label>
+              <input id="create-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" placeholder="e.g. SH-KIT-010" />
             </div>
             <div>
               <label className="label" htmlFor="create-note">Notes</label>
@@ -184,10 +197,12 @@ interface EditItemModalProps {
 }
 
 export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemModalProps) {
+  const { productTypes } = useProductTypes();
   const isSecondaryConfigured = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
   const [displayName, setDisplayName] = useState(item.displayName);
   const [spanishName, setSpanishName] = useState(item.spanishName ?? '');
   const [vendorId, setVendorId] = useState(item.vendorId);
+  const [productTypeId, setProductTypeId] = useState(item.productTypeId ?? '');
   const [baseUnitName, setBaseUnitName] = useState(item.baseUnitName);
   const [displayUnitName, setDisplayUnitName] = useState(isSecondaryConfigured ? item.displayUnitName : '');
   const [multiplier, setMultiplier] = useState<number | ''>(isSecondaryConfigured ? item.multiplier : '');
@@ -211,6 +226,7 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
         displayName,
         spanishName: spanishName.trim() || undefined,
         vendorId,
+        productTypeId: productTypeId || null,
         baseUnitName,
         displayUnitName: displayUnitName || '',
         multiplier: hasSecondary ? Number(multiplier) : 1,
@@ -256,9 +272,18 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
               </select>
             </div>
             <div>
-              <label className="label" htmlFor="edit-code">Product Code (SKU)</label>
-              <input id="edit-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" />
+              <label className="label" htmlFor="edit-category">Product Type / Category</label>
+              <select id="edit-category" value={productTypeId} onChange={e => setProductTypeId(e.target.value)} className="input">
+                <option value="">No Category</option>
+                {productTypes.filter(pt => pt.isActive || pt.id === item.productTypeId).map(pt => (
+                  <option key={pt.id} value={pt.id}>{pt.name}{!pt.isActive ? ' (Inactive)' : ''}</option>
+                ))}
+              </select>
             </div>
+          </div>
+          <div>
+            <label className="label" htmlFor="edit-code">Product Code (SKU)</label>
+            <input id="edit-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" />
           </div>
           <div>
             <label className="label" htmlFor="edit-note">Notes</label>

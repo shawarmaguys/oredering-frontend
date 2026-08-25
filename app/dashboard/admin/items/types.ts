@@ -14,10 +14,12 @@ export interface Item {
   isActive: boolean;
   vendorId: string;
   vendor?: { displayName: string };
+  productTypeId?: string;
+  productType?: { id: string; name: string; color?: string };
   createdAt: string;
   note?: string;
 }
 
-export type SortColumn = 'name' | 'vendor' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'status';
+export type SortColumn = 'name' | 'vendor' | 'category' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'status';
 export type SortDir = 'asc' | 'desc';
 export type ViewMode = 'tile' | 'list';

@@ -3,13 +3,16 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useItems } from '../../../context/ItemsContext';
 import { useVendors, Vendor } from '../../../context/VendorsContext';
+import { useProductTypes } from '../../../context/ProductTypesContext';
 import { Item, SortColumn, SortDir } from './types';
 
 const BATCH_SIZE = 25;
-const LS_KEY = 'items_vendor_filter';
+const LS_VENDOR_KEY = 'items_vendor_filter';
+const LS_CATEGORY_KEY = 'items_category_filter';
 
 export function useItemsStore(_initialContextVendors?: Vendor[]) {
   const { vendors } = useVendors();
+  const { productTypes } = useProductTypes();
   const { allItems, itemsLoading, refreshAllItems } = useItems();
 
   const [error, setError] = useState('');
@@ -17,7 +20,14 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
 
   const [vendorFilter, setVendorFilterState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(LS_KEY) || 'all';
+      return localStorage.getItem(LS_VENDOR_KEY) || 'all';
+    }
+    return 'all';
+  });
+
+  const [productTypeFilter, setProductTypeFilterState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(LS_CATEGORY_KEY) || 'all';
     }
     return 'all';
   });
@@ -50,8 +60,18 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     setVendorFilterState(val);
     setVisibleCount(BATCH_SIZE);
     if (typeof window !== 'undefined') {
-      if (val !== 'all') localStorage.setItem(LS_KEY, val);
-      else localStorage.removeItem(LS_KEY);
+      if (val !== 'all') localStorage.setItem(LS_VENDOR_KEY, val);
+      else localStorage.removeItem(LS_VENDOR_KEY);
+    }
+  }, []);
+
+  // Product Type filter change
+  const setProductTypeFilter = useCallback((val: string) => {
+    setProductTypeFilterState(val);
+    setVisibleCount(BATCH_SIZE);
+    if (typeof window !== 'undefined') {
+      if (val !== 'all') localStorage.setItem(LS_CATEGORY_KEY, val);
+      else localStorage.removeItem(LS_CATEGORY_KEY);
     }
   }, []);
 
@@ -64,7 +84,16 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
       result = result.filter((item) => item.vendorId === vendorFilter);
     }
 
-    // 2. Search Filter (searches displayName, spanishName, productCode, notes, vendor name)
+    // 2. Product Type Filter
+    if (productTypeFilter !== 'all') {
+      if (productTypeFilter === 'none') {
+        result = result.filter((item) => !item.productTypeId);
+      } else {
+        result = result.filter((item) => item.productTypeId === productTypeFilter);
+      }
+    }
+
+    // 3. Search Filter (searches displayName, spanishName, productCode, notes, vendor name, category name)
     const q = search.trim().toLowerCase();
     if (q) {
       result = result.filter((item) => {
@@ -73,17 +102,19 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
         const code = (item.productCode || '').toLowerCase();
         const note = (item.note || '').toLowerCase();
         const vendorName = (item.vendor?.displayName || '').toLowerCase();
+        const categoryName = (item.productType?.name || '').toLowerCase();
         return (
           name.includes(q) ||
           spanish.includes(q) ||
           code.includes(q) ||
           note.includes(q) ||
-          vendorName.includes(q)
+          vendorName.includes(q) ||
+          categoryName.includes(q)
         );
       });
     }
 
-    // 3. Sorting
+    // 4. Sorting
     result.sort((a, b) => {
       let valA: any = '';
       let valB: any = '';
@@ -96,6 +127,10 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
         case 'vendor':
           valA = a.vendor?.displayName || '';
           valB = b.vendor?.displayName || '';
+          break;
+        case 'category':
+          valA = a.productType?.name || '';
+          valB = b.productType?.name || '';
           break;
         case 'code':
           valA = a.productCode || '';
@@ -138,7 +173,7 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     });
 
     return result;
-  }, [allItems, vendorFilter, search, sortCol, sortDir]);
+  }, [allItems, vendorFilter, productTypeFilter, search, sortCol, sortDir]);
 
   const totalItems = filteredAndSortedItems.length;
   const hasMore = visibleCount < totalItems;
@@ -163,6 +198,7 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
   return {
     // Data
     vendors,
+    productTypes,
     items,
     loading: itemsLoading && allItems.length === 0,
     error,
@@ -176,6 +212,8 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     // Filters
     vendorFilter,
     setVendorFilter,
+    productTypeFilter,
+    setProductTypeFilter,
     search,
     handleSearchChange,
     // Sort
