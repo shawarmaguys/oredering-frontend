@@ -16,6 +16,7 @@ interface FormItem {
   itemId: string;
   displayName: string;
   spanishName?: string;
+  note?: string;
   baseUnitName: string;
   displayUnitName: string;
   multiplier: number;
@@ -77,6 +78,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           itemId: ri.itemId,
           displayName: ri.item?.displayName || 'Unknown Item',
           spanishName: ri.item?.spanishName,
+          note: ri.item?.note,
           baseUnitName: baseUnit,
           displayUnitName: displayUnit,
           multiplier,
@@ -247,10 +249,15 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         overflow: 'hidden',
       }}>
         {/* Item name header */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
             {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
           </span>
+          {item.note && item.note.trim() !== '' && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, lineHeight: 1.35 }}>
+              {t(item.note, undefined, item.note)}
+            </span>
+          )}
         </div>
 
         {/* Input area */}

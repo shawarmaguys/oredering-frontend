@@ -17,6 +17,7 @@ interface StockRecordItem {
     displayName: string;
     baseUnitName: string;
     displayUnitName: string;
+    note?: string;
     category?: { name: string };
   };
 }
@@ -158,6 +159,11 @@ export default function StockRecordDetailsPage() {
                             {item.item?.category?.name && (
                               <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                 Category: {item.item.category.name}
+                              </span>
+                            )}
+                            {item.item?.note && (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                Note: {item.item.note}
                               </span>
                             )}
                           </div>
