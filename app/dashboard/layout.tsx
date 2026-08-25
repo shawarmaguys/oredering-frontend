@@ -38,8 +38,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <nav className="navbar">
           <div className="navbar-inner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div className="navbar-logo">SG</div>
-              <span className="navbar-wordmark">{t('brand_name')}</span>
+              <Link href="/dashboard" className="navbar-brand">
+                <div className="navbar-logo">SG</div>
+                <span className="navbar-wordmark">{t('brand_name')}</span>
+              </Link>
               <div className="navbar-sep" />
               <span className="navbar-context">{t('stock_count_audit')}</span>
             </div>

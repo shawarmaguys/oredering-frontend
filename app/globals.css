@@ -754,6 +754,12 @@ code,
   gap: 9px;
   text-decoration: none;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity var(--transition-fast, 150ms ease-in-out);
+}
+
+.navbar-brand:hover {
+  opacity: 0.85;
 }
 
 .navbar-logo {

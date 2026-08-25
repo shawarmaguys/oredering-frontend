@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../dashboard/components/LanguageSwitcher';
@@ -93,20 +94,21 @@ function LoginForm() {
         }} />
 
         {/* Brand */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Link href="/dashboard" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
             backgroundColor: 'rgba(255,255,255,0.12)',
             border: '1px solid rgba(255,255,255,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 800, fontSize: '0.9375rem',
+            cursor: 'pointer',
           }}>
             SG
           </div>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.02em' }}>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.02em', cursor: 'pointer' }}>
             {t('brand_name')}
           </span>
-        </div>
+        </Link>
 
         {/* Quote */}
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -138,17 +140,18 @@ function LoginForm() {
           {/* Header */}
           <div style={{ marginBottom: 32 }}>
             {/* Mobile logo */}
-            <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 10, marginBottom: 28 }}>
+            <Link href="/dashboard" className="flex lg:hidden" style={{ alignItems: 'center', gap: 10, marginBottom: 28, textDecoration: 'none' }}>
               <div style={{
                 width: 32, height: 32, borderRadius: 8,
                 backgroundColor: 'var(--accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', fontWeight: 800, fontSize: '0.875rem',
+                cursor: 'pointer',
               }}>SG</div>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.02em', cursor: 'pointer' }}>
                 {t('brand_name')}
               </span>
-            </div>
+            </Link>
 
             <h1 style={{
               fontSize: '1.625rem', fontWeight: 700,

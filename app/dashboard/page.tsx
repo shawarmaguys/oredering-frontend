@@ -1,33 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSearchParams, useRouter } from 'next/navigation';
 import AdminDashboard from './components/AdminDashboard';
 import ManagerDashboard from './components/ManagerDashboard';
 import WorkerDashboard from './components/WorkerDashboard';
 import StockTakeForm from './components/StockTakeForm';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user } = useAuth();
-  const [recordId, setRecordId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const rid = params.get('recordId');
-      if (rid) {
-        setRecordId(rid);
-      }
-    }
-  }, []);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const recordId = searchParams.get('recordId');
 
   const handleClose = () => {
-    setRecordId(null);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('recordId');
-      window.history.pushState(null, '', url.pathname + url.search);
-    }
+    router.replace('/dashboard');
   };
 
   if (recordId) {
@@ -54,4 +42,12 @@ export default function DashboardPage() {
         </div>
       );
   }
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
+  );
 }
