@@ -43,6 +43,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     <div className="modal-backdrop confirm-modal-backdrop" style={{ zIndex: 9999 }}>
       <div className="modal-panel modal-panel-sm" style={{ maxWidth: '440px' }}>
         <button
+          type="button"
           onClick={handleCancel}
           className="modal-close"
           aria-label="Close modal"
@@ -79,10 +80,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           )}
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-          <button className="btn btn-secondary" onClick={handleCancel} style={{ minWidth: '80px' }}>
+          <button type="button" className="btn btn-secondary" onClick={handleCancel} style={{ minWidth: '80px' }}>
             {cancelText}
           </button>
           <button
+            type="button"
             className="btn btn-primary"
             onClick={onConfirm}
             style={{

@@ -147,6 +147,7 @@ export default function ProductTypesPage() {
               <p>Configure product types & categories for grouping inventory items and filtering catalog listings.</p>
             </div>
             <button
+              type="button"
               className="btn btn-primary"
               onClick={() => {
                 setError('');
@@ -183,6 +184,7 @@ export default function ProductTypesPage() {
 
             <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
               <button
+                type="button"
                 onClick={() => setViewMode('tile')}
                 title="Tile view"
                 style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
@@ -190,6 +192,7 @@ export default function ProductTypesPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('list')}
                 title="List view"
                 style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}
@@ -225,7 +228,7 @@ export default function ProductTypesPage() {
                 <h3>No categories found</h3>
                 <p>{search ? 'No categories matched your search term.' : 'Create product categories (e.g. Meat, Produce, Packaging) to group products.'}</p>
                 {!search && (
-                  <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+                  <button type="button" className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
                     Create First Category
                   </button>
                 )}
@@ -267,10 +270,10 @@ export default function ProductTypesPage() {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(pt)}>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => openEditModal(pt)}>
                         Edit
                       </button>
-                      <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(pt.id, pt.name)}>
+                      <button type="button" className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(pt.id, pt.name)}>
                         Delete
                       </button>
                     </div>
@@ -313,8 +316,8 @@ export default function ProductTypesPage() {
                         <td style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>{pt.description || '—'}</td>
                         <td style={{ textAlign: 'right', paddingRight: 24 }}>
                           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                            <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(pt)}>Edit</button>
-                            <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(pt.id, pt.name)}>Delete</button>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openEditModal(pt)}>Edit</button>
+                            <button type="button" className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(pt.id, pt.name)}>Delete</button>
                           </div>
                         </td>
                       </tr>
@@ -330,7 +333,7 @@ export default function ProductTypesPage() {
         {showCreateModal && (
           <div className="modal-backdrop">
             <div className="modal-panel">
-              <button onClick={() => setShowCreateModal(false)} className="modal-close">✕</button>
+              <button type="button" onClick={() => setShowCreateModal(false)} className="modal-close">✕</button>
               <div className="modal-header">
                 <h2>New Product Category</h2>
                 <p>Add a product category to organize your SKU catalog.</p>
@@ -365,7 +368,7 @@ export default function ProductTypesPage() {
                 </div>
 
                 <div>
-                  <label className="label">Badge Color</label>
+                  <span className="label" style={{ display: 'block', marginBottom: '6px' }}>Badge Color</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {DEFAULT_COLORS.map(c => (
                       <button
@@ -411,7 +414,7 @@ export default function ProductTypesPage() {
         {showEditModal && selectedType && (
           <div className="modal-backdrop">
             <div className="modal-panel">
-              <button onClick={() => { setShowEditModal(false); setSelectedType(null); }} className="modal-close">✕</button>
+              <button type="button" onClick={() => { setShowEditModal(false); setSelectedType(null); }} className="modal-close">✕</button>
               <div className="modal-header">
                 <h2>Edit Category</h2>
                 <p>Modify category details or color badge.</p>
@@ -444,7 +447,7 @@ export default function ProductTypesPage() {
                 </div>
 
                 <div>
-                  <label className="label">Badge Color</label>
+                  <span className="label" style={{ display: 'block', marginBottom: '6px' }}>Badge Color</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {DEFAULT_COLORS.map(c => (
                       <button
