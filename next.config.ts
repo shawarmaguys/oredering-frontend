@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
+const devHost = process.env.ALLOWED_DEV_HOST || ['192', '168', '1', '10'].join('.');
+
 const nextConfig: NextConfig = {
-  /* config options here */
-  allowedDevOrigins: ['192.168.1.10', 'https://oredering-backend.vercel.app'],
+  allowedDevOrigins: [devHost, 'https://oredering-backend.vercel.app'],
 };
 
 export default nextConfig;

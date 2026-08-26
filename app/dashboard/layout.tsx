@@ -173,6 +173,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Logout */}
             <button
+              type="button"
               onClick={logout}
               className="navbar-icon-btn"
               aria-label={t('sign_out')}

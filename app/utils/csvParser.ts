@@ -83,7 +83,7 @@ export function parseCSVToRows(text: string): string[][] {
 export function normalizeHeaderName(header: string): string {
   let clean = header.trim();
   // Strip out (REQUIRED), (Optional...), [Required], [Optional], etc.
-  clean = clean.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
+  clean = clean.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
   clean = clean.toLowerCase().replace(/[^a-z0-9]/g, '');
 
   if (clean === 'id' || clean.includes('itemid')) return 'id';

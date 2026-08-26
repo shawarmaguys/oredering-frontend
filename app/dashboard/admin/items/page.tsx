@@ -88,7 +88,7 @@ export default function ItemsPage() {
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleParChange = (itemId: string, originalPar: number, newPar: number) => {
     setPendingParEdits((prev) => {
-      if (newPar === originalPar || isNaN(newPar)) {
+      if (newPar === originalPar || Number.isNaN(newPar)) {
         const next = { ...prev };
         delete next[itemId];
         return next;
@@ -623,9 +623,8 @@ export default function ItemsPage() {
                         {filtered.map((item) => {
                           const isSelected = selectedMasterIds.includes(item.id);
                           return (
-                            <div
+                            <label
                               key={item.id}
-                              onClick={() => handleToggleSelectMaster(item.id)}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -642,7 +641,7 @@ export default function ItemsPage() {
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => {}} // Handled by parent div onClick
+                                  onChange={() => handleToggleSelectMaster(item.id)}
                                   style={{ cursor: 'pointer', width: 16, height: 16 }}
                                 />
                                 <div>
@@ -656,7 +655,7 @@ export default function ItemsPage() {
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </label>
                           );
                         })}
                       </div>

@@ -100,10 +100,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   };
 
   const updateItem = (itemId: string, field: keyof FormItem, val: string) => {
-    const numVal = parseFloat(val);
+    const numVal = Number.parseFloat(val);
     setFormItems(prev =>
       prev.map(item =>
-        item.itemId === itemId ? { ...item, [field]: isNaN(numVal) ? 0 : numVal } : item
+        item.itemId === itemId ? { ...item, [field]: Number.isNaN(numVal) ? 0 : numVal } : item
       )
     );
   };

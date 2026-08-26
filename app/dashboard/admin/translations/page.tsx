@@ -96,6 +96,7 @@ export default function TranslationsPage() {
               <p>Configure translation dictionaries to help multilingual store workers conduct stock audits fluently.</p>
             </div>
             <button
+              type="button"
               onClick={() => {
                 setError('');
                 setShowModal(true);
@@ -148,6 +149,7 @@ export default function TranslationsPage() {
                 <h3>No translations registered</h3>
                 <p>Map core product descriptions to Spanish or Arabic to help workers accurately record inventory levels.</p>
                 <button
+                  type="button"
                   onClick={() => setShowModal(true)}
                   className="btn btn-primary"
                 >
@@ -237,6 +239,7 @@ export default function TranslationsPage() {
           <div className="modal-backdrop">
             <div className="modal-panel modal-panel-sm">
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="modal-close"
                 aria-label="Close modal"

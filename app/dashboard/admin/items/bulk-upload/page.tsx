@@ -393,12 +393,13 @@ export default function BulkUploadItemsPage() {
 
               {/* Upload Card */}
               <div className="card" style={{ padding: '24px' }}>
-                <label htmlFor="csv-file-input" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                   Select CSV File to Add Products
-                </label>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
+                </span>
+                <label
+                  htmlFor="csv-file-input"
                   style={{
+                    display: 'block',
                     border: '2px dashed var(--border-default)',
                     borderRadius: 'var(--radius-md)',
                     padding: '24px',
@@ -426,7 +427,7 @@ export default function BulkUploadItemsPage() {
                       {file ? file.name : 'Click to select or drag & drop .csv file'}
                     </span>
                   </div>
-                </div>
+                </label>
               </div>
 
               {/* Loading State */}

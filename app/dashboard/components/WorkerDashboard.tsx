@@ -156,6 +156,7 @@ export default function WorkerDashboard() {
                         </span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleStartSubmission(draft.id)}
                         className="btn btn-primary"
                       >
