@@ -398,6 +398,7 @@ export default function BulkUploadItemsPage() {
                 </span>
                 <label
                   htmlFor="csv-file-input"
+                  aria-label="Select CSV File to Add Products"
                   style={{
                     display: 'block',
                     border: '2px dashed var(--border-default)',

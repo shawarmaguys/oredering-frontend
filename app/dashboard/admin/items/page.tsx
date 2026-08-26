@@ -625,6 +625,7 @@ export default function ItemsPage() {
                           return (
                             <label
                               key={item.id}
+                              aria-label={`Select item ${item.displayName}`}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
