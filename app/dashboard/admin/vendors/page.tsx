@@ -28,6 +28,7 @@ export default function VendorsPage() {
   const [displayName, setDisplayName] = useState('');
   const [channelName, setChannelName] = useState('');
   const [email, setEmail] = useState('');
+  const [otherEmails, setOtherEmails] = useState('');
   const [phone, setPhone] = useState('');
   const [address1, setAddress1] = useState('');
   const [address2, setAddress2] = useState('');
@@ -50,6 +51,7 @@ export default function VendorsPage() {
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editChannelName, setEditChannelName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editOtherEmails, setEditOtherEmails] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editAddress1, setEditAddress1] = useState('');
   const [editAddress2, setEditAddress2] = useState('');
@@ -137,6 +139,7 @@ export default function VendorsPage() {
         displayName,
         channelName: channelName || undefined,
         email: email || undefined,
+        otherEmails: otherEmails || undefined,
         phone: phone || undefined,
         address1: address1 || undefined,
         address2: address2 || undefined,
@@ -149,6 +152,7 @@ export default function VendorsPage() {
       setDisplayName('');
       setChannelName('');
       setEmail('');
+      setOtherEmails('');
       setPhone('');
       setAddress1('');
       setAddress2('');
@@ -177,6 +181,7 @@ export default function VendorsPage() {
         displayName: editDisplayName,
         channelName: editChannelName || null,
         email: editEmail || null,
+        otherEmails: editOtherEmails || null,
         phone: editPhone || null,
         address1: editAddress1 || null,
         address2: editAddress2 || null,
@@ -199,6 +204,7 @@ export default function VendorsPage() {
     setEditDisplayName(vendor.displayName);
     setEditChannelName(vendor.channelName || '');
     setEditEmail(vendor.email || '');
+    setEditOtherEmails(vendor.otherEmails || '');
     setEditPhone(vendor.phone || '');
     setEditAddress1(vendor.address1 || '');
     setEditAddress2(vendor.address2 || '');
@@ -657,19 +663,36 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="label" htmlFor="vendor-email">Contact Email Address(es)</label>
-                  <input
-                    id="vendor-email"
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input"
-                    placeholder="orders@syscowholesale.com, rep@sysco.com"
-                  />
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
-                    Separate multiple emails with commas.
-                  </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label className="label" htmlFor="vendor-email">Default Email Address(es)</label>
+                    <input
+                      id="vendor-email"
+                      type="text"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="input"
+                      placeholder="orders@syscowholesale.com"
+                    />
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
+                      Auto-selected when sending a PO.
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="label" htmlFor="vendor-other-emails">Other Email Address(es)</label>
+                    <input
+                      id="vendor-other-emails"
+                      type="text"
+                      value={otherEmails}
+                      onChange={(e) => setOtherEmails(e.target.value)}
+                      className="input"
+                      placeholder="billing@syscowholesale.com, rep@sysco.com"
+                    />
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
+                      User can manually select when sending a PO.
+                    </span>
+                  </div>
                 </div>
 
                 <div>
@@ -824,19 +847,36 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="label" htmlFor="edit-vendor-email">Contact Email Address(es)</label>
-                  <input
-                    id="edit-vendor-email"
-                    type="text"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className="input"
-                    placeholder="orders@syscowholesale.com, rep@sysco.com"
-                  />
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
-                    Separate multiple emails with commas.
-                  </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label className="label" htmlFor="edit-vendor-email">Default Email Address(es)</label>
+                    <input
+                      id="edit-vendor-email"
+                      type="text"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="input"
+                      placeholder="orders@syscowholesale.com"
+                    />
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
+                      Auto-selected when sending a PO.
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="label" htmlFor="edit-vendor-other-emails">Other Email Address(es)</label>
+                    <input
+                      id="edit-vendor-other-emails"
+                      type="text"
+                      value={editOtherEmails}
+                      onChange={(e) => setEditOtherEmails(e.target.value)}
+                      className="input"
+                      placeholder="billing@syscowholesale.com, rep@sysco.com"
+                    />
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', display: 'block', marginTop: '4px' }}>
+                      User can manually select when sending a PO.
+                    </span>
+                  </div>
                 </div>
 
                 <div>

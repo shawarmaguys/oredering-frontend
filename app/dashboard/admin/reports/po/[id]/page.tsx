@@ -36,6 +36,7 @@ interface PurchaseOrder {
   vendor?: {
     displayName: string;
     email?: string;
+    otherEmails?: string;
     address1?: string;
     address2?: string;
     address3?: string;
@@ -88,7 +89,8 @@ export default function PODetailsPage() {
     isOpen: boolean;
     poId: string;
     vendorName: string;
-    vendorEmails: string[];
+    defaultVendorEmails: string[];
+    otherVendorEmails: string[];
     selectedVendorEmails: string[];
     customEmails: string;
     subject: string;
@@ -162,7 +164,11 @@ export default function PODetailsPage() {
 
       const poIdShort = approved.id.slice(0, 8).toUpperCase();
       const locationName = approved.location?.name || 'Store';
-      const vendorEmails = (approved.vendor?.email || '')
+      const defaultVendorEmails = (approved.vendor?.email || '')
+        .split(',')
+        .map((e: string) => e.trim())
+        .filter((e: string) => e.length > 0);
+      const otherVendorEmails = (approved.vendor?.otherEmails || '')
         .split(',')
         .map((e: string) => e.trim())
         .filter((e: string) => e.length > 0);
@@ -171,8 +177,9 @@ export default function PODetailsPage() {
         isOpen: true,
         poId: approved.id,
         vendorName: approved.vendor?.displayName || 'Supplier',
-        vendorEmails,
-        selectedVendorEmails: [...vendorEmails],
+        defaultVendorEmails,
+        otherVendorEmails,
+        selectedVendorEmails: [...defaultVendorEmails],
         customEmails: '',
         subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
         body: '',
@@ -192,7 +199,11 @@ export default function PODetailsPage() {
     if (!po) return;
     const poIdShort = po.id.slice(0, 8).toUpperCase();
     const locationName = po.location?.name || 'Store';
-    const vendorEmails = (po.vendor?.email || '')
+    const defaultVendorEmails = (po.vendor?.email || '')
+      .split(',')
+      .map((e: string) => e.trim())
+      .filter((e: string) => e.length > 0);
+    const otherVendorEmails = (po.vendor?.otherEmails || '')
       .split(',')
       .map((e: string) => e.trim())
       .filter((e: string) => e.length > 0);
@@ -201,8 +212,9 @@ export default function PODetailsPage() {
       isOpen: true,
       poId: po.id,
       vendorName: po.vendor?.displayName || 'Supplier',
-      vendorEmails,
-      selectedVendorEmails: [...vendorEmails],
+      defaultVendorEmails,
+      otherVendorEmails,
+      selectedVendorEmails: [...defaultVendorEmails],
       customEmails: '',
       subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
       body: '',
@@ -412,15 +424,19 @@ export default function PODetailsPage() {
                 {po.status !== 'DRAFT' && (
                   <button
                     onClick={() => {
-                      const vendorEmails = po.vendor?.email
+                      const defaultVendorEmails = po.vendor?.email
                         ? po.vendor.email.split(',').map(e => e.trim()).filter(Boolean)
+                        : [];
+                      const otherVendorEmails = po.vendor?.otherEmails
+                        ? po.vendor.otherEmails.split(',').map(e => e.trim()).filter(Boolean)
                         : [];
                       setSendEmailState({
                         isOpen: true,
                         poId: po.id,
                         vendorName: po.vendor?.displayName || 'Supplier',
-                        vendorEmails: vendorEmails,
-                        selectedVendorEmails: vendorEmails,
+                        defaultVendorEmails,
+                        otherVendorEmails,
+                        selectedVendorEmails: defaultVendorEmails,
                         customEmails: '',
                         subject: `Purchase Order #${shortPoId}`,
                         body: '',
@@ -648,7 +664,12 @@ export default function PODetailsPage() {
                     )}
                     {po.vendor?.email && (
                       <div style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
-                        Email: <span style={{ color: '#374151', fontWeight: 500 }}>{po.vendor.email}</span>
+                        Default Email: <span style={{ color: '#374151', fontWeight: 500 }}>{po.vendor.email}</span>
+                      </div>
+                    )}
+                    {po.vendor?.otherEmails && (
+                      <div style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
+                        Other Email: <span style={{ color: '#374151', fontWeight: 500 }}>{po.vendor.otherEmails}</span>
                       </div>
                     )}
                   </div>
@@ -1207,10 +1228,41 @@ export default function PODetailsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</label>
 
-                  {sendEmailState.vendorEmails.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>Vendor Default Emails:</span>
-                      {sendEmailState.vendorEmails.map(email => (
+                  {/* Default Vendor Emails (Auto-selected) */}
+                  {sendEmailState.defaultVendorEmails.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>Default Email(s)</span>
+                        <span className="badge" style={{ fontSize: '0.625rem', padding: '1px 6px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>Auto-selected</span>
+                      </div>
+                      {sendEmailState.defaultVendorEmails.map(email => (
+                        <label key={email} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={sendEmailState.selectedVendorEmails.includes(email)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSendEmailState(prev => prev ? { ...prev, selectedVendorEmails: [...prev.selectedVendorEmails, email] } : null);
+                              } else {
+                                setSendEmailState(prev => prev ? { ...prev, selectedVendorEmails: prev.selectedVendorEmails.filter(x => x !== email) } : null);
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          {email}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Other / Secondary Vendor Emails (Unselected by default) */}
+                  {sendEmailState.otherVendorEmails.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>Other Email(s)</span>
+                        <span className="badge" style={{ fontSize: '0.625rem', padding: '1px 6px', backgroundColor: 'rgba(107, 114, 128, 0.15)', color: '#6b7280', border: '1px solid rgba(107, 114, 128, 0.3)' }}>Optional</span>
+                      </div>
+                      {sendEmailState.otherVendorEmails.map(email => (
                         <label key={email} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8125rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
                           <input
                             type="checkbox"
@@ -1231,7 +1283,7 @@ export default function PODetailsPage() {
                   )}
 
                   <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
-                    {sendEmailState.vendorEmails.length > 0 ? 'Additional Emails (comma separated):' : 'Enter Emails (comma separated):'}
+                    Additional One-off Emails (comma separated):
                   </span>
                   <input
                     type="text"
