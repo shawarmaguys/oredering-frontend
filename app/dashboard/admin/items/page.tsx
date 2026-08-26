@@ -44,6 +44,7 @@ export default function ItemsPage() {
   // Enable existing items modal state
   const [showEnableModal, setShowEnableModal] = useState(false);
   const [masterItems, setMasterItems] = useState<Item[]>([]);
+  const [unassignedVendors, setUnassignedVendors] = useState<any[]>([]);
   const [masterLoading, setMasterLoading] = useState(false);
   const [masterSearch, setMasterSearch] = useState('');
   const [masterVendorFilter, setMasterVendorFilter] = useState('all');
@@ -62,8 +63,12 @@ export default function ItemsPage() {
     setMasterVendorFilter('all');
     setMasterSearch('');
     try {
-      const data = await api.items.listUnassigned(selectedLocationId);
-      setMasterItems(data);
+      const [itemsData, unassignedVendorsData] = await Promise.all([
+        api.items.listUnassigned(selectedLocationId),
+        api.vendors.listUnassigned(selectedLocationId),
+      ]);
+      setMasterItems(itemsData);
+      setUnassignedVendors(unassignedVendorsData);
     } catch (err: any) {
       setError(err?.message || 'Failed to load available products.');
     } finally {
@@ -323,13 +328,28 @@ export default function ItemsPage() {
                   onChange={(e) => setMasterVendorFilter(e.target.value)}
                 >
                   <option value="all">All Vendors</option>
-                  {Array.from(
-                    new Set(masterItems.map((item) => item.vendor?.displayName).filter(Boolean))
-                  ).map((vName) => (
-                    <option key={vName} value={vName}>
-                      {vName}
-                    </option>
-                  ))}
+                  {(() => {
+                    const enabledVendorsList = vendors || [];
+                    const enabledNames = new Set(enabledVendorsList.map((v) => v.displayName));
+
+                    const list: { id: string; name: string; isEnabled: boolean }[] = [];
+                    enabledVendorsList.forEach((v) => {
+                      list.push({ id: v.id, name: v.displayName, isEnabled: true });
+                    });
+                    (unassignedVendors || []).forEach((v) => {
+                      if (!enabledNames.has(v.displayName)) {
+                        list.push({ id: v.id, name: v.displayName, isEnabled: false });
+                      }
+                    });
+
+                    list.sort((a, b) => a.name.localeCompare(b.name));
+
+                    return list.map((v) => (
+                      <option key={v.id} value={v.name} disabled={!v.isEnabled}>
+                        {v.name}{!v.isEnabled ? ' (Disabled)' : ''}
+                      </option>
+                    ));
+                  })()}
                 </select>
               </div>
 
@@ -339,6 +359,9 @@ export default function ItemsPage() {
                 </div>
               ) : (
                 (() => {
+                  const enabledVendorIds = new Set((vendors || []).map((v) => v.id));
+                  const enabledVendorNames = new Set((vendors || []).map((v) => v.displayName));
+
                   const filtered = masterItems
                     .filter((i) => {
                       const q = masterSearch.toLowerCase();
@@ -348,7 +371,15 @@ export default function ItemsPage() {
                         (i.vendor && i.vendor.displayName.toLowerCase().includes(q))
                       );
                       const matchesVendor = masterVendorFilter === 'all' || i.vendor?.displayName === masterVendorFilter;
-                      return matchesSearch && matchesVendor;
+                      const isVendorEnabled = i.vendorId
+                        ? enabledVendorIds.has(i.vendorId)
+                        : (i.vendor as any)?.id
+                        ? enabledVendorIds.has((i.vendor as any).id)
+                        : i.vendor?.displayName
+                        ? enabledVendorNames.has(i.vendor.displayName)
+                        : false;
+
+                      return matchesSearch && matchesVendor && isVendorEnabled;
                     })
                     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 
