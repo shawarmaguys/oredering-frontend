@@ -128,6 +128,10 @@ export const api = {
       request<any>(`/items/${id}/locations/${locationId}`, { method: 'POST', body: JSON.stringify({ parLevel }) }),
     removeFromLocation: (id: string, locationId: string) =>
       request<any>(`/items/${id}/locations/${locationId}`, { method: 'DELETE' }),
+    bulkValidate: (data: { items: any[]; locationId?: string }) =>
+      request<any>('/items/bulk-validate', { method: 'POST', body: JSON.stringify(data) }),
+    bulkUpload: (data: { items: any[]; locationId?: string }) =>
+      request<any>('/items/bulk-upload', { method: 'POST', body: JSON.stringify(data) }),
   },
   schedules: {
     list: () => request<any[]>('/schedules'),
