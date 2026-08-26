@@ -82,24 +82,40 @@ export function parseCSVToRows(text: string): string[][] {
  */
 export function normalizeHeaderName(header: string): string {
   let clean = header.trim();
-  // Strip out (REQUIRED), (Optional...), [Required], [Optional]
+  // Strip out (REQUIRED), (Optional...), [Required], [Optional], etc.
   clean = clean.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
   clean = clean.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-  if (clean.includes('itemid') || clean === 'id') return 'id';
-  if (clean.includes('productcode') || clean.includes('sku') || clean.includes('itemcode') || clean === 'code') return 'productCode';
-  if (clean.includes('productname') || clean.includes('displayname') || clean.includes('name') || clean.includes('title')) return 'displayName';
-  if (clean.includes('vendor') || clean.includes('supplier')) return 'vendorName';
+  if (clean === 'id' || clean.includes('itemid')) return 'id';
   if (clean.includes('vendorid')) return 'vendorId';
+  if (clean.includes('categoryid') || clean.includes('producttypeid')) return 'productTypeId';
+
+  // Specific entity names (MUST check before generic 'name' keyword)
+  if (clean.includes('vendor') || clean.includes('supplier')) return 'vendorName';
   if (clean.includes('category') || clean.includes('producttype') || clean.includes('type')) return 'productTypeName';
-  if (clean.includes('producttypeid') || clean.includes('categoryid')) return 'productTypeId';
-  if (clean.includes('baseunit') || clean.includes('unit')) return 'baseUnitName';
+  if (clean.includes('spanish')) return 'spanishName';
+
+  // Units
   if (clean.includes('displayunit') || clean.includes('packunit') || clean.includes('secondaryunit') || clean.includes('pack')) return 'displayUnitName';
+  if (clean.includes('baseunit') || clean === 'unit' || clean.includes('stockunit')) return 'baseUnitName';
+
+  // Product Code / SKU
+  if (clean.includes('productcode') || clean.includes('sku') || clean.includes('itemcode') || clean === 'code') return 'productCode';
+
+  // Multiplier / Ratio
   if (clean.includes('multiplier') || clean.includes('conversion') || clean.includes('ratio')) return 'multiplier';
-  if (clean.includes('spanish') || clean.includes('spanishname')) return 'spanishName';
+
+  // Note / Description
   if (clean.includes('note') || clean.includes('notes') || clean.includes('description')) return 'note';
-  if (clean.includes('par') || clean.includes('parlevel')) return 'parLevel';
+
+  // PAR Level
+  if (clean.includes('par')) return 'parLevel';
+
+  // Status / Active
   if (clean.includes('status') || clean.includes('active') || clean.includes('isactive')) return 'isActive';
+
+  // Product Name (fallback for general product name/displayname/title)
+  if (clean.includes('productname') || clean.includes('displayname') || clean.includes('product') || clean.includes('item') || clean.includes('name') || clean.includes('title')) return 'displayName';
 
   return clean;
 }

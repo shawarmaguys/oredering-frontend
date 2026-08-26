@@ -83,7 +83,7 @@ export default function ItemsPage() {
 
   // Delete state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; isLastLocation: boolean } | null>(null);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleParChange = (itemId: string, originalPar: number, newPar: number) => {
@@ -197,8 +197,9 @@ export default function ItemsPage() {
 
   const handleEdit = (item: Item) => setEditItem(item);
 
-  const handleDeleteClick = (id: string, name: string) => {
-    setItemToDelete({ id, name });
+  const handleDeleteClick = (id: string, name: string, activeLocationCount?: number) => {
+    const isLast = activeLocationCount !== undefined ? activeLocationCount <= 1 : true;
+    setItemToDelete({ id, name, isLastLocation: isLast });
     setDeleteConfirmOpen(true);
   };
 
@@ -689,12 +690,15 @@ export default function ItemsPage() {
 
         <ConfirmDialog
           isOpen={deleteConfirmOpen}
-          title={selectedLocationId && selectedLocationId !== 'all' ? "Remove Product from Location" : "Delete Product"}
-          message={
-            selectedLocationId && selectedLocationId !== 'all'
-              ? `Are you sure you want to remove "${itemToDelete?.name}" from ${activeLocationObj?.name || 'this location'}? The product will remain saved in the master catalog.`
-              : `Are you sure you want to delete "${itemToDelete?.name}"? This cannot be undone.`
+          title="Remove Product from Location"
+          message={`Are you sure you want to remove "${itemToDelete?.name}" from ${activeLocationObj?.name || 'this location'}?`}
+          warningMessage={
+            itemToDelete?.isLastLocation
+              ? `This product is ONLY assigned to ${activeLocationObj?.name || 'this location'}. Removing it will deactivate it globally and remove it from the system catalog.`
+              : undefined
           }
+          confirmText={itemToDelete?.isLastLocation ? "Deactivate & Remove Product" : "Remove Product"}
+          confirmVariant={itemToDelete?.isLastLocation ? "danger" : "primary"}
           onConfirm={handleConfirmDelete}
           onCancel={() => { setDeleteConfirmOpen(false); setItemToDelete(null); }}
         />

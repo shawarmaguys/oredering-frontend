@@ -61,7 +61,7 @@ export default function VendorsPage() {
 
   // Delete confirmation state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string; isLastLocation: boolean } | null>(null);
 
   // Enable existing vendors modal state
   const [showEnableModal, setShowEnableModal] = useState(false);
@@ -214,8 +214,9 @@ export default function VendorsPage() {
     setShowEditModal(true);
   };
 
-  const handleDeleteClick = (id: string, name: string) => {
-    setVendorToDelete({ id, name });
+  const handleDeleteClick = (id: string, name: string, assignedLocationCount?: number) => {
+    const isLast = assignedLocationCount !== undefined ? assignedLocationCount <= 1 : true;
+    setVendorToDelete({ id, name, isLastLocation: isLast });
     setDeleteConfirmOpen(true);
   };
 
@@ -441,7 +442,7 @@ export default function VendorsPage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}
+                              onClick={() => handleDeleteClick(vendor.id, vendor.displayName, vendor.locationVendors?.length)}
                               className="btn btn-secondary btn-sm"
                               style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }}
                               title="Delete Vendor"
@@ -554,7 +555,7 @@ export default function VendorsPage() {
                             <td style={{ textAlign: 'right', paddingRight: 24 }}>
                               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                                 <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(vendor)}>Edit</button>
-                                <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}>Delete</button>
+                                <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(vendor.id, vendor.displayName, vendor.locationVendors?.length)}>Delete</button>
                               </div>
                             </td>
                           )}
@@ -1189,8 +1190,15 @@ export default function VendorsPage() {
 
         <ConfirmDialog
           isOpen={deleteConfirmOpen}
-          title="Remove Vendor from Location?"
-          message={`Are you sure you want to remove "${vendorToDelete?.name}" from ${activeLocationObj?.name || 'this location'}? The vendor account and historical records will remain safe in the system.`}
+          title="Remove Vendor from Location"
+          message={`Are you sure you want to remove "${vendorToDelete?.name}" from ${activeLocationObj?.name || 'this location'}?`}
+          warningMessage={
+            vendorToDelete?.isLastLocation
+              ? `This vendor is ONLY assigned to ${activeLocationObj?.name || 'this location'}. Removing it will deactivate it globally and remove it from the system.`
+              : undefined
+          }
+          confirmText={vendorToDelete?.isLastLocation ? "Deactivate & Remove Vendor" : "Remove Vendor"}
+          confirmVariant={vendorToDelete?.isLastLocation ? "danger" : "primary"}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setDeleteConfirmOpen(false);

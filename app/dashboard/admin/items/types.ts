@@ -19,6 +19,7 @@ export interface Item {
   createdAt: string;
   note?: string;
   parLevel?: number;
+  activeLocationCount?: number;
   locationItems?: Array<{ locationId: string; parLevel: number; isActive: boolean }>;
 }
 

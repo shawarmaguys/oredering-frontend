@@ -110,21 +110,30 @@ export default function BulkUploadItemsPage() {
     setError('');
 
     try {
-      const itemsPayload = rows.map((r) => ({
-        productCode: r.productCode || undefined,
-        displayName: r.displayName || '',
-        vendorName: r.vendorName || undefined,
-        vendorId: r.vendorId || undefined,
-        productTypeName: r.productTypeName || undefined,
-        productTypeId: r.productTypeId || undefined,
-        baseUnitName: r.baseUnitName || '',
-        displayUnitName: r.displayUnitName || undefined,
-        multiplier: r.multiplier ? Number(r.multiplier) : undefined,
-        spanishName: r.spanishName || undefined,
-        note: r.note || undefined,
-        parLevel: r.parLevel !== undefined && r.parLevel !== '' ? Number(r.parLevel) : undefined,
-        isActive: r.isActive || undefined,
-      }));
+      const mapRowToPayload = (r: ParsedCsvRow) => {
+        const vendorName = r.vendorName || r.vendor || r.supplier || undefined;
+        const vendorId = r.vendorId || r.vendorid || undefined;
+        const displayName = r.displayName || r.productName || r.name || r.title || '';
+        const baseUnitName = r.baseUnitName || r.unit || r.stockunit || '';
+
+        return {
+          productCode: r.productCode || undefined,
+          displayName,
+          vendorName,
+          vendorId,
+          productTypeName: r.productTypeName || r.category || undefined,
+          productTypeId: r.productTypeId || undefined,
+          baseUnitName,
+          displayUnitName: r.displayUnitName || undefined,
+          multiplier: r.multiplier ? Number(r.multiplier) : undefined,
+          spanishName: r.spanishName || undefined,
+          note: r.note || undefined,
+          parLevel: r.parLevel !== undefined && r.parLevel !== '' ? Number(r.parLevel) : undefined,
+          isActive: r.isActive || undefined,
+        };
+      };
+
+      const itemsPayload = rows.map(mapRowToPayload);
 
       const res = await api.items.bulkValidate({
         items: itemsPayload,
@@ -154,21 +163,30 @@ export default function BulkUploadItemsPage() {
     setError('');
 
     try {
-      const itemsPayload = parsedRows.map((r) => ({
-        productCode: r.productCode || undefined,
-        displayName: r.displayName || '',
-        vendorName: r.vendorName || undefined,
-        vendorId: r.vendorId || undefined,
-        productTypeName: r.productTypeName || undefined,
-        productTypeId: r.productTypeId || undefined,
-        baseUnitName: r.baseUnitName || '',
-        displayUnitName: r.displayUnitName || undefined,
-        multiplier: r.multiplier ? Number(r.multiplier) : undefined,
-        spanishName: r.spanishName || undefined,
-        note: r.note || undefined,
-        parLevel: r.parLevel !== undefined && r.parLevel !== '' ? Number(r.parLevel) : undefined,
-        isActive: r.isActive || undefined,
-      }));
+      const mapRowToPayload = (r: ParsedCsvRow) => {
+        const vendorName = r.vendorName || r.vendor || r.supplier || undefined;
+        const vendorId = r.vendorId || r.vendorid || undefined;
+        const displayName = r.displayName || r.productName || r.name || r.title || '';
+        const baseUnitName = r.baseUnitName || r.unit || r.stockunit || '';
+
+        return {
+          productCode: r.productCode || undefined,
+          displayName,
+          vendorName,
+          vendorId,
+          productTypeName: r.productTypeName || r.category || undefined,
+          productTypeId: r.productTypeId || undefined,
+          baseUnitName,
+          displayUnitName: r.displayUnitName || undefined,
+          multiplier: r.multiplier ? Number(r.multiplier) : undefined,
+          spanishName: r.spanishName || undefined,
+          note: r.note || undefined,
+          parLevel: r.parLevel !== undefined && r.parLevel !== '' ? Number(r.parLevel) : undefined,
+          isActive: r.isActive || undefined,
+        };
+      };
+
+      const itemsPayload = parsedRows.map(mapRowToPayload);
 
       const res = await api.items.bulkUpload({
         items: itemsPayload,
@@ -421,24 +439,43 @@ export default function BulkUploadItemsPage() {
               {/* Validation & Preview Table */}
               {validationResult && !validating && (
                 <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* Summary Bar */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <div style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-sunken)', border: '1px solid var(--border-subtle)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        Total Rows: {validationResult.total}
-                      </div>
-                      <div style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.3)', fontSize: '0.875rem', fontWeight: 600, color: '#16a34a' }}>
-                        Ready to Add: {validationResult.validCount}
-                      </div>
+                  {/* Header Actions & Filter Tabs */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+                    {/* Filter Tabs */}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${filterTab === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setFilterTab('all')}
+                      >
+                        All Rows ({validationResult.total})
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${filterTab === 'valid' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setFilterTab('valid')}
+                      >
+                        Ready to Add ({validationResult.validCount})
+                      </button>
                       {validationResult.duplicateCount > 0 && (
-                        <div style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: '0.875rem', fontWeight: 600, color: '#d97706' }}>
-                          ⚠️ Duplicates (Skipped): {validationResult.duplicateCount}
-                        </div>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${filterTab === 'duplicate' ? 'btn-primary' : 'btn-secondary'}`}
+                          onClick={() => setFilterTab('duplicate')}
+                          style={{ color: filterTab === 'duplicate' ? '#ffffff' : '#d97706' }}
+                        >
+                          ⚠️ Duplicates ({validationResult.duplicateCount})
+                        </button>
                       )}
                       {validationResult.invalidCount - validationResult.duplicateCount > 0 && (
-                        <div style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', fontSize: '0.875rem', fontWeight: 600, color: '#dc2626' }}>
-                          Errors: {validationResult.invalidCount - validationResult.duplicateCount}
-                        </div>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${filterTab === 'invalid' ? 'btn-primary' : 'btn-secondary'}`}
+                          onClick={() => setFilterTab('invalid')}
+                          style={{ color: filterTab === 'invalid' ? '#ffffff' : '#ef4444' }}
+                        >
+                          Errors ({validationResult.invalidCount - validationResult.duplicateCount})
+                        </button>
                       )}
                     </div>
 
@@ -463,44 +500,6 @@ export default function BulkUploadItemsPage() {
                         )}
                       </button>
                     </div>
-                  </div>
-
-                  {/* Filter Tabs */}
-                  <div style={{ display: 'flex', gap: '6px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${filterTab === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setFilterTab('all')}
-                    >
-                      All Rows ({validationResult.total})
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${filterTab === 'valid' ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setFilterTab('valid')}
-                    >
-                      Ready to Add ({validationResult.validCount})
-                    </button>
-                    {validationResult.duplicateCount > 0 && (
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${filterTab === 'duplicate' ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setFilterTab('duplicate')}
-                        style={{ color: filterTab === 'duplicate' ? '#ffffff' : '#d97706' }}
-                      >
-                        ⚠️ Duplicates ({validationResult.duplicateCount})
-                      </button>
-                    )}
-                    {validationResult.invalidCount - validationResult.duplicateCount > 0 && (
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${filterTab === 'invalid' ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setFilterTab('invalid')}
-                        style={{ color: filterTab === 'invalid' ? '#ffffff' : '#ef4444' }}
-                      >
-                        Errors ({validationResult.invalidCount - validationResult.duplicateCount})
-                      </button>
-                    )}
                   </div>
 
                   {/* Table Container */}
