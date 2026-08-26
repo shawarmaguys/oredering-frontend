@@ -37,12 +37,13 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   const initializedRef = useRef(false);
 
   const fetchAllForLocation = useCallback(async (locId: string, forceRefresh = false) => {
+    if (!locId || locId === 'all') return;
     if (!forceRefresh && inFlightPromise.current) return inFlightPromise.current;
 
     setItemsLoading(true);
     const promise = (async () => {
       try {
-        const queryParam = locId && locId !== 'all' ? locId : undefined;
+        const queryParam = locId;
         const first: any = await api.items.list({ limit: ALL_LIMIT, page: 1, locationId: queryParam });
         
         let combined: Item[] = [];
@@ -82,7 +83,8 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const locKey = selectedLocationId || 'all';
+    if (!selectedLocationId || selectedLocationId === 'all') return;
+    const locKey = selectedLocationId;
     const cached = cacheMap.current.get(locKey);
     if (cached) {
       setAllItems(cached);
@@ -100,14 +102,16 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   }, [selectedLocationId, fetchAllForLocation]);
 
   const ensureLoaded = useCallback(async () => {
-    const locKey = selectedLocationId || 'all';
+    if (!selectedLocationId || selectedLocationId === 'all') return;
+    const locKey = selectedLocationId;
     if (!cacheMap.current.has(locKey)) {
       return fetchAllForLocation(locKey);
     }
   }, [selectedLocationId, fetchAllForLocation]);
 
   const refreshAllItems = useCallback(async () => {
-    const locKey = selectedLocationId || 'all';
+    if (!selectedLocationId || selectedLocationId === 'all') return;
+    const locKey = selectedLocationId;
     cacheMap.current.delete(locKey);
     initializedRef.current = false;
     setIsInitialized(false);

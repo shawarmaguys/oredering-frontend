@@ -9,6 +9,7 @@ import { useVendors, Vendor } from '../../../context/VendorsContext';
 import { useLocations } from '../../../context/LocationsContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useItems } from '../../../context/ItemsContext';
 
 // Vendor and Department types are imported from VendorsContext
 
@@ -17,6 +18,7 @@ export default function VendorsPage() {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_MANAGER';
 
   const { vendors, departments, vendorsLoading: loading, refreshVendors } = useVendors();
+  const { refreshAllItems } = useItems();
   const { locations } = useLocations();
   const { selectedLocationId } = useLocationFilter();
 
@@ -117,6 +119,7 @@ export default function VendorsPage() {
       setMasterVendors((prev) => prev.filter((v) => !selectedVendorIds.includes(v.id)));
       setSelectedVendorIds([]);
       await refreshVendors();
+      await refreshAllItems();
     } catch (err: any) {
       setError(err?.message || 'Failed to enable selected vendors.');
     } finally {
@@ -219,6 +222,7 @@ export default function VendorsPage() {
     try {
       await api.vendors.delete(id, selectedLocationId);
       await refreshVendors();
+      await refreshAllItems();
     } catch (err: any) {
       setError(err.message || 'Failed to delete vendor.');
     }
@@ -914,13 +918,14 @@ export default function VendorsPage() {
               <div className="modal-header">
                 <h2>Enable Existing Suppliers</h2>
                 <p>
-                  Assign onboarded master suppliers to store locations.
+                  Assign onboarded master suppliers to{' '}
+                  <strong>{activeLocationObj?.name || 'this location'}</strong>.
                 </p>
               </div>
 
-              {/* Search Bar & Location Filter */}
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+              {/* Search Bar */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -947,19 +952,6 @@ export default function VendorsPage() {
                     onChange={(e) => setMasterSearch(e.target.value)}
                   />
                 </div>
-
-                <select
-                  className="input"
-                  style={{ width: 'auto', minWidth: '180px', borderRadius: 'var(--radius-md)' }}
-                  value={targetLocationId}
-                  onChange={(e) => handleTargetLocationChange(e.target.value)}
-                >
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.name}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* List */}
