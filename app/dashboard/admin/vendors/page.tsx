@@ -526,6 +526,8 @@ export default function VendorsPage() {
           })()
         )}
 
+
+
         {/* Modal Onboarding Form */}
         {showModal && (
           <div className="modal-backdrop">
@@ -864,42 +866,28 @@ export default function VendorsPage() {
           </div>
         )}
 
+
+
         {/* Enable Existing Vendors Modal */}
         {showEnableModal && (
-          <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)' }}>
-            <div className="modal-content animate-in" style={{ maxWidth: '600px', width: '92%', borderRadius: '16px', padding: '24px' }}>
-              <div className="modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                    Enable Existing Suppliers
-                  </h2>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                    Assign onboarded suppliers to <strong style={{ color: 'var(--accent)' }}>{activeLocationObj?.name || 'this location'}</strong>.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowEnableModal(false)}
-                  className="btn-close"
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '32px',
-                    height: '32px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  &times;
-                </button>
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-lg" style={{ maxWidth: '640px' }}>
+              <button
+                onClick={() => setShowEnableModal(false)}
+                className="modal-close"
+              >
+                &times;
+              </button>
+
+              <div className="modal-header">
+                <h2>Enable Existing Suppliers</h2>
+                <p>
+                  Assign onboarded suppliers to <strong style={{ color: 'var(--accent)' }}>{activeLocationObj?.name || 'this location'}</strong>.
+                </p>
               </div>
 
               {/* Search Bar */}
-              <div style={{ position: 'relative', marginTop: '16px', marginBottom: '16px' }}>
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -986,7 +974,7 @@ export default function VendorsPage() {
                   }
 
                   return (
-                    <div style={{ maxHeight: '360px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
+                    <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
                       {availableToEnable.map((v) => (
                         <div
                           key={v.id}
@@ -996,7 +984,7 @@ export default function VendorsPage() {
                             justifyContent: 'space-between',
                             padding: '14px 16px',
                             borderRadius: 'var(--radius-md)',
-                            background: 'var(--bg-surface)',
+                            background: 'var(--bg-sunken, var(--bg-surface))',
                             border: '1px solid var(--border-default)',
                             transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                           }}
@@ -1015,6 +1003,7 @@ export default function VendorsPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 textTransform: 'uppercase',
+                                flexShrink: 0,
                               }}
                             >
                               {v.displayName.substring(0, 2)}
@@ -1045,7 +1034,7 @@ export default function VendorsPage() {
                 })()
               )}
 
-              <div className="modal-footer" style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
                 <button onClick={() => setShowEnableModal(false)} className="btn btn-secondary" style={{ padding: '8px 20px', fontWeight: 600 }}>
                   Done
                 </button>

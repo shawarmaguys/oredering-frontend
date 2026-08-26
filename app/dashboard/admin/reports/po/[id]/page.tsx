@@ -502,7 +502,7 @@ export default function PODetailsPage() {
                 borderRadius: 'var(--radius-xl)',
                 border: '1px solid #e5e7eb',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
-                overflow: 'hidden',
+                overflow: 'visible',
                 position: 'relative',
                 margin: '0 auto',
                 width: '100%',

@@ -457,8 +457,15 @@ code,
 /* --- Table --- */
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
+}
+
+.data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .data-table thead tr {
@@ -478,7 +485,7 @@ code,
   position: sticky;
   top: 0;
   background-color: var(--bg-sunken);
-  z-index: 2;
+  z-index: 10;
   box-shadow: 0 1px 0 var(--border-subtle);
 }
 
@@ -1064,11 +1071,18 @@ code,
 /* Responsive table wrapper for side-scrolling overflow prevention on tiny screens */
 .table-responsive-wrap {
   width: 100%;
-  overflow-x: auto;
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-subtle);
   background-color: var(--bg-surface);
+}
+
+.table-scroll-container .table-responsive-wrap {
+  overflow: visible !important;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
 }
 
 .table-responsive-wrap .data-table {

@@ -1278,7 +1278,7 @@ export default function LocationsPage() {
                     No global departments defined yet.
                   </div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <table className="data-table" style={{ width: '100%', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ backgroundColor: 'var(--bg-sunken)', borderBottom: '1px solid var(--border-subtle)' }}>
                         <th style={{ padding: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', width: '60px' }}>Code</th>
