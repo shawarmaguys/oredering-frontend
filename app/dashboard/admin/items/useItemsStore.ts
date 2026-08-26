@@ -152,6 +152,10 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
           valA = Number(a.multiplier) || 1;
           valB = Number(b.multiplier) || 1;
           break;
+        case 'parLevel':
+          valA = Number(a.parLevel) || 0;
+          valB = Number(b.parLevel) || 0;
+          break;
         case 'status':
           valA = a.isActive ? 1 : 0;
           valB = b.isActive ? 1 : 0;

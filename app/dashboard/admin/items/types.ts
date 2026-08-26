@@ -18,8 +18,10 @@ export interface Item {
   productType?: { id: string; name: string; color?: string };
   createdAt: string;
   note?: string;
+  parLevel?: number;
+  locationItems?: Array<{ locationId: string; parLevel: number; isActive: boolean }>;
 }
 
-export type SortColumn = 'name' | 'vendor' | 'category' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'status';
+export type SortColumn = 'name' | 'vendor' | 'category' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'parLevel' | 'status';
 export type SortDir = 'asc' | 'desc';
 export type ViewMode = 'tile' | 'list';

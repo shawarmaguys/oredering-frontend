@@ -109,6 +109,14 @@ export const api = {
       const query = q.toString() ? `?${q.toString()}` : '';
       return request<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(`/items${query}`);
     },
+    listUnassigned: (locationId: string, vendorId?: string, productTypeId?: string) => {
+      const q = new URLSearchParams();
+      if (locationId) q.set('location_id', locationId);
+      if (vendorId) q.set('vendor_id', vendorId);
+      if (productTypeId) q.set('product_type_id', productTypeId);
+      const query = q.toString() ? `?${q.toString()}` : '';
+      return request<any[]>(`/items/unassigned${query}`);
+    },
     create: (data: any) => request<any>('/items', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/items/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string, locationId?: string) => {

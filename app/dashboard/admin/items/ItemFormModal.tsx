@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '../../../utils/api';
 import { Item, Vendor } from './types';
 import { useProductTypes } from '../../../context/ProductTypesContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
 
 // ─── Shared translation button ────────────────────────────────────────────────
 interface TranslateButtonProps {
@@ -80,6 +81,7 @@ interface CreateItemModalProps {
 
 export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModalProps) {
   const { productTypes } = useProductTypes();
+  const { selectedLocationId } = useLocationFilter();
   const [displayName, setDisplayName] = useState('');
   const [spanishName, setSpanishName] = useState('');
   const [vendorId, setVendorId] = useState(vendors[0]?.id ?? '');
@@ -89,6 +91,7 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
   const [multiplier, setMultiplier] = useState<number | ''>('');
   const [productCode, setProductCode] = useState('');
   const [note, setNote] = useState('');
+  const [parLevel, setParLevel] = useState<number | ''>(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -113,6 +116,8 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
         multiplier: hasSecondary ? Number(multiplier) : 1,
         productCode: productCode || undefined,
         note: note || undefined,
+        locationId: selectedLocationId && selectedLocationId !== 'all' ? selectedLocationId : undefined,
+        parLevel: parLevel !== '' ? Number(parLevel) : 0,
       });
       onCreated();
     } catch (err: any) {
@@ -168,9 +173,15 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
                 </select>
               </div>
             </div>
-            <div>
-              <label className="label" htmlFor="create-code">Product Code (SKU)</label>
-              <input id="create-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" placeholder="e.g. SH-KIT-010" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label className="label" htmlFor="create-code">Product Code (SKU)</label>
+                <input id="create-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" placeholder="e.g. SH-KIT-010" />
+              </div>
+              <div>
+                <label className="label" htmlFor="create-par">Stock PAR Level</label>
+                <input id="create-par" type="number" step="any" min="0" value={parLevel} onChange={e => setParLevel(e.target.value === '' ? '' : Number(e.target.value))} className="input mono" placeholder="0" />
+              </div>
             </div>
             <div>
               <label className="label" htmlFor="create-note">Notes</label>
@@ -198,6 +209,7 @@ interface EditItemModalProps {
 
 export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemModalProps) {
   const { productTypes } = useProductTypes();
+  const { selectedLocationId } = useLocationFilter();
   const isSecondaryConfigured = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
   const [displayName, setDisplayName] = useState(item.displayName);
   const [spanishName, setSpanishName] = useState(item.spanishName ?? '');
@@ -208,6 +220,7 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
   const [multiplier, setMultiplier] = useState<number | ''>(isSecondaryConfigured ? item.multiplier : '');
   const [productCode, setProductCode] = useState(item.productCode ?? '');
   const [note, setNote] = useState(item.note ?? '');
+  const [parLevel, setParLevel] = useState<number | ''>(item.parLevel ?? 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -233,6 +246,11 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
         productCode: productCode || undefined,
         note: note || undefined,
       });
+
+      if (selectedLocationId && selectedLocationId !== 'all') {
+        await api.items.assignToLocation(item.id, selectedLocationId, parLevel !== '' ? Number(parLevel) : 0);
+      }
+
       onUpdated();
     } catch (err: any) {
       setError(err.message || 'Failed to update product.');
@@ -281,9 +299,15 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
               </select>
             </div>
           </div>
-          <div>
-            <label className="label" htmlFor="edit-code">Product Code (SKU)</label>
-            <input id="edit-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label className="label" htmlFor="edit-code">Product Code (SKU)</label>
+              <input id="edit-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" />
+            </div>
+            <div>
+              <label className="label" htmlFor="edit-par">Stock PAR Level</label>
+              <input id="edit-par" type="number" step="any" min="0" value={parLevel} onChange={e => setParLevel(e.target.value === '' ? '' : Number(e.target.value))} className="input mono" />
+            </div>
           </div>
           <div>
             <label className="label" htmlFor="edit-note">Notes</label>

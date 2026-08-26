@@ -64,12 +64,19 @@ export default function VendorsPage() {
   const [masterVendors, setMasterVendors] = useState<Vendor[]>([]);
   const [masterLoading, setMasterLoading] = useState(false);
   const [masterSearch, setMasterSearch] = useState('');
+  const [targetLocationId, setTargetLocationId] = useState<string>('');
+  const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [batchEnabling, setBatchEnabling] = useState(false);
 
-  const openEnableModal = async () => {
+  const openEnableModal = async (locId?: string) => {
     setShowEnableModal(true);
     setMasterLoading(true);
+    setSelectedVendorIds([]);
+    setMasterSearch('');
+    const defaultLoc = locId || (selectedLocationId && selectedLocationId !== 'all' ? selectedLocationId : (locations[0]?.id || ''));
+    setTargetLocationId(defaultLoc);
     try {
-      const data = await api.vendors.listUnassigned(selectedLocationId);
+      const data = await api.vendors.listUnassigned(defaultLoc);
       setMasterVendors(data);
     } catch (err: any) {
       setError(err?.message || 'Failed to load available vendors.');
@@ -78,17 +85,42 @@ export default function VendorsPage() {
     }
   };
 
-  const handleToggleLocationAssignment = async (vendor: Vendor, isAssigned: boolean) => {
+  const handleTargetLocationChange = async (newLocId: string) => {
+    setTargetLocationId(newLocId);
+    setSelectedVendorIds([]);
+    setMasterLoading(true);
     try {
-      if (isAssigned) {
-        await api.vendors.removeFromLocation(vendor.id, selectedLocationId);
-      } else {
-        await api.vendors.assignToLocation(vendor.id, selectedLocationId);
-      }
-      setMasterVendors((prev) => prev.filter((v) => v.id !== vendor.id));
+      const data = await api.vendors.listUnassigned(newLocId);
+      setMasterVendors(data);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load available vendors.');
+    } finally {
+      setMasterLoading(false);
+    }
+  };
+
+  const handleToggleSelectVendor = (vendorId: string) => {
+    setSelectedVendorIds((prev) =>
+      prev.includes(vendorId) ? prev.filter((id) => id !== vendorId) : [...prev, vendorId]
+    );
+  };
+
+  const handleEnableSelectedVendors = async () => {
+    if (selectedVendorIds.length === 0 || !targetLocationId) return;
+    setBatchEnabling(true);
+    try {
+      await Promise.all(
+        selectedVendorIds.map((vendorId) =>
+          api.vendors.assignToLocation(vendorId, targetLocationId)
+        )
+      );
+      setMasterVendors((prev) => prev.filter((v) => !selectedVendorIds.includes(v.id)));
+      setSelectedVendorIds([]);
       await refreshVendors();
     } catch (err: any) {
-      setError(err?.message || 'Failed to update vendor location assignment.');
+      setError(err?.message || 'Failed to enable selected vendors.');
+    } finally {
+      setBatchEnabling(false);
     }
   };
 
@@ -871,7 +903,7 @@ export default function VendorsPage() {
         {/* Enable Existing Vendors Modal */}
         {showEnableModal && (
           <div className="modal-backdrop">
-            <div className="modal-panel modal-panel-lg" style={{ maxWidth: '640px' }}>
+            <div className="modal-panel modal-panel-lg" style={{ maxWidth: '680px' }}>
               <button
                 onClick={() => setShowEnableModal(false)}
                 className="modal-close"
@@ -882,37 +914,52 @@ export default function VendorsPage() {
               <div className="modal-header">
                 <h2>Enable Existing Suppliers</h2>
                 <p>
-                  Assign onboarded suppliers to <strong style={{ color: 'var(--accent)' }}>{activeLocationObj?.name || 'this location'}</strong>.
+                  Assign onboarded master suppliers to store locations.
                 </p>
               </div>
 
-              {/* Search Bar */}
-              <div style={{ position: 'relative', marginBottom: '16px' }}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  style={{
-                    width: 15,
-                    height: 15,
-                    position: 'absolute',
-                    left: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-tertiary)',
-                  }}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-                <input
+              {/* Search Bar & Location Filter */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    style={{
+                      width: 15,
+                      height: 15,
+                      position: 'absolute',
+                      left: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)',
+                    }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                  </svg>
+                  <input
+                    className="input"
+                    style={{ paddingLeft: 36, width: '100%', borderRadius: 'var(--radius-md)' }}
+                    placeholder="Search available vendors to enable..."
+                    value={masterSearch}
+                    onChange={(e) => setMasterSearch(e.target.value)}
+                  />
+                </div>
+
+                <select
                   className="input"
-                  style={{ paddingLeft: 36, width: '100%', borderRadius: 'var(--radius-md)' }}
-                  placeholder="Search available vendors to enable..."
-                  value={masterSearch}
-                  onChange={(e) => setMasterSearch(e.target.value)}
-                />
+                  style={{ width: 'auto', minWidth: '180px', borderRadius: 'var(--radius-md)' }}
+                  value={targetLocationId}
+                  onChange={(e) => handleTargetLocationChange(e.target.value)}
+                >
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* List */}
@@ -929,6 +976,7 @@ export default function VendorsPage() {
                   });
 
                   if (availableToEnable.length === 0) {
+                    const activeTargetLocObj = locations.find((l) => l.id === targetLocationId);
                     return (
                       <div
                         style={{
@@ -966,78 +1014,142 @@ export default function VendorsPage() {
                           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                             {masterSearch
                               ? 'Try searching for a different supplier name or department.'
-                              : `All onboarded suppliers in the system are currently active for ${activeLocationObj?.name || 'this location'}.`}
+                              : `All onboarded suppliers in the system are currently active for ${activeTargetLocObj?.name || 'this location'}.`}
                           </div>
                         </div>
                       </div>
                     );
                   }
 
+                  const allFilteredSelected = availableToEnable.length > 0 && availableToEnable.every((v) => selectedVendorIds.includes(v.id));
+
+                  const handleSelectAllFiltered = () => {
+                    if (allFilteredSelected) {
+                      const filteredIds = availableToEnable.map((v) => v.id);
+                      setSelectedVendorIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
+                    } else {
+                      const filteredIds = availableToEnable.map((v) => v.id);
+                      setSelectedVendorIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+                    }
+                  };
+
                   return (
-                    <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
-                      {availableToEnable.map((v) => (
-                        <div
-                          key={v.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '14px 16px',
-                            borderRadius: 'var(--radius-md)',
-                            background: 'var(--bg-sunken, var(--bg-surface))',
-                            border: '1px solid var(--border-default)',
-                            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      {/* Select All Bar */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          marginBottom: '8px',
+                          background: 'var(--bg-sunken, var(--bg-surface))',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-subtle)',
+                          fontSize: '13px',
+                        }}
+                      >
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <input
+                            type="checkbox"
+                            checked={allFilteredSelected}
+                            onChange={handleSelectAllFiltered}
+                            style={{ cursor: 'pointer', width: 16, height: 16 }}
+                          />
+                          Select All ({availableToEnable.length} vendors)
+                        </label>
+                        {selectedVendorIds.length > 0 && (
+                          <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 600 }}>
+                            {selectedVendorIds.length} selected
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Items List */}
+                      <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                        {availableToEnable.map((v) => {
+                          const isSelected = selectedVendorIds.includes(v.id);
+                          return (
                             <div
+                              key={v.id}
+                              onClick={() => handleToggleSelectVendor(v.id)}
                               style={{
-                                width: 38,
-                                height: 38,
-                                borderRadius: 'var(--radius-md)',
-                                background: 'var(--accent-glow, rgba(99, 102, 241, 0.1))',
-                                color: 'var(--accent)',
-                                fontWeight: 700,
-                                fontSize: '15px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                textTransform: 'uppercase',
-                                flexShrink: 0,
+                                justifyContent: 'space-between',
+                                padding: '12px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                background: isSelected ? 'var(--accent-subtle, rgba(235, 94, 40, 0.08))' : 'var(--bg-sunken, var(--bg-surface))',
+                                border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-default)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
                               }}
                             >
-                              {v.displayName.substring(0, 2)}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{v.displayName}</div>
-                              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span className="badge" style={{ padding: '2px 6px', fontSize: '11px' }}>{v.department?.fullName || 'General'}</span>
-                                {v.channelName && <span>• #{v.channelName}</span>}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}} // Handled by parent div onClick
+                                  style={{ cursor: 'pointer', width: 16, height: 16 }}
+                                />
+                                <div
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'var(--accent-glow, rgba(99, 102, 241, 0.1))',
+                                    color: 'var(--accent)',
+                                    fontWeight: 700,
+                                    fontSize: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    textTransform: 'uppercase',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {v.displayName.substring(0, 2)}
+                                </div>
+                                <div>
+                                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{v.displayName}</div>
+                                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span className="badge" style={{ padding: '2px 6px', fontSize: '11px' }}>{v.department?.fullName || 'General'}</span>
+                                    {v.channelName && <span>• #{v.channelName}</span>}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-
-                          <button
-                            onClick={() => handleToggleLocationAssignment(v, false)}
-                            className="btn btn-primary"
-                            style={{ padding: '7px 14px', fontSize: '12.5px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            Enable for Store
-                          </button>
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })()
               )}
 
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => setShowEnableModal(false)} className="btn btn-secondary" style={{ padding: '8px 20px', fontWeight: 600 }}>
-                  Done
-                </button>
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  {selectedVendorIds.length > 0 ? `${selectedVendorIds.length} vendor(s) selected` : 'Click vendors or checkboxes to select multiple.'}
+                </span>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {selectedVendorIds.length > 0 && (
+                    <button
+                      onClick={handleEnableSelectedVendors}
+                      disabled={batchEnabling}
+                      className="btn btn-primary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      {batchEnabling ? 'Enabling...' : `Enable Selected (${selectedVendorIds.length})`}
+                    </button>
+                  )}
+                  <button onClick={() => setShowEnableModal(false)} className="btn btn-secondary" style={{ padding: '8px 20px', fontWeight: 600 }}>
+                    Done
+                  </button>
+                </div>
               </div>
             </div>
           </div>

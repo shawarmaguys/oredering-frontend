@@ -6,14 +6,8 @@ import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useLocations, StoreLocation } from '../../../context/LocationsContext';
-import { useItems } from '../../../context/ItemsContext';
-
-// Location type is defined in LocationsContext as StoreLocation
-
 export default function LocationsPage() {
   const { locations, locationsLoading: loading, refreshLocations } = useLocations();
-  const { allItems } = useItems();
-  const locationProductsCache = useRef<Record<string, any[]>>({});
 
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
@@ -41,16 +35,6 @@ export default function LocationsPage() {
   const [editSlackUserToken, setEditSlackUserToken] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Products Management State
-  const [showProductsModal, setShowProductsModal] = useState(false);
-  const [productsLoading, setProductsLoading] = useState(false);
-  const [locationItems, setLocationItems] = useState<any[]>([]);
-  const [productsSearch, setProductsSearch] = useState('');
-  const [productsVendorFilter, setProductsVendorFilter] = useState<string>('all');
-  const [productsSortColumn, setProductsSortColumn] = useState<string>('displayName');
-  const [productsSortDir, setProductsSortDir] = useState<'asc' | 'desc'>('asc');
-  const [savingItemId, setSavingItemId] = useState<string | null>(null);
-
   // Store Locations List Sort State
   const [locSortColumn, setLocSortColumn] = useState<'name' | 'address' | 'phone' | 'email' | 'slack' | 'createdAt'>('name');
   const [locSortDir, setLocSortDir] = useState<'asc' | 'desc'>('asc');
@@ -73,99 +57,6 @@ export default function LocationsPage() {
   // Delete department confirmation state
   const [deleteDeptConfirmOpen, setDeleteDeptConfirmOpen] = useState(false);
   const [deptToDelete, setDeptToDelete] = useState<{ id: string; name: string } | null>(null);
-
-  const fetchLocationItems = async (locationId: string) => {
-    // If already cached, show instantly without skeletons
-    if (locationProductsCache.current[locationId]) {
-      setLocationItems(locationProductsCache.current[locationId]);
-      setProductsLoading(false);
-    } else if (allItems.length > 0) {
-      // Seed with allItems from context so UI displays immediately
-      const initialItems = allItems.map((item) => ({
-        id: item.id,
-        displayName: item.displayName,
-        productCode: item.productCode,
-        baseUnitName: item.baseUnitName,
-        displayUnitName: item.displayUnitName,
-        multiplier: Number(item.multiplier) || 1,
-        vendor: item.vendor,
-        assigned: false,
-        parLevel: 0,
-        displayOrder: 0,
-        isActive: false,
-      }));
-      setLocationItems(initialItems);
-      setProductsLoading(false);
-    } else {
-      setProductsLoading(true);
-    }
-
-    try {
-      const data = await api.locations.getItems(locationId);
-      const rawList = Array.isArray(data) ? data : (data as any)?.data || [];
-      locationProductsCache.current[locationId] = rawList;
-      setLocationItems(rawList);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch products for location.');
-    } finally {
-      setProductsLoading(false);
-    }
-  };
-
-  const handleToggleProduct = async (item: any) => {
-    if (!selectedLocation) return;
-    setSavingItemId(item.id);
-    const locId = selectedLocation.id;
-    try {
-      if (item.assigned) {
-        // Toggle OFF (unassign)
-        await api.locations.removeItem(locId, item.id);
-        const updater = (prev: any[]) => prev.map(x => x.id === item.id ? { ...x, assigned: false, isActive: false } : x);
-        setLocationItems(updater);
-        if (locationProductsCache.current[locId]) {
-          locationProductsCache.current[locId] = updater(locationProductsCache.current[locId]);
-        }
-      } else {
-        // Toggle ON (assign)
-        await api.locations.addOrUpdateItem(locId, {
-          itemId: item.id,
-          parLevel: item.parLevel || 0,
-          isActive: true
-        });
-        const updater = (prev: any[]) => prev.map(x => x.id === item.id ? { ...x, assigned: true, isActive: true } : x);
-        setLocationItems(updater);
-        if (locationProductsCache.current[locId]) {
-          locationProductsCache.current[locId] = updater(locationProductsCache.current[locId]);
-        }
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to update assignment.');
-    } finally {
-      setSavingItemId(null);
-    }
-  };
-
-  const handleUpdateDetails = async (item: any, parLevel: number) => {
-    if (!selectedLocation) return;
-    setSavingItemId(item.id);
-    const locId = selectedLocation.id;
-    try {
-      await api.locations.addOrUpdateItem(locId, {
-        itemId: item.id,
-        parLevel,
-        isActive: item.isActive
-      });
-      const updater = (prev: any[]) => prev.map(x => x.id === item.id ? { ...x, parLevel } : x);
-      setLocationItems(updater);
-      if (locationProductsCache.current[locId]) {
-        locationProductsCache.current[locId] = updater(locationProductsCache.current[locId]);
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to update item details.');
-    } finally {
-      setSavingItemId(null);
-    }
-  };
 
   const fetchLocationDepts = async (locationId: string) => {
     setDeptsLoading(true);
@@ -594,26 +485,6 @@ export default function LocationsPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedLocation(loc);
-                          setError('');
-                          setProductsSearch('');
-                          setShowProductsModal(true);
-                          fetchLocationItems(loc.id);
-                        }}
-                        className="btn btn-secondary btn-sm"
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 2 }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                        </svg>
-                        Manage Products
-                      </button>
-
-                    </div>
-
                     <div style={{
                       paddingTop: '12px',
                       borderTop: '1px solid var(--border-subtle)',
@@ -667,7 +538,6 @@ export default function LocationsPage() {
                           <td style={{ textAlign: 'right', paddingRight: 24 }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                               <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
-                              <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setError(''); setProductsSearch(''); setShowProductsModal(true); fetchLocationItems(loc.id); }}>Products</button>
                             </div>
                           </td>
                         </tr>
@@ -946,234 +816,7 @@ export default function LocationsPage() {
           </div>
         )}
 
-        {/* Modal Manage Products */}
-        {showProductsModal && selectedLocation && (
-          <div className="modal-backdrop">
-            <div className="modal-panel modal-panel-lg" style={{ maxWidth: '1100px', width: '90vw', height: '80vh', maxHeight: '850px', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '24px 28px 24px' }}>
-              <button
-                onClick={() => {
-                  setShowProductsModal(false);
-                  setSelectedLocation(null);
-                }}
-                className="modal-close"
-                aria-label="Close modal"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
 
-              <div className="modal-header" style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
-                <h2>Manage Location Products</h2>
-                <p>Configure which catalog items are active at <strong>{selectedLocation.name}</strong>, customize stock par levels, and display order.</p>
-              </div>
-
-              {/* Search Bar & Vendor Filter */}
-              <div style={{ padding: '16px 0', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-                  <input
-                    type="text"
-                    className="input"
-                    placeholder="Search products by name, code, or vendor..."
-                    value={productsSearch}
-                    onChange={(e) => setProductsSearch(e.target.value)}
-                    style={{ paddingLeft: '36px' }}
-                  />
-                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontSize: '1rem' }}>🔍</span>
-                </div>
-
-                <select
-                  className="input"
-                  style={{ width: 'auto', minWidth: '180px' }}
-                  value={productsVendorFilter}
-                  onChange={(e) => setProductsVendorFilter(e.target.value)}
-                >
-                  <option value="all">All Vendors</option>
-                  {Array.from(new Set(locationItems.map(i => i.vendor?.displayName).filter(Boolean))).map((vName: any) => (
-                    <option key={vName} value={vName}>{vName}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Products Table / List */}
-              <div style={{ flex: 1, overflowY: 'auto', minHeight: '300px', paddingBottom: '20px' }}>
-                {productsLoading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '24px 0' }}>
-                    <div className="skeleton" style={{ height: '36px', width: '100%' }} />
-                    <div className="skeleton" style={{ height: '32px', width: '100%' }} />
-                    <div className="skeleton" style={{ height: '32px', width: '100%' }} />
-                    <div className="skeleton" style={{ height: '32px', width: '100%' }} />
-                  </div>
-                ) : (
-                  (() => {
-                    const filtered = locationItems.filter(item => {
-                      const searchLower = productsSearch.toLowerCase();
-                      const matchesSearch = (
-                        item.displayName.toLowerCase().includes(searchLower) ||
-                        (item.productCode && item.productCode.toLowerCase().includes(searchLower)) ||
-                        (item.vendor && item.vendor.displayName.toLowerCase().includes(searchLower))
-                      );
-                      const matchesVendor = productsVendorFilter === 'all' || item.vendor?.displayName === productsVendorFilter;
-                      return matchesSearch && matchesVendor;
-                    }).sort((a, b) => {
-                      let valA: any = '';
-                      let valB: any = '';
-                      if (productsSortColumn === 'assigned') { valA = a.assigned ? 1 : 0; valB = b.assigned ? 1 : 0; }
-                      else if (productsSortColumn === 'displayName') { valA = a.displayName || ''; valB = b.displayName || ''; }
-                      else if (productsSortColumn === 'vendor') { valA = a.vendor?.displayName || ''; valB = b.vendor?.displayName || ''; }
-                      else if (productsSortColumn === 'parLevel') { valA = Number(a.parLevel) || 0; valB = Number(b.parLevel) || 0; }
-                      else if (productsSortColumn === 'status') { valA = a.assigned ? 1 : 0; valB = b.assigned ? 1 : 0; }
-                      
-                      if (typeof valA === 'string') {
-                        return productsSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-                      }
-                      return productsSortDir === 'asc' ? valA - valB : valB - valA;
-                    });
-
-                    if (filtered.length === 0) {
-                      return (
-                        <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)' }}>
-                          No matching products found in the catalog.
-                        </div>
-                      );
-                    }
-
-                    const handleProductHeaderClick = (col: string) => {
-                      if (productsSortColumn === col) {
-                        setProductsSortDir(d => d === 'asc' ? 'desc' : 'asc');
-                      } else {
-                        setProductsSortColumn(col);
-                        setProductsSortDir('asc');
-                      }
-                    };
-
-                    return (
-                      <table className="data-table" style={{ width: '100%' }}>
-                        <thead>
-                          <tr>
-                            <th style={{ width: '80px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleProductHeaderClick('assigned')}>
-                              Assign {productsSortColumn === 'assigned' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
-                            </th>
-                            <th style={{ cursor: 'pointer' }} onClick={() => handleProductHeaderClick('displayName')}>
-                              Product Details {productsSortColumn === 'displayName' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
-                            </th>
-                            <th style={{ cursor: 'pointer' }} onClick={() => handleProductHeaderClick('vendor')}>
-                              Vendor {productsSortColumn === 'vendor' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
-                            </th>
-                            <th style={{ width: '130px', cursor: 'pointer' }} onClick={() => handleProductHeaderClick('parLevel')}>
-                              Par Level {productsSortColumn === 'parLevel' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
-                            </th>
-                            <th style={{ width: '80px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleProductHeaderClick('status')}>
-                              Status {productsSortColumn === 'status' ? (productsSortDir === 'asc' ? '▲' : '▼') : ''}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filtered.map((item) => {
-                            const isSaving = savingItemId === item.id;
-                            return (
-                              <tr key={item.id} style={{ opacity: item.assigned ? 1 : 0.6, transition: 'opacity 0.2s' }}>
-                                <td style={{ textAlign: 'center', padding: '12px' }}>
-                                  <label className="switch-label" style={{ display: 'inline-block', position: 'relative', width: '40px', height: '20px', cursor: 'pointer' }}>
-                                    <input
-                                      type="checkbox"
-                                      checked={item.assigned}
-                                      disabled={isSaving}
-                                      onChange={() => handleToggleProduct(item)}
-                                      style={{ opacity: 0, width: 0, height: 0 }}
-                                    />
-                                    <span style={{
-                                      position: 'absolute',
-                                      cursor: 'pointer',
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0,
-                                      backgroundColor: item.assigned ? 'var(--accent)' : 'var(--bg-sunken)',
-                                      border: '1px solid var(--border-subtle)',
-                                      transition: '0.2s',
-                                      borderRadius: '10px'
-                                    }}>
-                                      <span style={{
-                                        position: 'absolute',
-                                        content: '""',
-                                        height: '14px',
-                                        width: '14px',
-                                        left: item.assigned ? '23px' : '2px',
-                                        bottom: '2px',
-                                        backgroundColor: 'white',
-                                        transition: '0.2s',
-                                        borderRadius: '50%',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                                      }} />
-                                    </span>
-                                  </label>
-                                </td>
-                                <td style={{ padding: '12px' }}>
-                                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.displayName}</div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                    SKU: <span className="mono">{item.productCode || '—'}</span> | Unit: {item.baseUnitName}
-                                  </div>
-                                </td>
-                                <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>
-                                  {item.vendor?.displayName || '—'}
-                                </td>
-                                <td style={{ padding: '12px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      min="0"
-                                      disabled={!item.assigned || isSaving}
-                                      value={item.parLevel}
-                                      onChange={(e) => {
-                                        const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                        setLocationItems(prev => prev.map(x => x.id === item.id ? { ...x, parLevel: val } : x));
-                                      }}
-                                      onBlur={(e) => {
-                                        const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                        handleUpdateDetails(item, val);
-                                      }}
-                                      className="input mono"
-                                      style={{ padding: '4px 8px', fontSize: '0.8125rem', height: '30px', width: '80px', textAlign: 'right' }}
-                                    />
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.displayUnitName ? item.displayUnitName : item.baseUnitName}</span>
-                                  </div>
-                                </td>
-                                <td style={{ textAlign: 'center', padding: '12px' }}>
-                                  {isSaving ? (
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>saving...</span>
-                                  ) : item.assigned ? (
-                                    <span className="badge badge-green" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>Active</span>
-                                  ) : (
-                                    <span className="badge badge-neutral" style={{ fontSize: '0.6875rem', padding: '2px 6px', opacity: 0.7 }}>Inactive</span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    );
-                  })()
-                )}
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button
-                  onClick={() => {
-                    setShowProductsModal(false);
-                    setSelectedLocation(null);
-                  }}
-                  className="btn btn-primary"
-                  style={{ minWidth: '100px' }}
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
 
         {/* Modal Manage Global Departments */}

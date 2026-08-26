@@ -131,6 +131,12 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
               )}
             </div>
           </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>PAR Level:</span>
+            <span className="mono" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+              {item.parLevel ?? 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>{item.displayUnitName || item.baseUnitName}</span>
+            </span>
+          </div>
           {item.note && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>Note:</span>
@@ -177,6 +183,8 @@ interface ItemsTableViewProps {
   onSort: (col: SortColumn) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string, name: string) => void;
+  onUpdatePar?: (itemId: string, newPar: number) => void;
+  canEdit?: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
 }
@@ -185,7 +193,7 @@ function SortIndicator({ col, active, dir }: { col: string; active: boolean; dir
   return <>{active ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</>;
 }
 
-export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete, hasMore, onLoadMore }: ItemsTableViewProps) {
+export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete, onUpdatePar, canEdit = true, hasMore, onLoadMore }: ItemsTableViewProps) {
   const th = (col: SortColumn, label: string, extraStyle?: React.CSSProperties) => (
     <th style={{ cursor: 'pointer', ...extraStyle }} onClick={() => onSort(col)}>
       {label}<SortIndicator col={col} active={sortCol === col} dir={sortDir} />
@@ -202,6 +210,7 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
               {th('category', 'Category')}
               {th('vendor', 'Assigned Vendor')}
               {th('code', 'Product Code')}
+              {th('parLevel', 'PAR Level', { width: '130px' })}
               {th('note', 'Notes')}
               {th('pack', 'Pack Size')}
               {th('baseUnit', 'Individual Stock Unit')}
@@ -232,6 +241,34 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                   </td>
                   <td><span style={{ color: 'var(--text-secondary)' }}>{item.vendor?.displayName || 'Unknown Vendor'}</span></td>
                   <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.productCode || '—'}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        disabled={!canEdit}
+                        defaultValue={item.parLevel ?? 0}
+                        key={`${item.id}-${item.parLevel}`}
+                        onBlur={(e) => {
+                          const val = e.target.value === '' ? 0 : Number(e.target.value);
+                          if (val !== (item.parLevel ?? 0) && onUpdatePar) {
+                            onUpdatePar(item.id, val);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        className="input mono"
+                        style={{ padding: '4px 8px', fontSize: '0.8125rem', height: '30px', width: '75px', textAlign: 'right' }}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        {item.displayUnitName ? item.displayUnitName : item.baseUnitName}
+                      </span>
+                    </div>
+                  </td>
                   <td style={{ color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note || '—'}</td>
                   <td>
                     {isSecondary
