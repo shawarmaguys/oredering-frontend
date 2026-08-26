@@ -58,6 +58,29 @@ export default function LocationsPage() {
   const [deleteDeptConfirmOpen, setDeleteDeptConfirmOpen] = useState(false);
   const [deptToDelete, setDeptToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  // Delete location confirmation state
+  const [deleteLocConfirmOpen, setDeleteLocConfirmOpen] = useState(false);
+  const [locToDelete, setLocToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDeleteLocClick = (id: string, name: string) => {
+    setLocToDelete({ id, name });
+    setDeleteLocConfirmOpen(true);
+  };
+
+  const handleConfirmDeleteLoc = async () => {
+    if (!locToDelete) return;
+    const { id } = locToDelete;
+    setDeleteLocConfirmOpen(false);
+    setLocToDelete(null);
+
+    try {
+      await api.locations.delete(id);
+      await refreshLocations();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete location.');
+    }
+  };
+
   const fetchLocationDepts = async (locationId: string) => {
     setDeptsLoading(true);
     try {
@@ -427,24 +450,34 @@ export default function LocationsPage() {
                           </h3>
                         </div>
 
-                        <button
-                          onClick={() => {
-                            setSelectedLocation(loc);
-                            setEditName(loc.name);
-                            setEditAddress(loc.address);
-                            setEditPhone(loc.phone);
-                            setEditEmail(loc.email);
-                            setEditSlackBotToken(loc.slackBotToken || '');
-                            setEditSlackUserToken(loc.slackUserToken || '');
-                            setError('');
-                            setShowEditModal(true);
-                          }}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
-                          title="Edit Location"
-                        >
-                          Edit
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            onClick={() => {
+                              setSelectedLocation(loc);
+                              setEditName(loc.name);
+                              setEditAddress(loc.address);
+                              setEditPhone(loc.phone);
+                              setEditEmail(loc.email);
+                              setEditSlackBotToken(loc.slackBotToken || '');
+                              setEditSlackUserToken(loc.slackUserToken || '');
+                              setError('');
+                              setShowEditModal(true);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
+                            title="Edit Location"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLocClick(loc.id, loc.name)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: 'var(--error)' }}
+                            title="Delete Location"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -538,6 +571,7 @@ export default function LocationsPage() {
                           <td style={{ textAlign: 'right', paddingRight: 24 }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                               <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button className="btn btn-secondary btn-sm" onClick={() => handleDeleteLocClick(loc.id, loc.name)} style={{ color: 'var(--error)' }}>Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -1003,6 +1037,17 @@ export default function LocationsPage() {
           onCancel={() => {
             setDeleteDeptConfirmOpen(false);
             setDeptToDelete(null);
+          }}
+        />
+
+        <ConfirmDialog
+          isOpen={deleteLocConfirmOpen}
+          title="Delete Store Location?"
+          message={`Are you sure you want to delete the store location "${locToDelete?.name}"? This will remove all vendor and product assignments associated with this location.`}
+          onConfirm={handleConfirmDeleteLoc}
+          onCancel={() => {
+            setDeleteLocConfirmOpen(false);
+            setLocToDelete(null);
           }}
         />
       </div>
