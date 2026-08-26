@@ -18,6 +18,7 @@ export default function Home() {
     }
   }, [isAuthenticated, isLoading, router]);
 
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
       <div className="animate-pulse flex flex-col items-center">
