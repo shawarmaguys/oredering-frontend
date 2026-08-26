@@ -97,6 +97,7 @@ export const translations: Record<Language, Record<string, string>> = {
     all_counts_approved: 'All store counts are approved and synchronized.',
     access_all_completed: 'Access all completed kitchen stock sheets and track the stage of procurement purchase orders.',
     view_po_and_stock: 'View Purchase Orders and Stock records',
+    view_vendors: 'View Vendors',
 
     // Worker Dashboard
     worker_desc: 'Record kitchen stock audits, view schedules, and submit daily physical quantities.',
@@ -355,6 +356,7 @@ export const translations: Record<Language, Record<string, string>> = {
     all_counts_approved: 'Todos los conteos de la tienda están aprobados y sincronizados.',
     access_all_completed: 'Acceda a todas las hojas de stock completadas y siga la etapa de las órdenes de compra.',
     view_po_and_stock: 'Ver Órdenes de Compra y Registros',
+    view_vendors: 'Ver Proveedores',
 
     // Worker Dashboard
     worker_desc: 'Registre las auditorías de inventario de cocina, consulte horarios y envíe cantidades físicas diarias.',

@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { api } from '../utils/api';
 import { Item } from '../dashboard/admin/items/types';
+import { useLocationFilter } from './LocationFilterContext';
 
 const ALL_LIMIT = 500;
 
@@ -25,44 +26,45 @@ interface ItemsContextType {
 const ItemsContext = createContext<ItemsContextType | undefined>(undefined);
 
 export function ItemsProvider({ children }: { children: React.ReactNode }) {
+  const { selectedLocationId } = useLocationFilter();
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [itemsReady, setItemsReady] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const cacheMap = useRef<Map<string, Item[]>>(new Map());
   const inFlightPromise = useRef<Promise<void> | null>(null);
   const initializedRef = useRef(false);
 
-  const fetchAll = useCallback(async () => {
-    if (inFlightPromise.current) return inFlightPromise.current;
+  const fetchAllForLocation = useCallback(async (locId: string, forceRefresh = false) => {
+    if (!forceRefresh && inFlightPromise.current) return inFlightPromise.current;
 
     setItemsLoading(true);
     const promise = (async () => {
       try {
-        const first: any = await api.items.list({ limit: ALL_LIMIT, page: 1 });
+        const queryParam = locId && locId !== 'all' ? locId : undefined;
+        const first: any = await api.items.list({ limit: ALL_LIMIT, page: 1, locationId: queryParam });
+        
+        let combined: Item[] = [];
         if (Array.isArray(first)) {
-          setAllItems(first);
-          setItemsReady(true);
-          initializedRef.current = true;
-          setIsInitialized(true);
-          return;
+          combined = first;
+        } else {
+          const firstData: Item[] = Array.isArray(first?.data) ? first.data : [];
+          const totalPages = typeof first?.totalPages === 'number' ? first.totalPages : 1;
+          const extraFetches: Promise<any>[] = [];
+          for (let p = 2; p <= totalPages; p++) {
+            extraFetches.push(api.items.list({ limit: ALL_LIMIT, page: p, locationId: queryParam }));
+          }
+          const rest = await Promise.all(extraFetches);
+          combined = [
+            ...firstData,
+            ...rest.flatMap((r: any) =>
+              Array.isArray(r) ? r : Array.isArray(r?.data) ? r.data : [],
+            ),
+          ];
         }
 
-        const firstData: Item[] = Array.isArray(first?.data) ? first.data : [];
-        const totalPages = typeof first?.totalPages === 'number' ? first.totalPages : 1;
-        const extraFetches: Promise<any>[] = [];
-        for (let p = 2; p <= totalPages; p++) {
-          extraFetches.push(api.items.list({ limit: ALL_LIMIT, page: p }));
-        }
-
-        const rest = await Promise.all(extraFetches);
-        const combined: Item[] = [
-          ...firstData,
-          ...rest.flatMap((r: any) =>
-            Array.isArray(r) ? r : Array.isArray(r?.data) ? r.data : [],
-          ),
-        ];
-
+        cacheMap.current.set(locId, combined);
         setAllItems(combined);
         setItemsReady(true);
         initializedRef.current = true;
@@ -79,18 +81,39 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
     return promise;
   }, []);
 
-  const ensureLoaded = useCallback(async () => {
-    if (!initializedRef.current) {
-      return fetchAll();
+  useEffect(() => {
+    const locKey = selectedLocationId || 'all';
+    const cached = cacheMap.current.get(locKey);
+    if (cached) {
+      setAllItems(cached);
+      setItemsReady(true);
+      setIsInitialized(true);
+      // Background refresh
+      fetchAllForLocation(locKey);
+    } else {
+      setAllItems([]);
+      setItemsReady(false);
+      setIsInitialized(false);
+      initializedRef.current = false;
+      fetchAllForLocation(locKey);
     }
-  }, [fetchAll]);
+  }, [selectedLocationId, fetchAllForLocation]);
+
+  const ensureLoaded = useCallback(async () => {
+    const locKey = selectedLocationId || 'all';
+    if (!cacheMap.current.has(locKey)) {
+      return fetchAllForLocation(locKey);
+    }
+  }, [selectedLocationId, fetchAllForLocation]);
 
   const refreshAllItems = useCallback(async () => {
+    const locKey = selectedLocationId || 'all';
+    cacheMap.current.delete(locKey);
     initializedRef.current = false;
     setIsInitialized(false);
     setItemsReady(false);
-    await fetchAll();
-  }, [fetchAll]);
+    await fetchAllForLocation(locKey, true);
+  }, [selectedLocationId, fetchAllForLocation]);
 
   return (
     <ItemsContext.Provider

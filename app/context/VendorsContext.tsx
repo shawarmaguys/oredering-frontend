@@ -9,6 +9,7 @@ import React, {
   useEffect,
 } from 'react';
 import { api } from '../utils/api';
+import { useLocationFilter } from './LocationFilterContext';
 
 export interface Vendor {
   id: string;
@@ -21,6 +22,7 @@ export interface Vendor {
   address3?: string;
   departmentId: string;
   department?: { id: string; code: string; fullName: string };
+  locationVendors?: Array<{ locationId: string }>;
   createdAt: string;
 }
 
@@ -43,27 +45,47 @@ interface VendorsContextType {
 const VendorsContext = createContext<VendorsContextType | undefined>(undefined);
 
 export function VendorsProvider({ children }: { children: React.ReactNode }) {
+  let locationFilter: ReturnType<typeof useLocationFilter> | undefined;
+  try {
+    locationFilter = useLocationFilter();
+  } catch (_) {
+    // Graceful fallback if instantiated outside LocationFilterProvider
+  }
+
+  const selectedLocationId = locationFilter?.selectedLocationId || '';
+
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const initializedRef = useRef(false);
+  const cacheMap = useRef<Map<string, Vendor[]>>(new Map());
+  const activeLocationRef = useRef<string>(selectedLocationId);
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
-  const fetchAll = useCallback(async () => {
-    if (inFlightPromise.current) return inFlightPromise.current;
+  const fetchVendorsForLocation = useCallback(async (locId: string, forceRefresh = false) => {
+    const cacheKey = locId || 'all';
+
+    if (!forceRefresh && cacheMap.current.has(cacheKey)) {
+      setVendors(cacheMap.current.get(cacheKey)!);
+      setIsInitialized(true);
+      return;
+    }
+
+    if (!forceRefresh && inFlightPromise.current) return inFlightPromise.current;
 
     setVendorsLoading(true);
     const promise = (async () => {
       try {
+        const queryLocParam = locId && locId !== 'all' ? locId : undefined;
         const [vendorsData, deptsData] = await Promise.all([
-          api.vendors.list(),
+          api.vendors.list(undefined, queryLocParam),
           api.vendors.departments(),
         ]);
+
+        cacheMap.current.set(cacheKey, vendorsData);
         setVendors(vendorsData);
         setDepartments(deptsData);
-        initializedRef.current = true;
         setIsInitialized(true);
       } catch (err) {
         console.error('[VendorsContext] Failed to load vendors/departments:', err);
@@ -77,18 +99,24 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
     return promise;
   }, []);
 
-  const ensureLoaded = useCallback(async () => {
-    if (!initializedRef.current) {
-      return fetchAll();
-    }
-  }, [fetchAll]);
+  useEffect(() => {
+    const locKey = selectedLocationId || 'all';
+    activeLocationRef.current = locKey;
+    fetchVendorsForLocation(locKey);
+  }, [selectedLocationId, fetchVendorsForLocation]);
 
-  // Exposed refresh — call after any create / update / delete mutation
+  const ensureLoaded = useCallback(async () => {
+    const locId = activeLocationRef.current || selectedLocationId || 'all';
+    if (!cacheMap.current.has(locId)) {
+      await fetchVendorsForLocation(locId);
+    }
+  }, [fetchVendorsForLocation, selectedLocationId]);
+
   const refreshVendors = useCallback(async () => {
-    initializedRef.current = false;
-    setIsInitialized(false);
-    await fetchAll();
-  }, [fetchAll]);
+    cacheMap.current.clear();
+    const locId = activeLocationRef.current || selectedLocationId || 'all';
+    await fetchVendorsForLocation(locId, true);
+  }, [fetchVendorsForLocation, selectedLocationId]);
 
   return (
     <VendorsContext.Provider

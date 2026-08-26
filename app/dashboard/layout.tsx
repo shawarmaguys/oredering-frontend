@@ -129,7 +129,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   }}
                   title="Filter all views by location"
                 >
-                  <option value="all">All Locations</option>
                   {allowedLocations.map(loc => (
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}

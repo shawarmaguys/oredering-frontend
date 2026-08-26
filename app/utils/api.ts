@@ -53,14 +53,32 @@ export const api = {
     removeDepartment: (locationId: string, departmentId: string) => request<any>(`/locations/${locationId}/departments/${departmentId}`, { method: 'DELETE' }),
   },
   vendors: {
-    list: (departmentId?: string) => {
-      const query = departmentId ? `?department_id=${departmentId}` : '';
+    list: (departmentId?: string, locationId?: string) => {
+      const q = new URLSearchParams();
+      if (departmentId) q.set('department_id', departmentId);
+      if (locationId) q.set('location_id', locationId);
+      const query = q.toString() ? `?${q.toString()}` : '';
       return request<any[]>(`/vendors${query}`);
+    },
+    listUnassigned: (locationId: string, departmentId?: string) => {
+      const q = new URLSearchParams();
+      if (locationId) q.set('location_id', locationId);
+      if (departmentId) q.set('department_id', departmentId);
+      const query = q.toString() ? `?${q.toString()}` : '';
+      return request<any[]>(`/vendors/unassigned${query}`);
     },
     create: (data: any) => request<any>('/vendors', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/vendors/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    delete: (id: string) => request<any>(`/vendors/${id}`, { method: 'DELETE' }),
+    delete: (id: string, locationId?: string) => {
+      const query = locationId && locationId !== 'all' ? `?location_id=${locationId}` : '';
+      return request<any>(`/vendors/${id}${query}`, { method: 'DELETE' });
+    },
     departments: () => request<any[]>('/vendors/departments'),
+    getLocationAssignments: (id: string) => request<any[]>(`/vendors/${id}/locations`),
+    assignToLocation: (id: string, locationId: string) =>
+      request<any>(`/vendors/${id}/locations/${locationId}`, { method: 'POST' }),
+    removeFromLocation: (id: string, locationId: string) =>
+      request<any>(`/vendors/${id}/locations/${locationId}`, { method: 'DELETE' }),
   },
   departments: {
     list: () => request<any[]>('/vendors/departments'),
@@ -79,10 +97,11 @@ export const api = {
     delete: (id: string) => request<any>(`/product-types/${id}`, { method: 'DELETE' }),
   },
   items: {
-    list: (params?: { vendorId?: string; productTypeId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
+    list: (params?: { vendorId?: string; productTypeId?: string; locationId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
       const q = new URLSearchParams();
       if (params?.vendorId) q.set('vendor_id', params.vendorId);
       if (params?.productTypeId) q.set('product_type_id', params.productTypeId);
+      if (params?.locationId && params.locationId !== 'all') q.set('location_id', params.locationId);
       if (params?.search) q.set('search', params.search);
       if (params?.page != null) q.set('page', String(params.page));
       if (params?.limit != null) q.set('limit', String(params.limit));
@@ -93,7 +112,14 @@ export const api = {
     },
     create: (data: any) => request<any>('/items', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request<any>(`/items/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    delete: (id: string) => request<any>(`/items/${id}`, { method: 'DELETE' }),
+    delete: (id: string, locationId?: string) => {
+      const query = locationId && locationId !== 'all' ? `?location_id=${locationId}` : '';
+      return request<any>(`/items/${id}${query}`, { method: 'DELETE' });
+    },
+    assignToLocation: (id: string, locationId: string, parLevel?: number) =>
+      request<any>(`/items/${id}/locations/${locationId}`, { method: 'POST', body: JSON.stringify({ parLevel }) }),
+    removeFromLocation: (id: string, locationId: string) =>
+      request<any>(`/items/${id}/locations/${locationId}`, { method: 'DELETE' }),
   },
   schedules: {
     list: () => request<any[]>('/schedules'),

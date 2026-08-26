@@ -64,6 +64,12 @@ export default function UsersPage() {
     setFormSubmitting(true);
     setError('');
 
+    if (role === 'MANAGER' && selectedLocationIds.length > 1) {
+      setError('Managers can only be assigned to a single store location.');
+      setFormSubmitting(false);
+      return;
+    }
+
     try {
       await api.users.create({
         fullName: fullName,
@@ -94,6 +100,12 @@ export default function UsersPage() {
     if (!selectedUser) return;
     setFormSubmitting(true);
     setError('');
+
+    if (editRole === 'MANAGER' && selectedLocationIds.length > 1) {
+      setError('Managers can only be assigned to a single store location.');
+      setFormSubmitting(false);
+      return;
+    }
 
     try {
       await api.users.update(selectedUser.id, {
@@ -522,7 +534,13 @@ export default function UsersPage() {
                   <select
                     id="user-role"
                     value={role}
-                    onChange={(e) => setRole(e.target.value as any)}
+                    onChange={(e) => {
+                      const newRole = e.target.value as any;
+                      setRole(newRole);
+                      if (newRole === 'MANAGER' && selectedLocationIds.length > 1) {
+                        setSelectedLocationIds([selectedLocationIds[0]]);
+                      }
+                    }}
                     className="input"
                   >
                     <option value="WORKER">Worker (Perform Stock Takes)</option>
@@ -532,7 +550,27 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                {role !== 'ADMIN' && (
+                {role === 'MANAGER' ? (
+                  <div>
+                    <label className="label" htmlFor="user-location-single">Assigned Store Location *</label>
+                    <select
+                      id="user-location-single"
+                      className="input"
+                      value={selectedLocationIds[0] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedLocationIds(val ? [val] : []);
+                      }}
+                    >
+                      <option value="">Select a location...</option>
+                      {locationsList.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : role !== 'ADMIN' && (
                   <div>
                     <label className="label">Assigned store locations</label>
                     <div style={{
@@ -657,7 +695,13 @@ export default function UsersPage() {
                   <select
                     id="edit-user-role"
                     value={editRole}
-                    onChange={(e) => setEditRole(e.target.value as any)}
+                    onChange={(e) => {
+                      const newRole = e.target.value as any;
+                      setEditRole(newRole);
+                      if (newRole === 'MANAGER' && selectedLocationIds.length > 1) {
+                        setSelectedLocationIds([selectedLocationIds[0]]);
+                      }
+                    }}
                     className="input"
                   >
                     <option value="WORKER">Worker (Perform Stock Takes)</option>
@@ -667,7 +711,27 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                {editRole !== 'ADMIN' && (
+                {editRole === 'MANAGER' ? (
+                  <div>
+                    <label className="label" htmlFor="edit-user-location-single">Assigned Store Location *</label>
+                    <select
+                      id="edit-user-location-single"
+                      className="input"
+                      value={selectedLocationIds[0] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedLocationIds(val ? [val] : []);
+                      }}
+                    >
+                      <option value="">Select a location...</option>
+                      {locationsList.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : editRole !== 'ADMIN' && (
                   <div>
                     <label className="label">Assigned store locations</label>
                     <div style={{

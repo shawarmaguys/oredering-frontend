@@ -6,11 +6,21 @@ import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useVendors, Vendor } from '../../../context/VendorsContext';
+import { useLocations } from '../../../context/LocationsContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { useAuth } from '../../../context/AuthContext';
 
 // Vendor and Department types are imported from VendorsContext
 
 export default function VendorsPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_MANAGER';
+
   const { vendors, departments, vendorsLoading: loading, refreshVendors } = useVendors();
+  const { locations } = useLocations();
+  const { selectedLocationId } = useLocationFilter();
+
+  const activeLocationObj = locations.find((l) => l.id === selectedLocationId);
 
   const [error, setError] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -49,7 +59,38 @@ export default function VendorsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  // Removed local fetchInitialData - data comes from VendorsContext
+  // Enable existing vendors modal state
+  const [showEnableModal, setShowEnableModal] = useState(false);
+  const [masterVendors, setMasterVendors] = useState<Vendor[]>([]);
+  const [masterLoading, setMasterLoading] = useState(false);
+  const [masterSearch, setMasterSearch] = useState('');
+
+  const openEnableModal = async () => {
+    setShowEnableModal(true);
+    setMasterLoading(true);
+    try {
+      const data = await api.vendors.listUnassigned(selectedLocationId);
+      setMasterVendors(data);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load available vendors.');
+    } finally {
+      setMasterLoading(false);
+    }
+  };
+
+  const handleToggleLocationAssignment = async (vendor: Vendor, isAssigned: boolean) => {
+    try {
+      if (isAssigned) {
+        await api.vendors.removeFromLocation(vendor.id, selectedLocationId);
+      } else {
+        await api.vendors.assignToLocation(vendor.id, selectedLocationId);
+      }
+      setMasterVendors((prev) => prev.filter((v) => v.id !== vendor.id));
+      await refreshVendors();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update vendor location assignment.');
+    }
+  };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +107,7 @@ export default function VendorsPage() {
         address2: address2 || undefined,
         address3: address3 || undefined,
         departmentId,
+        locationId: selectedLocationId,
       });
 
       // Reset
@@ -117,6 +159,20 @@ export default function VendorsPage() {
     }
   };
 
+  const openEditModal = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setEditDisplayName(vendor.displayName);
+    setEditChannelName(vendor.channelName || '');
+    setEditEmail(vendor.email || '');
+    setEditPhone(vendor.phone || '');
+    setEditAddress1(vendor.address1 || '');
+    setEditAddress2(vendor.address2 || '');
+    setEditAddress3(vendor.address3 || '');
+    setEditDepartmentId(vendor.departmentId);
+    setError('');
+    setShowEditModal(true);
+  };
+
   const handleDeleteClick = (id: string, name: string) => {
     setVendorToDelete({ id, name });
     setDeleteConfirmOpen(true);
@@ -129,7 +185,7 @@ export default function VendorsPage() {
     setVendorToDelete(null);
     setError('');
     try {
-      await api.vendors.delete(id);
+      await api.vendors.delete(id, selectedLocationId);
       await refreshVendors();
     } catch (err: any) {
       setError(err.message || 'Failed to delete vendor.');
@@ -154,18 +210,34 @@ export default function VendorsPage() {
               <h1>Vendors & Suppliers</h1>
               <p>Manage wholesale vendor accounts, Slack channels, and contact information.</p>
             </div>
-            <button
-              onClick={() => {
-                setError('');
-                setShowModal(true);
-              }}
-              className="btn btn-primary"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Onboard Vendor
-            </button>
+            {isAdmin && (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button
+                  onClick={() => {
+                    setError('');
+                    openEnableModal();
+                  }}
+                  className="btn btn-secondary"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Enable Existing Vendors
+                </button>
+                <button
+                  onClick={() => {
+                    setError('');
+                    setShowModal(true);
+                  }}
+                  className="btn btn-primary"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Onboard Vendor
+                </button>
+              </div>
+            )}
           </div>
 
           {error && !showModal && !showEditModal && (
@@ -235,12 +307,14 @@ export default function VendorsPage() {
                 </div>
                 <h3>No vendors onboarded</h3>
                 <p>Onboard your food, beverage, and packaging wholesale vendors to configure purchase order channels.</p>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="btn btn-primary"
-                >
-                  Onboard First Supplier
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="btn btn-primary"
+                  >
+                    Onboard First Supplier
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -311,42 +385,32 @@ export default function VendorsPage() {
                             </span>
                           )}
                         </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            onClick={() => {
-                              setSelectedVendor(vendor);
-                              setEditDisplayName(vendor.displayName);
-                              setEditChannelName(vendor.channelName || '');
-                              setEditEmail(vendor.email || '');
-                              setEditPhone(vendor.phone || '');
-                              setEditAddress1(vendor.address1 || '');
-                              setEditAddress2(vendor.address2 || '');
-                              setEditAddress3(vendor.address3 || '');
-                              setEditDepartmentId(vendor.departmentId);
-                              setError('');
-                              setShowEditModal(true);
-                            }}
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
-                            title="Edit Vendor"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                            </svg>
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }}
-                            title="Delete Vendor"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                            </svg>
-                            Delete
-                          </button>
-                        </div>
+                        {isAdmin && (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => openEditModal(vendor)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
+                              title="Edit Vendor"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                              </svg>
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }}
+                              title="Delete Vendor"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8125rem' }}>
@@ -433,7 +497,7 @@ export default function VendorsPage() {
                       <th style={{ cursor: 'pointer' }} onClick={() => { if (vendorSortColumn === 'createdAt') setVendorSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setVendorSortColumn('createdAt'); setVendorSortDir('asc'); } }}>
                         Added {vendorSortColumn === 'createdAt' ? (vendorSortDir === 'asc' ? '▲' : '▼') : ''}
                       </th>
-                      <th style={{ textAlign: 'right', paddingRight: 24 }}>Actions</th>
+                      {isAdmin && <th style={{ textAlign: 'right', paddingRight: 24 }}>Actions</th>}
                     </tr></thead>
                     <tbody>
                       {filtered.map(vendor => (
@@ -444,12 +508,14 @@ export default function VendorsPage() {
                           <td>{vendor.email || '—'}</td>
                           <td>{vendor.phone || '—'}</td>
                           <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : '—'}</td>
-                          <td style={{ textAlign: 'right', paddingRight: 24 }}>
-                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                              <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedVendor(vendor); setEditDisplayName(vendor.displayName); setEditChannelName(vendor.channelName || ''); setEditEmail(vendor.email || ''); setEditPhone(vendor.phone || ''); setEditAddress1(vendor.address1 || ''); setEditAddress2(vendor.address2 || ''); setEditAddress3(vendor.address3 || ''); setEditDepartmentId(vendor.departmentId); setError(''); setShowEditModal(true); }}>Edit</button>
-                              <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}>Delete</button>
-                            </div>
-                          </td>
+                          {isAdmin && (
+                            <td style={{ textAlign: 'right', paddingRight: 24 }}>
+                              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(vendor)}>Edit</button>
+                                <button className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }} onClick={() => handleDeleteClick(vendor.id, vendor.displayName)}>Delete</button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -605,6 +671,8 @@ export default function VendorsPage() {
                     />
                   </div>
                 </div>
+
+
 
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
@@ -768,6 +836,8 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
+
+
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
@@ -794,10 +864,200 @@ export default function VendorsPage() {
           </div>
         )}
 
+        {/* Enable Existing Vendors Modal */}
+        {showEnableModal && (
+          <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)' }}>
+            <div className="modal-content animate-in" style={{ maxWidth: '600px', width: '92%', borderRadius: '16px', padding: '24px' }}>
+              <div className="modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                    Enable Existing Suppliers
+                  </h2>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                    Assign onboarded suppliers to <strong style={{ color: 'var(--accent)' }}>{activeLocationObj?.name || 'this location'}</strong>.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowEnableModal(false)}
+                  className="btn-close"
+                  style={{
+                    background: 'var(--bg-subtle)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div style={{ position: 'relative', marginTop: '16px', marginBottom: '16px' }}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  style={{
+                    width: 15,
+                    height: 15,
+                    position: 'absolute',
+                    left: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                  }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <input
+                  className="input"
+                  style={{ paddingLeft: 36, width: '100%', borderRadius: 'var(--radius-md)' }}
+                  placeholder="Search available vendors to enable..."
+                  value={masterSearch}
+                  onChange={(e) => setMasterSearch(e.target.value)}
+                />
+              </div>
+
+              {/* List */}
+              {masterLoading ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <div className="animate-spin" style={{ display: 'inline-block', width: 24, height: 24, border: '2px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', marginBottom: 8 }} />
+                  <div>Loading master vendors...</div>
+                </div>
+              ) : (
+                (() => {
+                  const availableToEnable = masterVendors.filter((v) => {
+                    const q = masterSearch.toLowerCase();
+                    return !q || v.displayName.toLowerCase().includes(q) || v.department?.fullName.toLowerCase().includes(q);
+                  });
+
+                  if (availableToEnable.length === 0) {
+                    return (
+                      <div
+                        style={{
+                          padding: '40px 20px',
+                          textAlign: 'center',
+                          background: 'var(--bg-surface)',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px dashed var(--border-default)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '12px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: '50%',
+                            background: 'rgba(34, 197, 94, 0.1)',
+                            color: '#22c55e',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '15px' }}>
+                            {masterSearch ? 'No matching vendors found' : 'All vendors are enabled'}
+                          </div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                            {masterSearch
+                              ? 'Try searching for a different supplier name or department.'
+                              : `All onboarded suppliers in the system are currently active for ${activeLocationObj?.name || 'this location'}.`}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ maxHeight: '360px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
+                      {availableToEnable.map((v) => (
+                        <div
+                          key={v.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '14px 16px',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--bg-surface)',
+                            border: '1px solid var(--border-default)',
+                            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div
+                              style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--accent-glow, rgba(99, 102, 241, 0.1))',
+                                color: 'var(--accent)',
+                                fontWeight: 700,
+                                fontSize: '15px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {v.displayName.substring(0, 2)}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{v.displayName}</div>
+                              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span className="badge" style={{ padding: '2px 6px', fontSize: '11px' }}>{v.department?.fullName || 'General'}</span>
+                                {v.channelName && <span>• #{v.channelName}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleToggleLocationAssignment(v, false)}
+                            className="btn btn-primary"
+                            style={{ padding: '7px 14px', fontSize: '12.5px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 14, height: 14 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Enable for Store
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              )}
+
+              <div className="modal-footer" style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowEnableModal(false)} className="btn btn-secondary" style={{ padding: '8px 20px', fontWeight: 600 }}>
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ConfirmDialog
           isOpen={deleteConfirmOpen}
-          title="Delete Vendor?"
-          message={`Are you sure you want to delete "${vendorToDelete?.name}"? This will delete all products, schedules, stock records, and purchase orders associated with this vendor.`}
+          title="Remove Vendor from Location?"
+          message={`Are you sure you want to remove "${vendorToDelete?.name}" from ${activeLocationObj?.name || 'this location'}? The vendor account and historical records will remain safe in the system.`}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setDeleteConfirmOpen(false);

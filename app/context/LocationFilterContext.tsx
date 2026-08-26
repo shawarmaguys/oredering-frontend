@@ -29,30 +29,37 @@ export function LocationFilterProvider({ children }: { children: React.ReactNode
     return locations;
   }, [locations, user]);
 
-  const [selectedLocationId, setSelectedLocationIdRaw] = useState<string>('all');
+  const [selectedLocationId, setSelectedLocationIdRaw] = useState<string>('');
 
-  // Restore from localStorage once on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setSelectedLocationIdRaw(stored);
-    }
-  }, []);
-
-  // When allowedLocations load: if stored selection is no longer allowed, reset to 'all'
+  // Synchronize selectedLocationId with allowedLocations
   useEffect(() => {
     if (allowedLocations.length === 0) return;
-    if (selectedLocationId !== 'all' && !allowedLocations.find(l => l.id === selectedLocationId)) {
-      setSelectedLocationIdRaw('all');
-      localStorage.removeItem(STORAGE_KEY);
+
+    let targetId = selectedLocationId;
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored && stored !== 'all' && allowedLocations.some((l) => l.id === stored)) {
+        targetId = stored;
+      }
+    }
+
+    if (!targetId || targetId === 'all' || !allowedLocations.some((l) => l.id === targetId)) {
+      targetId = allowedLocations[0].id;
+    }
+
+    if (targetId !== selectedLocationId) {
+      setSelectedLocationIdRaw(targetId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, targetId);
+      }
     }
   }, [allowedLocations, selectedLocationId]);
 
   const setSelectedLocationId = useCallback((id: string) => {
+    if (!id || id === 'all') return;
     setSelectedLocationIdRaw(id);
     if (typeof window !== 'undefined') {
-      if (id === 'all') localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, id);
+      localStorage.setItem(STORAGE_KEY, id);
     }
   }, []);
 

@@ -152,6 +152,42 @@ export default function ManagerDashboard() {
                 {t('view_po_and_stock')}
               </Link>
             </div>
+
+            {/* Vendors & Suppliers Link Card */}
+            <div className="card" style={{
+              padding: '24px',
+              background: 'linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-sunken) 100%)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent)'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m1.5-1.5l-3-1m-3.182-5.59L12.75 3M2.25 9.75v10.5c0 .414.336.75.75.75h3.75m-.75-11.25V21" />
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {t('vendors_suppliers_title')}
+                </h3>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                  {t('vendors_suppliers_desc')}
+                </p>
+              </div>
+              <Link href="/dashboard/admin/vendors" className="btn btn-secondary" style={{ width: '100%', marginTop: '8px', textAlign: 'center', textDecoration: 'none', justifyContent: 'center' }}>
+                {t('view_vendors')}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

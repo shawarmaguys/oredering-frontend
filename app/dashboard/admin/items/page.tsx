@@ -7,6 +7,8 @@ import AdminGuard from '../../components/AdminGuard';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useVendors } from '../../../context/VendorsContext';
 
+import { useLocationFilter } from '../../../context/LocationFilterContext';
+
 import { useItemsStore } from './useItemsStore';
 import { ItemsToolbar } from './ItemsToolbar';
 import { ItemsTileView, ItemsTableView } from './ItemsViews';
@@ -15,6 +17,7 @@ import type { Item, ViewMode } from './types';
 
 export default function ItemsPage() {
   const { vendors: contextVendors } = useVendors();
+  const { selectedLocationId } = useLocationFilter();
   const store = useItemsStore(contextVendors);
   const {
     vendors, productTypes, items, loading, error, setError,
@@ -50,7 +53,7 @@ export default function ItemsPage() {
     setItemToDelete(null);
     invalidateCache();
     try {
-      await api.items.delete(id);
+      await api.items.delete(id, selectedLocationId);
       refreshItems();
     } catch (err: any) {
       setError(err.message || 'Failed to delete product.');

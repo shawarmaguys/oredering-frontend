@@ -15,10 +15,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <VendorsProvider>
-          <ProductTypesProvider>
-            <LocationsProvider>
-              <LocationFilterProvider>
+        <ProductTypesProvider>
+          <LocationsProvider>
+            <LocationFilterProvider>
+              <VendorsProvider>
                 <UsersProvider>
                   <SchedulesProvider>
                     <ItemsProvider>
@@ -28,10 +28,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     </ItemsProvider>
                   </SchedulesProvider>
                 </UsersProvider>
-              </LocationFilterProvider>
-            </LocationsProvider>
-          </ProductTypesProvider>
-        </VendorsProvider>
+              </VendorsProvider>
+            </LocationFilterProvider>
+          </LocationsProvider>
+        </ProductTypesProvider>
       </AuthProvider>
     </LanguageProvider>
   );

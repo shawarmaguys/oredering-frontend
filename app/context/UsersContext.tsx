@@ -9,6 +9,7 @@ import React, {
   useEffect,
 } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 export interface User {
   id: string;
@@ -31,6 +32,7 @@ interface UsersContextType {
 const UsersContext = createContext<UsersContextType | undefined>(undefined);
 
 export function UsersProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -40,6 +42,14 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
 
   const fetchAll = useCallback(async () => {
     if (inFlightPromise.current) return inFlightPromise.current;
+
+    // Skip API request for non-admins to avoid Forbidden resource errors
+    if (user && user.role !== 'ADMIN' && user.role !== 'SUPER_MANAGER') {
+      setUsers([]);
+      initializedRef.current = true;
+      setIsInitialized(true);
+      return;
+    }
 
     setUsersLoading(true);
     const promise = (async () => {
@@ -62,8 +72,14 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         setUsers(mapped);
         initializedRef.current = true;
         setIsInitialized(true);
-      } catch (err) {
-        console.error('[UsersContext] Failed to load users:', err);
+      } catch (err: any) {
+        if (err?.message?.includes('Forbidden')) {
+          setUsers([]);
+          initializedRef.current = true;
+          setIsInitialized(true);
+        } else {
+          console.error('[UsersContext] Failed to load users:', err);
+        }
       } finally {
         setUsersLoading(false);
         inFlightPromise.current = null;
@@ -72,7 +88,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
 
     inFlightPromise.current = promise;
     return promise;
-  }, []);
+  }, [user]);
 
   const ensureLoaded = useCallback(async () => {
     if (!initializedRef.current) {
