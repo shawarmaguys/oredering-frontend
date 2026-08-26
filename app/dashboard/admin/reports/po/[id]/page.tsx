@@ -1056,7 +1056,7 @@ export default function PODetailsPage() {
                                       type="number"
                                       min="0"
                                       value={currentQty}
-                                      onChange={(e) => handleQtyChange(poItem.itemId, parseFloat(e.target.value) || 0)}
+                                      onChange={(e) => handleQtyChange(poItem.itemId, Number.parseFloat(e.target.value) || 0)}
                                       style={{
                                         width: '60px',
                                         padding: '4px 6px',

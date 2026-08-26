@@ -40,38 +40,42 @@ export function parseCSVToRows(text: string): string[][] {
   let currentCell = '';
   let insideQuote = false;
 
+  const pushCell = () => {
+    currentRow.push(currentCell);
+    currentCell = '';
+  };
+
+  const pushRow = () => {
+    pushCell();
+    rows.push(currentRow);
+    currentRow = [];
+  };
+
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
     const nextChar = text[i + 1];
 
     if (char === '"') {
       if (insideQuote && nextChar === '"') {
-        // Escaped double quote inside quoted field
         currentCell += '"';
         i++;
       } else {
-        // Toggle quote state
         insideQuote = !insideQuote;
       }
     } else if (char === ',' && !insideQuote) {
-      currentRow.push(currentCell);
-      currentCell = '';
+      pushCell();
     } else if ((char === '\r' || char === '\n') && !insideQuote) {
       if (char === '\r' && nextChar === '\n') {
         i++;
       }
-      currentRow.push(currentCell);
-      rows.push(currentRow);
-      currentRow = [];
-      currentCell = '';
+      pushRow();
     } else {
       currentCell += char;
     }
   }
 
   if (currentCell.length > 0 || currentRow.length > 0) {
-    currentRow.push(currentCell);
-    rows.push(currentRow);
+    pushRow();
   }
 
   return rows;
@@ -82,8 +86,8 @@ export function parseCSVToRows(text: string): string[][] {
  */
 export function normalizeHeaderName(header: string): string {
   let clean = header.trim();
-  // Strip out (REQUIRED), (Optional...), [Required], [Optional], etc.
-  clean = clean.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
+  // Strip out (REQUIRED), (Optional...), [Required], [Optional], etc. cleanly without backtracking
+  clean = clean.replace(/\([^()]*\)/g, '').replace(/\[[^[\]]*\]/g, '').trim();
   clean = clean.toLowerCase().replace(/[^a-z0-9]/g, '');
 
   if (clean === 'id' || clean.includes('itemid')) return 'id';
