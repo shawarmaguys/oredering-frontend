@@ -254,6 +254,7 @@ export default function LocationsPage() {
             </div>
             <div className='d-flex flex-column flex-md-row gap-5'>
               <button
+                type="button"
                 onClick={() => {
                   setError('');
                   setShowGlobalDeptsModal(true);
@@ -267,6 +268,7 @@ export default function LocationsPage() {
                 Manage Departments
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setError('');
                   setShowModal(true);
@@ -305,10 +307,10 @@ export default function LocationsPage() {
             </select>
 
             <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-              <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
               </button>
-              <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
               </button>
             </div>
@@ -345,6 +347,7 @@ export default function LocationsPage() {
                 <h3>No store locations yet</h3>
                 <p>Onboard your franchise storefront branches to organize inventory sheets and audits.</p>
                 <button
+                  type="button"
                   onClick={() => setShowModal(true)}
                   className="btn btn-primary"
                 >
@@ -452,6 +455,7 @@ export default function LocationsPage() {
 
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button
+                            type="button"
                             onClick={() => {
                               setSelectedLocation(loc);
                               setEditName(loc.name);
@@ -470,6 +474,7 @@ export default function LocationsPage() {
                             Edit
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeleteLocClick(loc.id, loc.name)}
                             className="btn btn-secondary btn-sm"
                             style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: 'var(--error)' }}
@@ -570,8 +575,8 @@ export default function LocationsPage() {
                           <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{loc.createdAt ? new Date(loc.createdAt).toLocaleDateString() : '—'}</td>
                           <td style={{ textAlign: 'right', paddingRight: 24 }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                              <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
-                              <button className="btn btn-secondary btn-sm" onClick={() => handleDeleteLocClick(loc.id, loc.name)} style={{ color: 'var(--error)' }}>Delete</button>
+                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDeleteLocClick(loc.id, loc.name)} style={{ color: 'var(--error)' }}>Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -589,6 +594,7 @@ export default function LocationsPage() {
           <div className="modal-backdrop">
             <div className="modal-panel modal-panel-sm">
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="modal-close"
                 aria-label="Close modal"
@@ -721,6 +727,7 @@ export default function LocationsPage() {
           <div className="modal-backdrop">
             <div className="modal-panel modal-panel-sm">
               <button
+                type="button"
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedLocation(null);
@@ -858,6 +865,7 @@ export default function LocationsPage() {
           <div className="modal-backdrop">
             <div className="modal-panel modal-panel-md">
               <button
+                type="button"
                 onClick={() => {
                   setShowGlobalDeptsModal(false);
                   setEditingDept(null);
@@ -887,8 +895,9 @@ export default function LocationsPage() {
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Dept Code (e.g. KIT)</label>
+                    <label htmlFor="dept-code-input" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Dept Code (e.g. KIT)</label>
                     <input
+                      id="dept-code-input"
                       type="text"
                       className="input"
                       placeholder="KIT"
@@ -899,8 +908,9 @@ export default function LocationsPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Full Department Name</label>
+                    <label htmlFor="dept-fullname-input" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Full Department Name</label>
                     <input
+                      id="dept-fullname-input"
                       type="text"
                       className="input"
                       placeholder="Kitchen & Food Supply"
@@ -911,8 +921,9 @@ export default function LocationsPage() {
                   </div>
                 </div>
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Slack Notifications Channel Name (Optional)</label>
+                  <label htmlFor="dept-slackchannel-input" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 550 }}>Slack Notifications Channel Name (Optional)</label>
                   <input
+                    id="dept-slackchannel-input"
                     type="text"
                     className="input"
                     placeholder="orders-kitchen"
@@ -983,6 +994,7 @@ export default function LocationsPage() {
                           <td style={{ padding: '10px', textAlign: 'right' }}>
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                               <button
+                                type="button"
                                 onClick={() => {
                                   setEditingDept(dept);
                                   setDeptCode(dept.code);
@@ -995,6 +1007,7 @@ export default function LocationsPage() {
                                 Edit
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleDeleteDeptClick(dept.id, dept.fullName)}
                                 className="btn btn-secondary btn-sm"
                                 style={{ padding: '2px 6px', fontSize: '0.6875rem', color: 'var(--error)' }}
@@ -1012,6 +1025,7 @@ export default function LocationsPage() {
 
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
                 <button
+                  type="button"
                   onClick={() => {
                     setShowGlobalDeptsModal(false);
                     setEditingDept(null);

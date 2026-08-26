@@ -130,7 +130,7 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
   return (
     <div className="modal-backdrop">
       <div className="modal-panel modal-panel-md">
-        <button onClick={onClose} className="modal-close" aria-label="Close modal">
+        <button type="button" onClick={onClose} className="modal-close" aria-label="Close modal">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         <div className="modal-header">
@@ -151,10 +151,10 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
             </div>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label className="label" style={{ margin: 0 }}>Spanish Name</label>
+                <label className="label" htmlFor="create-spanish" style={{ margin: 0 }}>Spanish Name</label>
                 <TranslateButton sourceText={displayName} onTranslated={setSpanishName} onError={setError} />
               </div>
-              <input type="text" value={spanishName} onChange={e => setSpanishName(e.target.value)} className="input" placeholder="e.g. Cono de Shawarma de Pollo (30lb)" />
+              <input id="create-spanish" type="text" value={spanishName} onChange={e => setSpanishName(e.target.value)} className="input" placeholder="e.g. Cono de Shawarma de Pollo (30lb)" />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
@@ -262,7 +262,7 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
   return (
     <div className="modal-backdrop">
       <div className="modal-panel modal-panel-md">
-        <button onClick={onClose} className="modal-close" aria-label="Close modal">
+        <button type="button" onClick={onClose} className="modal-close" aria-label="Close modal">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         <div className="modal-header">
@@ -277,10 +277,10 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
           </div>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label className="label" style={{ margin: 0 }}>Spanish Name</label>
+              <label className="label" htmlFor="edit-spanish" style={{ margin: 0 }}>Spanish Name</label>
               <TranslateButton sourceText={displayName} onTranslated={setSpanishName} onError={setError} />
             </div>
-            <input type="text" value={spanishName} onChange={e => setSpanishName(e.target.value)} className="input" />
+            <input id="edit-spanish" type="text" value={spanishName} onChange={e => setSpanishName(e.target.value)} className="input" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>

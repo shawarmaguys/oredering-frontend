@@ -268,7 +268,7 @@ export default function BulkUploadItemsPage() {
           {error && (
             <div className="alert alert-error" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{error}</span>
-              <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, color: 'inherit' }}>✕</button>
+              <button type="button" onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, color: 'inherit' }}>✕</button>
             </div>
           )}
 
@@ -393,7 +393,7 @@ export default function BulkUploadItemsPage() {
 
               {/* Upload Card */}
               <div className="card" style={{ padding: '24px' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                <label htmlFor="csv-file-input" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                   Select CSV File to Add Products
                 </label>
                 <div
@@ -410,6 +410,7 @@ export default function BulkUploadItemsPage() {
                   }}
                 >
                   <input
+                    id="csv-file-input"
                     ref={fileInputRef}
                     type="file"
                     accept=".csv"

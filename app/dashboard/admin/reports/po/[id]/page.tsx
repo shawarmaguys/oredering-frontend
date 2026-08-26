@@ -408,6 +408,7 @@ export default function PODetailsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 {isDraft && (
                   <button
+                    type="button"
                     onClick={handleApproveClick}
                     disabled={actionLoading}
                     className="btn btn-primary btn-sm"
@@ -423,6 +424,7 @@ export default function PODetailsPage() {
                 {/* Re-Email / Dispatch Action Button */}
                 {po.status !== 'DRAFT' && (
                   <button
+                    type="button"
                     onClick={() => {
                       const defaultVendorEmails = po.vendor?.email
                         ? po.vendor.email.split(',').map(e => e.trim()).filter(Boolean)
@@ -1226,7 +1228,7 @@ export default function PODetailsPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</label>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Recipient Email(s)</span>
 
                   {/* Default Vendor Emails (Auto-selected) */}
                   {sendEmailState.defaultVendorEmails.length > 0 && (
@@ -1282,10 +1284,11 @@ export default function PODetailsPage() {
                     </div>
                   )}
 
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
+                  <label htmlFor="po-custom-emails" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>
                     Additional One-off Emails (comma separated):
-                  </span>
+                  </label>
                   <input
+                    id="po-custom-emails"
                     type="text"
                     value={sendEmailState.customEmails}
                     onChange={(e) => setSendEmailState(prev => prev ? { ...prev, customEmails: e.target.value } : null)}
@@ -1305,10 +1308,11 @@ export default function PODetailsPage() {
 
                 {/* PDF Custom Note */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <label htmlFor="po-email-notes" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                     Purchase Order Note / Dispatch Instructions
                   </label>
                   <textarea
+                    id="po-email-notes"
                     rows={3}
                     value={sendEmailState.notes}
                     onChange={(e) => setSendEmailState(prev => prev ? { ...prev, notes: e.target.value } : null)}
@@ -1331,6 +1335,7 @@ export default function PODetailsPage() {
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
                 <button
+                  type="button"
                   onClick={() => setSendEmailState(null)}
                   disabled={actionLoading}
                   className="btn btn-secondary"
@@ -1339,6 +1344,7 @@ export default function PODetailsPage() {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleSendEmail}
                   disabled={actionLoading}
                   className="btn btn-primary"

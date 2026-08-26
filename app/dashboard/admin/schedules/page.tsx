@@ -264,6 +264,7 @@ export default function SchedulesPage() {
               <p>Configure automated Slack notification schedules and multiple triggers for storefront stock audits.</p>
             </div>
             <button
+              type="button"
               onClick={handleOpenCreateModal}
               className="btn btn-primary"
             >
@@ -309,10 +310,10 @@ export default function SchedulesPage() {
               {vendors.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
             </select>
             <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', marginLeft: 'auto' }}>
-              <button onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setViewMode('tile')} title="Tile view" style={{ padding: '8px 10px', background: viewMode === 'tile' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'tile' ? '#fff' : 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 15.75v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
               </button>
-              <button onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
+              <button type="button" onClick={() => setViewMode('list')} title="List view" style={{ padding: '8px 10px', background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-surface)', color: viewMode === 'list' ? '#fff' : 'var(--text-secondary)', border: 'none', borderLeft: '1px solid var(--border-default)', cursor: 'pointer' }}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
               </button>
             </div>
@@ -504,6 +505,7 @@ export default function SchedulesPage() {
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button
+                            type="button"
                             onClick={() => handleOpenGroupEditModal(group)}
                             className="btn btn-secondary btn-sm"
                             style={{ padding: '6px 12px', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
@@ -511,6 +513,7 @@ export default function SchedulesPage() {
                             ✏️ Edit Triggers
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeleteGroup(group)}
                             className="btn btn-secondary btn-sm"
                             style={{ padding: '6px 10px', fontSize: '0.8125rem', color: 'var(--red)' }}
@@ -520,6 +523,7 @@ export default function SchedulesPage() {
                           </button>
                         </div>
                         <button
+                          type="button"
                           onClick={() => handleTriggerGroup(group)}
                           disabled={triggeringId === group.items[0]?.id}
                           className="btn btn-primary btn-sm"
@@ -642,6 +646,7 @@ export default function SchedulesPage() {
                             <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 <button
+                                  type="button"
                                   onClick={() => handleOpenGroupEditModal(group)}
                                   className="btn btn-secondary btn-sm"
                                   style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -649,6 +654,7 @@ export default function SchedulesPage() {
                                   ✏️ Edit Triggers
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleDeleteGroup(group)}
                                   className="btn btn-secondary btn-sm"
                                   style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--red)' }}
@@ -657,6 +663,7 @@ export default function SchedulesPage() {
                                   🗑️
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleTriggerGroup(group)}
                                   disabled={triggeringId === group.items[0]?.id}
                                   className="btn btn-secondary btn-sm"
@@ -682,6 +689,7 @@ export default function SchedulesPage() {
           <div className="modal-backdrop">
             <div className="modal-panel modal-panel-md" style={{ maxWidth: '580px' }}>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="modal-close"
                 aria-label="Close modal"
@@ -791,8 +799,9 @@ export default function SchedulesPage() {
 
                           <div style={{ display: 'grid', gridTemplateColumns: t.scheduleType === 'WEEKLY' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '10px', alignItems: 'end' }}>
                             <div>
-                              <label className="label" style={{ fontSize: '0.75rem' }}>Schedule Type</label>
+                              <label className="label" htmlFor={`sched-type-${idx}`} style={{ fontSize: '0.75rem' }}>Schedule Type</label>
                               <select
+                                id={`sched-type-${idx}`}
                                 value={t.scheduleType}
                                 onChange={(e) => handleUpdateTriggerRow(idx, { scheduleType: e.target.value as any })}
                                 className="input"
@@ -805,8 +814,9 @@ export default function SchedulesPage() {
 
                             {t.scheduleType === 'WEEKLY' && (
                               <div>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Day of Week</label>
+                                <label className="label" htmlFor={`sched-day-${idx}`} style={{ fontSize: '0.75rem' }}>Day of Week</label>
                                 <select
+                                  id={`sched-day-${idx}`}
                                   value={t.dayOfWeek}
                                   onChange={(e) => handleUpdateTriggerRow(idx, { dayOfWeek: Number(e.target.value) })}
                                   className="input"
@@ -822,8 +832,9 @@ export default function SchedulesPage() {
                             )}
 
                             <div>
-                              <label className="label" style={{ fontSize: '0.75rem' }}>Trigger Time</label>
+                              <label className="label" htmlFor={`sched-time-${idx}`} style={{ fontSize: '0.75rem' }}>Trigger Time</label>
                               <input
+                                id={`sched-time-${idx}`}
                                 type="time"
                                 required
                                 value={t.triggerTime}

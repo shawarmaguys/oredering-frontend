@@ -274,7 +274,7 @@ export default function ItemsPage() {
               )}
 
               {isAdmin && selectedLocationId && selectedLocationId !== 'all' && (
-                <button className="btn btn-secondary" onClick={openEnableModal}>
+                <button type="button" className="btn btn-secondary" onClick={openEnableModal}>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                   </svg>
@@ -282,7 +282,7 @@ export default function ItemsPage() {
                 </button>
               )}
 
-              <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+              <button type="button" className="btn btn-primary" onClick={() => setShowCreate(true)}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
@@ -292,6 +292,7 @@ export default function ItemsPage() {
               {hasPendingEdits && (
                 <div style={{ display: 'flex', gap: '8px', marginLeft: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--border-default)' }}>
                   <button
+                    type="button"
                     className="btn btn-primary"
                     onClick={handleSaveParEdits}
                     disabled={isSavingParEdits}
@@ -304,6 +305,7 @@ export default function ItemsPage() {
                     {isSavingParEdits ? 'Saving...' : `Save Edits (${Object.keys(pendingParEdits).length})`}
                   </button>
                   <button
+                    type="button"
                     className="btn btn-secondary"
                     onClick={handleDiscardParEdits}
                     disabled={isSavingParEdits}
@@ -319,7 +321,7 @@ export default function ItemsPage() {
           {error && (
             <div className="alert alert-error" style={{ marginBottom: '8px' }}>
               {error}
-              <button onClick={() => setError('')} style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>✕</button>
+              <button type="button" onClick={() => setError('')} style={{ marginLeft: '12px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>✕</button>
             </div>
           )}
 
@@ -358,9 +360,9 @@ export default function ItemsPage() {
                 <p>Use "Enable Existing Products" to assign items from master catalog or add a new product.</p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                   {isAdmin && selectedLocationId && selectedLocationId !== 'all' && (
-                    <button className="btn btn-secondary btn-sm" onClick={openEnableModal}>Enable Existing Products</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={openEnableModal}>Enable Existing Products</button>
                   )}
-                  <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>Add New Product</button>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>Add New Product</button>
                 </div>
               </div>
             </div>
@@ -416,6 +418,7 @@ export default function ItemsPage() {
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
+                type="button"
                 onClick={handleSaveParEdits}
                 disabled={isSavingParEdits}
                 className="btn btn-primary"
@@ -424,6 +427,7 @@ export default function ItemsPage() {
                 {isSavingParEdits ? 'Saving...' : 'Save Changes'}
               </button>
               <button
+                type="button"
                 onClick={handleDiscardParEdits}
                 disabled={isSavingParEdits}
                 className="btn btn-secondary"
@@ -458,6 +462,7 @@ export default function ItemsPage() {
           <div className="modal-backdrop">
             <div className="modal-panel modal-panel-lg" style={{ maxWidth: '800px', width: '90vw' }}>
               <button
+                type="button"
                 onClick={() => setShowEnableModal(false)}
                 className="modal-close"
                 aria-label="Close modal"
@@ -668,6 +673,7 @@ export default function ItemsPage() {
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {selectedMasterIds.length > 0 && (
                     <button
+                      type="button"
                       onClick={handleEnableSelectedMaster}
                       disabled={batchEnabling}
                       className="btn btn-primary"
@@ -679,7 +685,7 @@ export default function ItemsPage() {
                       {batchEnabling ? 'Enabling...' : `Enable Selected (${selectedMasterIds.length})`}
                     </button>
                   )}
-                  <button onClick={() => setShowEnableModal(false)} className="btn btn-secondary">
+                  <button type="button" onClick={() => setShowEnableModal(false)} className="btn btn-secondary">
                     Done
                   </button>
                 </div>
