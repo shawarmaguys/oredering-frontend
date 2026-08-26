@@ -625,6 +625,7 @@ export default function ItemsPage() {
                           return (
                             <label
                               key={item.id}
+                              htmlFor={`master-item-${item.id}`}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -639,15 +640,16 @@ export default function ItemsPage() {
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <input
+                                  id={`master-item-${item.id}`}
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => handleToggleSelectMaster(item.id)}
                                   style={{ cursor: 'pointer', width: 16, height: 16 }}
                                 />
                                 <div>
-                                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
+                                  <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px', display: 'block' }}>
                                     {item.displayName}
-                                  </div>
+                                  </span>
                                   <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px', display: 'flex', gap: '8px' }}>
                                     <span>SKU: <span className="mono">{item.productCode || '—'}</span></span>
                                     <span>• Vendor: {item.vendor?.displayName || '—'}</span>
