@@ -184,6 +184,8 @@ interface ItemsTableViewProps {
   onEdit: (item: Item) => void;
   onDelete: (id: string, name: string) => void;
   onUpdatePar?: (itemId: string, newPar: number) => void;
+  pendingParEdits?: Record<string, number>;
+  onParChange?: (itemId: string, originalPar: number, newPar: number) => void;
   canEdit?: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
@@ -193,7 +195,7 @@ function SortIndicator({ col, active, dir }: { col: string; active: boolean; dir
   return <>{active ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</>;
 }
 
-export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete, onUpdatePar, canEdit = true, hasMore, onLoadMore }: ItemsTableViewProps) {
+export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete, onUpdatePar, pendingParEdits = {}, onParChange, canEdit = true, hasMore, onLoadMore }: ItemsTableViewProps) {
   const th = (col: SortColumn, label: string, extraStyle?: React.CSSProperties) => (
     <th style={{ cursor: 'pointer', ...extraStyle }} onClick={() => onSort(col)}>
       {label}<SortIndicator col={col} active={sortCol === col} dir={sortDir} />
@@ -222,8 +224,12 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
           <tbody>
             {items.map(item => {
               const isSecondary = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
+              const originalPar = item.parLevel ?? 0;
+              const isEdited = pendingParEdits[item.id] !== undefined;
+              const currentPar = isEdited ? pendingParEdits[item.id] : originalPar;
+
               return (
-                <tr key={item.id}>
+                <tr key={item.id} style={{ backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.03)' : undefined }}>
                   <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     <div>{item.displayName}</div>
                     <div style={{ fontSize: '0.75rem', color: item.spanishName ? 'var(--accent)' : 'transparent', fontWeight: 400, fontStyle: 'italic', marginTop: '2px', userSelect: item.spanishName ? 'auto' : 'none' }}>
@@ -248,11 +254,12 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                         step="any"
                         min="0"
                         disabled={!canEdit}
-                        defaultValue={item.parLevel ?? 0}
-                        key={`${item.id}-${item.parLevel}`}
-                        onBlur={(e) => {
+                        value={currentPar}
+                        onChange={(e) => {
                           const val = e.target.value === '' ? 0 : Number(e.target.value);
-                          if (val !== (item.parLevel ?? 0) && onUpdatePar) {
+                          if (onParChange) {
+                            onParChange(item.id, originalPar, val);
+                          } else if (onUpdatePar && val !== originalPar) {
                             onUpdatePar(item.id, val);
                           }
                         }}
@@ -262,7 +269,16 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                           }
                         }}
                         className="input mono"
-                        style={{ padding: '4px 8px', fontSize: '0.8125rem', height: '30px', width: '75px', textAlign: 'right' }}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.8125rem',
+                          height: '30px',
+                          width: '75px',
+                          textAlign: 'right',
+                          borderColor: isEdited ? 'var(--accent, #3b82f6)' : undefined,
+                          backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.12)' : undefined,
+                          fontWeight: isEdited ? 600 : undefined,
+                        }}
                       />
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                         {item.displayUnitName ? item.displayUnitName : item.baseUnitName}

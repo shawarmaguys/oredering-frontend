@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { api } from '../../../utils/api';
 import AdminGuard from '../../components/AdminGuard';
@@ -51,11 +51,82 @@ export default function ItemsPage() {
   const [selectedMasterIds, setSelectedMasterIds] = useState<string[]>([]);
   const [batchEnabling, setBatchEnabling] = useState(false);
 
+  // Pending PAR edits state
+  const [pendingParEdits, setPendingParEdits] = useState<Record<string, number>>({});
+  const [isSavingParEdits, setIsSavingParEdits] = useState(false);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  const hasPendingEdits = Object.keys(pendingParEdits).length > 0;
+
+  // Warning on browser unload/close when there are unsaved edits
+  useEffect(() => {
+    if (!hasPendingEdits) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Cancel the event as stated by standard guidelines
+      event.preventDefault();
+      // Chrome requires returnValue to be set
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasPendingEdits]);
+
+  // Clear pending edits on location change
+  const prevLocRef = useRef(selectedLocationId);
+  useEffect(() => {
+    if (prevLocRef.current !== selectedLocationId) {
+      setPendingParEdits({});
+      prevLocRef.current = selectedLocationId;
+    }
+  }, [selectedLocationId]);
+
   // Delete state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
+  const handleParChange = (itemId: string, originalPar: number, newPar: number) => {
+    setPendingParEdits((prev) => {
+      if (newPar === originalPar || isNaN(newPar)) {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      }
+      return { ...prev, [itemId]: newPar };
+    });
+  };
+
+  const handleSaveParEdits = async () => {
+    if (!hasPendingEdits) return;
+    setIsSavingParEdits(true);
+    setError('');
+    try {
+      const entries = Object.entries(pendingParEdits);
+      await Promise.all(
+        entries.map(([itemId, newPar]) =>
+          api.items.assignToLocation(itemId, selectedLocationId, newPar)
+        )
+      );
+      setPendingParEdits({});
+      invalidateCache();
+      refreshItems();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save PAR level edits.');
+    } finally {
+      setIsSavingParEdits(false);
+    }
+  };
+
+  const handleDiscardParEdits = () => {
+    setDiscardConfirmOpen(true);
+  };
+
+  const handleConfirmDiscard = () => {
+    setPendingParEdits({});
+    setDiscardConfirmOpen(false);
+  };
+
   const openEnableModal = async () => {
     setShowEnableModal(true);
     setMasterLoading(true);
@@ -207,6 +278,30 @@ export default function ItemsPage() {
                 </svg>
                 New Product
               </button>
+
+              {hasPendingEdits && (
+                <div style={{ display: 'flex', gap: '8px', marginLeft: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--border-default)' }}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleSaveParEdits}
+                    disabled={isSavingParEdits}
+                    style={{
+                      backgroundColor: 'var(--accent, #3b82f6)',
+                      fontWeight: 600,
+                      boxShadow: '0 0 10px rgba(59, 130, 246, 0.3)',
+                    }}
+                  >
+                    {isSavingParEdits ? 'Saving...' : `Save Edits (${Object.keys(pendingParEdits).length})`}
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleDiscardParEdits}
+                    disabled={isSavingParEdits}
+                  >
+                    Discard
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -267,9 +362,67 @@ export default function ItemsPage() {
                 <ItemsTileView items={items} onEdit={handleEdit} onDelete={handleDeleteClick} hasMore={hasMore} onLoadMore={loadMore} />
               </div>
             ) : (
-              <ItemsTableView items={items} sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} onEdit={handleEdit} onDelete={handleDeleteClick} onUpdatePar={handleUpdateParLevel} canEdit={isAdmin} hasMore={hasMore} onLoadMore={loadMore} />
+              <ItemsTableView
+                items={items}
+                sortCol={sortCol}
+                sortDir={sortDir}
+                onSort={toggleSort}
+                onEdit={handleEdit}
+                onDelete={handleDeleteClick}
+                onUpdatePar={handleUpdateParLevel}
+                pendingParEdits={pendingParEdits}
+                onParChange={handleParChange}
+                canEdit={isAdmin}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
+              />
             )}
           </>
+        )}
+
+        {/* Floating Unsaved Edits Banner */}
+        {hasPendingEdits && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              backgroundColor: 'var(--bg-surface-elevated, #1e293b)',
+              color: '#ffffff',
+              padding: '12px 24px',
+              borderRadius: 'var(--radius-lg, 12px)',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              border: '1px solid var(--border-default, #334155)',
+            }}
+          >
+            <span style={{ fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+              You have {Object.keys(pendingParEdits).length} unsaved PAR level edit{Object.keys(pendingParEdits).length > 1 ? 's' : ''}
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={handleSaveParEdits}
+                disabled={isSavingParEdits}
+                className="btn btn-primary"
+                style={{ padding: '6px 16px', fontSize: '0.875rem' }}
+              >
+                {isSavingParEdits ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                onClick={handleDiscardParEdits}
+                disabled={isSavingParEdits}
+                className="btn btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.875rem', color: '#94a3b8' }}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Modals */}
@@ -535,6 +688,14 @@ export default function ItemsPage() {
           }
           onConfirm={handleConfirmDelete}
           onCancel={() => { setDeleteConfirmOpen(false); setItemToDelete(null); }}
+        />
+
+        <ConfirmDialog
+          isOpen={discardConfirmOpen}
+          title="Discard Unsaved Edits?"
+          message="Are you sure you want to discard all unsaved PAR level edits? Any changes you made will be lost."
+          onConfirm={handleConfirmDiscard}
+          onCancel={() => setDiscardConfirmOpen(false)}
         />
       </div>
     </AdminGuard>
