@@ -53,9 +53,8 @@ export const api = {
     removeDepartment: (locationId: string, departmentId: string) => request<any>(`/locations/${locationId}/departments/${departmentId}`, { method: 'DELETE' }),
   },
   vendors: {
-    list: (departmentId?: string, locationId?: string) => {
+    list: (locationId?: string) => {
       const q = new URLSearchParams();
-      if (departmentId) q.set('department_id', departmentId);
       if (locationId) q.set('location_id', locationId);
       const query = q.toString() ? `?${q.toString()}` : '';
       return request<any[]>(`/vendors${query}`);

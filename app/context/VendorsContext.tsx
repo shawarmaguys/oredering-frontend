@@ -64,10 +64,10 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchVendorsForLocation = useCallback(async (locId: string, forceRefresh = false) => {
-    const cacheKey = locId || 'all';
+    if (!locId || locId === 'all') return;
 
-    if (!forceRefresh && cacheMap.current.has(cacheKey)) {
-      setVendors(cacheMap.current.get(cacheKey)!);
+    if (!forceRefresh && cacheMap.current.has(locId)) {
+      setVendors(cacheMap.current.get(locId)!);
       setIsInitialized(true);
       return;
     }
@@ -77,13 +77,12 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
     setVendorsLoading(true);
     const promise = (async () => {
       try {
-        const queryLocParam = locId && locId !== 'all' ? locId : undefined;
         const [vendorsData, deptsData] = await Promise.all([
-          api.vendors.list(undefined, queryLocParam),
+          api.vendors.list(locId),
           api.vendors.departments(),
         ]);
 
-        cacheMap.current.set(cacheKey, vendorsData);
+        cacheMap.current.set(locId, vendorsData);
         setVendors(vendorsData);
         setDepartments(deptsData);
         setIsInitialized(true);
@@ -100,22 +99,25 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const locKey = selectedLocationId || 'all';
-    activeLocationRef.current = locKey;
-    fetchVendorsForLocation(locKey);
+    if (selectedLocationId && selectedLocationId !== 'all') {
+      activeLocationRef.current = selectedLocationId;
+      fetchVendorsForLocation(selectedLocationId);
+    }
   }, [selectedLocationId, fetchVendorsForLocation]);
 
   const ensureLoaded = useCallback(async () => {
-    const locId = activeLocationRef.current || selectedLocationId || 'all';
-    if (!cacheMap.current.has(locId)) {
+    const locId = activeLocationRef.current || selectedLocationId;
+    if (locId && locId !== 'all') {
       await fetchVendorsForLocation(locId);
     }
   }, [fetchVendorsForLocation, selectedLocationId]);
 
   const refreshVendors = useCallback(async () => {
     cacheMap.current.clear();
-    const locId = activeLocationRef.current || selectedLocationId || 'all';
-    await fetchVendorsForLocation(locId, true);
+    const locId = activeLocationRef.current || selectedLocationId;
+    if (locId && locId !== 'all') {
+      await fetchVendorsForLocation(locId, true);
+    }
   }, [fetchVendorsForLocation, selectedLocationId]);
 
   return (
