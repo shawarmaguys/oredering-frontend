@@ -90,7 +90,7 @@ export function normalizeHeaderName(header: string): string {
   clean = clean.replace(/\([^()]*\)/g, '').replace(/\[[^[\]]*\]/g, '').trim();
   clean = clean.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-  if (clean === 'id' || clean.includes('itemid')) return 'id';
+  if (clean === 'id' || clean.includes('itemid') || clean.includes('productid')) return 'id';
   if (clean.includes('vendorid')) return 'vendorId';
   if (clean.includes('categoryid') || clean.includes('producttypeid')) return 'productTypeId';
 
@@ -125,10 +125,81 @@ export function normalizeHeaderName(header: string): string {
 }
 
 /**
+ * Generates CSV string populated with products for a specific vendor
+ */
+export function generateVendorProductsCsv(items: any[], defaultVendorName?: string): string {
+  const headers = [
+    'Product ID (Do Not Change for Existing)',
+    'Product Code (Optional)',
+    'Product Name (REQUIRED)',
+    'Vendor Name (REQUIRED)',
+    'Category (Optional)',
+    'Base Unit (REQUIRED)',
+    'Display Unit (Optional)',
+    'Multiplier (Optional)',
+    'Spanish Name (Optional)',
+    'Note (Optional)',
+    'PAR Level (Optional)',
+    'Status (Optional: active/inactive)'
+  ];
+
+  const formatCell = (val: string | number | undefined | null) => {
+    if (val === undefined || val === null) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rows: string[] = [headers.map((h) => formatCell(h)).join(',')];
+
+  if (items && items.length > 0) {
+    items.forEach((item) => {
+      const row = [
+        item.id || '',
+        item.productCode || '',
+        item.displayName || '',
+        item.vendor?.displayName || item.vendorName || defaultVendorName || '',
+        item.productType?.name || item.productTypeName || '',
+        item.baseUnitName || '',
+        item.displayUnitName || '',
+        item.multiplier !== undefined && item.multiplier !== null ? String(item.multiplier) : '',
+        item.spanishName || '',
+        item.note || '',
+        item.parLevel !== undefined && item.parLevel !== null ? String(item.parLevel) : '0',
+        item.isActive === false ? 'inactive' : 'active'
+      ];
+      rows.push(row.map((cell) => formatCell(cell)).join(','));
+    });
+  } else {
+    // Add sample blank row with vendor name prefilled
+    const sampleRow = [
+      '',
+      'SKU-1001',
+      'Example New Product',
+      defaultVendorName || 'Vendor Name',
+      'General',
+      'EA',
+      'Case (12)',
+      '12',
+      '',
+      '',
+      '10',
+      'active'
+    ];
+    rows.push(sampleRow.map((cell) => formatCell(cell)).join(','));
+  }
+
+  return rows.join('\n');
+}
+
+/**
  * Generates downloadable CSV template string with clear headers & example rows
  */
 export function generateProductsCsvTemplate(): string {
   const headers = [
+    'Product ID (Do Not Change for Existing)',
     'Product Code (Optional)',
     'Product Name (REQUIRED)',
     'Vendor Name (REQUIRED)',
@@ -143,6 +214,7 @@ export function generateProductsCsvTemplate(): string {
   ];
 
   const exampleRow1 = [
+    '',
     'SKU-1001',
     'Chicken Breast',
     'Roma Food Service',
@@ -157,6 +229,7 @@ export function generateProductsCsvTemplate(): string {
   ];
 
   const exampleRow2 = [
+    '',
     'SKU-1002',
     'Basmati Rice',
     'US Foods',
