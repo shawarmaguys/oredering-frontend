@@ -84,13 +84,11 @@ export default function LocationsPage() {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateSourceLoc, setDuplicateSourceLoc] = useState<StoreLocation | null>(null);
   const [duplicateName, setDuplicateName] = useState('');
-  const [duplicateCopySlack, setDuplicateCopySlack] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
 
   const handleDuplicateClick = (loc: StoreLocation) => {
     setDuplicateSourceLoc(loc);
     setDuplicateName(loc.name + ' (Copy)');
-    setDuplicateCopySlack(false);
     setError('');
     setShowDuplicateModal(true);
   };
@@ -103,7 +101,6 @@ export default function LocationsPage() {
     try {
       await api.locations.duplicate(duplicateSourceLoc.id, {
         name: duplicateName.trim(),
-        copySlackTokens: duplicateCopySlack,
       });
       setShowDuplicateModal(false);
       setDuplicateSourceLoc(null);
@@ -1086,29 +1083,6 @@ export default function LocationsPage() {
                     placeholder="e.g. San Diego Uptown"
                     autoFocus
                   />
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '12px 14px',
-                    backgroundColor: 'var(--bg-sunken)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  <input
-                    id="dup-copy-slack"
-                    type="checkbox"
-                    checked={duplicateCopySlack}
-                    onChange={(e) => setDuplicateCopySlack(e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }}
-                  />
-                  <label htmlFor="dup-copy-slack" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
-                    Copy Slack tokens from source location
-                  </label>
                 </div>
 
                 <div style={{
