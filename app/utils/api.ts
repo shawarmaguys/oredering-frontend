@@ -84,6 +84,8 @@ export const api = {
     getDepartments: (locationId: string) => request<any[]>(`/locations/${locationId}/departments`),
     addOrUpdateDepartment: (locationId: string, data: any) => request<any>(`/locations/${locationId}/departments`, { method: 'POST', body: JSON.stringify(data) }),
     removeDepartment: (locationId: string, departmentId: string) => request<any>(`/locations/${locationId}/departments/${departmentId}`, { method: 'DELETE' }),
+    duplicate: (id: string, data: { name: string; copySlackTokens?: boolean }) =>
+      request<any>(`/locations/${id}/duplicate`, { method: 'POST', body: JSON.stringify(data) }),
   },
   vendors: {
     list: (locationId?: string) => {

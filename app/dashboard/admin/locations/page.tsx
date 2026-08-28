@@ -62,6 +62,41 @@ export default function LocationsPage() {
   const [deleteLocConfirmOpen, setDeleteLocConfirmOpen] = useState(false);
   const [locToDelete, setLocToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  // Duplicate location state
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateSourceLoc, setDuplicateSourceLoc] = useState<StoreLocation | null>(null);
+  const [duplicateName, setDuplicateName] = useState('');
+  const [duplicateCopySlack, setDuplicateCopySlack] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+
+  const handleDuplicateClick = (loc: StoreLocation) => {
+    setDuplicateSourceLoc(loc);
+    setDuplicateName(loc.name + ' (Copy)');
+    setDuplicateCopySlack(false);
+    setError('');
+    setShowDuplicateModal(true);
+  };
+
+  const handleDuplicateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!duplicateSourceLoc || !duplicateName.trim()) return;
+    setDuplicating(true);
+    setError('');
+    try {
+      await api.locations.duplicate(duplicateSourceLoc.id, {
+        name: duplicateName.trim(),
+        copySlackTokens: duplicateCopySlack,
+      });
+      setShowDuplicateModal(false);
+      setDuplicateSourceLoc(null);
+      await refreshLocations();
+    } catch (err: any) {
+      setError(err.message || 'Failed to duplicate location.');
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   const handleDeleteLocClick = (id: string, name: string) => {
     setLocToDelete({ id, name });
     setDeleteLocConfirmOpen(true);
@@ -475,6 +510,15 @@ export default function LocationsPage() {
                           </button>
                           <button
                             type="button"
+                            onClick={() => handleDuplicateClick(loc)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
+                            title="Duplicate Location"
+                          >
+                            Duplicate
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleDeleteLocClick(loc.id, loc.name)}
                             className="btn btn-secondary btn-sm"
                             style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: 'var(--error)' }}
@@ -576,6 +620,7 @@ export default function LocationsPage() {
                           <td style={{ textAlign: 'right', paddingRight: 24 }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                               <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDuplicateClick(loc)}>Duplicate</button>
                               <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDeleteLocClick(loc.id, loc.name)} style={{ color: 'var(--error)' }}>Delete</button>
                             </div>
                           </td>
@@ -856,7 +901,115 @@ export default function LocationsPage() {
             </div>
           </div>
         )}
+        {/* Modal Duplicate Location */}
+        {showDuplicateModal && duplicateSourceLoc && (
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDuplicateModal(false);
+                  setDuplicateSourceLoc(null);
+                  setError('');
+                }}
+                className="modal-close"
+                aria-label="Close modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
 
+              <div className="modal-header">
+                <h2>Duplicate Location</h2>
+                <p>Create a copy of <strong>{duplicateSourceLoc.name}</strong> with all its vendors, products, departments, and schedules.</p>
+              </div>
+
+              {error && (
+                <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleDuplicateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label className="label" htmlFor="dup-name">New Location Name *</label>
+                  <input
+                    id="dup-name"
+                    type="text"
+                    required
+                    value={duplicateName}
+                    onChange={(e) => setDuplicateName(e.target.value)}
+                    className="input"
+                    placeholder="e.g. San Diego Uptown"
+                    autoFocus
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    backgroundColor: 'var(--bg-sunken)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <input
+                    id="dup-copy-slack"
+                    type="checkbox"
+                    checked={duplicateCopySlack}
+                    onChange={(e) => setDuplicateCopySlack(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="dup-copy-slack" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                    Copy Slack tokens from source location
+                  </label>
+                </div>
+
+                <div style={{
+                  padding: '10px 14px',
+                  backgroundColor: 'var(--bg-sunken)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-tertiary)',
+                  lineHeight: 1.5,
+                }}>
+                  <strong style={{ color: 'var(--text-secondary)' }}>What gets copied:</strong> Vendor assignments, product catalog (with par levels), department assignments, and ordering schedules.
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDuplicateModal(false);
+                      setDuplicateSourceLoc(null);
+                      setError('');
+                    }}
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={duplicating || !duplicateName.trim()}
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                  >
+                    {duplicating ? 'Duplicating...' : 'Duplicate Location'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
 
 
