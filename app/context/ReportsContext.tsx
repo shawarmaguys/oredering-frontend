@@ -10,6 +10,7 @@ import React, {
   useMemo,
 } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 export interface PurchaseOrder {
   id: string;
@@ -64,6 +65,7 @@ interface ReportsContextType {
 const ReportsContext = createContext<ReportsContextType | undefined>(undefined);
 
 export function ReportsProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [stockRecords, setStockRecords] = useState<StockRecord[]>([]);
   const [posLoading, setPosLoading] = useState(false);
@@ -74,6 +76,7 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchPurchaseOrders = useCallback(async () => {
+    if (!isAuthenticated) return;
     setPosLoading(true);
     try {
       const res = await api.purchaseOrders.list();
@@ -99,9 +102,10 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setPosLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchStockRecords = useCallback(async () => {
+    if (!isAuthenticated) return;
     setStockRecordsLoading(true);
     try {
       const res = await api.stockRecords.list();
@@ -121,9 +125,10 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setStockRecordsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchAll = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (inFlightPromise.current) return inFlightPromise.current;
 
     const promise = (async () => {
@@ -138,10 +143,22 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
   }, [fetchPurchaseOrders, fetchStockRecords]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!initializedRef.current) {
       return fetchAll();
     }
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setPurchaseOrders([]);
+      setStockRecords([]);
+      initializedRef.current = false;
+      setIsInitialized(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const refreshPurchaseOrders = useCallback(async () => {
     await fetchPurchaseOrders();
@@ -152,10 +169,11 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
   }, [fetchStockRecords]);
 
   const refreshAll = useCallback(async () => {
+    if (!isAuthenticated) return;
     initializedRef.current = false;
     setIsInitialized(false);
     await fetchAll();
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   const pendingReviews = useMemo(() => {
     return purchaseOrders.filter(

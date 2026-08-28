@@ -32,7 +32,7 @@ interface UsersContextType {
 const UsersContext = createContext<UsersContextType | undefined>(undefined);
 
 export function UsersProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,6 +41,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (inFlightPromise.current) return inFlightPromise.current;
 
     // Skip API request for non-admins to avoid Forbidden resource errors
@@ -88,19 +89,31 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
 
     inFlightPromise.current = promise;
     return promise;
-  }, [user]);
+  }, [user, isAuthenticated]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setUsers([]);
+      initializedRef.current = false;
+      setIsInitialized(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!initializedRef.current) {
       return fetchAll();
     }
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   const refreshUsers = useCallback(async () => {
+    if (!isAuthenticated) return;
     initializedRef.current = false;
     setIsInitialized(false);
     await fetchAll();
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   return (
     <UsersContext.Provider

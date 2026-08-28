@@ -1,11 +1,32 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+/** Prevents multiple 401 redirects from racing each other. */
+let isLoggingOut = false;
+
+function handleUnauthorized() {
+  if (typeof window === 'undefined' || isLoggingOut) return;
+  isLoggingOut = true;
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+}
+
+/**
+ * Central fetch wrapper.
+ * - Skips the request entirely when no token is stored (throws early).
+ * - Auto-logs out the user on any 401 response.
+ */
 async function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
+  // Guard: never fire authenticated requests without a token
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Authorization: `Bearer ${token}`,
     ...(options.headers || {}),
   };
 
@@ -17,6 +38,12 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 
   if (response.status === 204) {
     return {} as T;
+  }
+
+  // Auto-logout on 401 (expired / invalid token)
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error('Session expired');
   }
 
   if (!response.ok) {
@@ -31,6 +58,11 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
   }
 
   return response.json();
+}
+
+/** Call after a successful login to re-arm the 401 redirect guard. */
+export function resetLogoutFlag() {
+  isLoggingOut = false;
 }
 
 export const api = {

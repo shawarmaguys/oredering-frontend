@@ -9,6 +9,7 @@ import React, {
   useEffect,
 } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 export interface ProductType {
   id: string;
@@ -35,6 +36,7 @@ interface ProductTypesContextType {
 const ProductTypesContext = createContext<ProductTypesContextType | undefined>(undefined);
 
 export function ProductTypesProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [productTypesLoading, setProductTypesLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -43,6 +45,7 @@ export function ProductTypesProvider({ children }: { children: React.ReactNode }
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (inFlightPromise.current) return inFlightPromise.current;
 
     setProductTypesLoading(true);
@@ -62,19 +65,31 @@ export function ProductTypesProvider({ children }: { children: React.ReactNode }
 
     inFlightPromise.current = promise;
     return promise;
-  }, []);
+  }, [isAuthenticated]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setProductTypes([]);
+      initializedRef.current = false;
+      setIsInitialized(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!initializedRef.current) {
       return fetchAll();
     }
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   const refreshProductTypes = useCallback(async () => {
+    if (!isAuthenticated) return;
     initializedRef.current = false;
     setIsInitialized(false);
     await fetchAll();
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   const createProductType = useCallback(async (data: { name: string; description?: string; color?: string }) => {
     const newPt = await api.productTypes.create(data);

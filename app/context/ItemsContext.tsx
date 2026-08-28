@@ -11,6 +11,7 @@ import React, {
 import { api } from '../utils/api';
 import { Item } from '../dashboard/admin/items/types';
 import { useLocationFilter } from './LocationFilterContext';
+import { useAuth } from './AuthContext';
 
 const ALL_LIMIT = 500;
 
@@ -26,6 +27,7 @@ interface ItemsContextType {
 const ItemsContext = createContext<ItemsContextType | undefined>(undefined);
 
 export function ItemsProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { selectedLocationId } = useLocationFilter();
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
@@ -37,6 +39,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
   const initializedRef = useRef(false);
 
   const fetchAllForLocation = useCallback(async (locId: string, forceRefresh = false) => {
+    if (!isAuthenticated) return;
     if (!locId || locId === 'all') return;
     if (!forceRefresh && inFlightPromise.current) return inFlightPromise.current;
 
@@ -80,9 +83,10 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
 
     inFlightPromise.current = promise;
     return promise;
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (!selectedLocationId || selectedLocationId === 'all') return;
     const locKey = selectedLocationId;
     const cached = cacheMap.current.get(locKey);
@@ -99,17 +103,31 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
       initializedRef.current = false;
       fetchAllForLocation(locKey);
     }
-  }, [selectedLocationId, fetchAllForLocation]);
+  }, [isAuthenticated, selectedLocationId, fetchAllForLocation]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setAllItems([]);
+      cacheMap.current.clear();
+      initializedRef.current = false;
+      setIsInitialized(false);
+      setItemsReady(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!selectedLocationId || selectedLocationId === 'all') return;
     const locKey = selectedLocationId;
     if (!cacheMap.current.has(locKey)) {
       return fetchAllForLocation(locKey);
     }
-  }, [selectedLocationId, fetchAllForLocation]);
+  }, [isAuthenticated, selectedLocationId, fetchAllForLocation]);
 
   const refreshAllItems = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!selectedLocationId || selectedLocationId === 'all') return;
     const locKey = selectedLocationId;
     cacheMap.current.delete(locKey);
@@ -117,7 +135,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
     setIsInitialized(false);
     setItemsReady(false);
     await fetchAllForLocation(locKey, true);
-  }, [selectedLocationId, fetchAllForLocation]);
+  }, [isAuthenticated, selectedLocationId, fetchAllForLocation]);
 
   return (
     <ItemsContext.Provider

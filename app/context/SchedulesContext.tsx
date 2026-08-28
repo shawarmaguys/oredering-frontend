@@ -9,6 +9,7 @@ import React, {
   useEffect,
 } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 export interface Schedule {
   id: string;
@@ -58,6 +59,7 @@ function normalise(s: any): Schedule {
 }
 
 export function SchedulesProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -66,6 +68,7 @@ export function SchedulesProvider({ children }: { children: React.ReactNode }) {
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (inFlightPromise.current) return inFlightPromise.current;
 
     setSchedulesLoading(true);
@@ -85,19 +88,31 @@ export function SchedulesProvider({ children }: { children: React.ReactNode }) {
 
     inFlightPromise.current = promise;
     return promise;
-  }, []);
+  }, [isAuthenticated]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setSchedules([]);
+      initializedRef.current = false;
+      setIsInitialized(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!initializedRef.current) {
       return fetchAll();
     }
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   const refreshSchedules = useCallback(async () => {
+    if (!isAuthenticated) return;
     initializedRef.current = false;
     setIsInitialized(false);
     await fetchAll();
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   return (
     <SchedulesContext.Provider

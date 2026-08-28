@@ -9,6 +9,7 @@ import React, {
   useEffect,
 } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 export interface StoreLocation {
   id: string;
@@ -32,6 +33,7 @@ interface LocationsContextType {
 const LocationsContext = createContext<LocationsContextType | undefined>(undefined);
 
 export function LocationsProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [locations, setLocations] = useState<StoreLocation[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -40,6 +42,7 @@ export function LocationsProvider({ children }: { children: React.ReactNode }) {
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (inFlightPromise.current) return inFlightPromise.current;
 
     setLocationsLoading(true);
@@ -59,20 +62,32 @@ export function LocationsProvider({ children }: { children: React.ReactNode }) {
 
     inFlightPromise.current = promise;
     return promise;
-  }, []);
+  }, [isAuthenticated]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setLocations([]);
+      initializedRef.current = false;
+      setIsInitialized(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     if (!initializedRef.current) {
       return fetchAll();
     }
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   // Exposed refresh — call after any create / update / delete mutation
   const refreshLocations = useCallback(async () => {
+    if (!isAuthenticated) return;
     initializedRef.current = false;
     setIsInitialized(false);
     await fetchAll();
-  }, [fetchAll]);
+  }, [fetchAll, isAuthenticated]);
 
   return (
     <LocationsContext.Provider

@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { api } from '../utils/api';
 import { useLocationFilter } from './LocationFilterContext';
+import { useAuth } from './AuthContext';
 
 export interface Vendor {
   id: string;
@@ -46,6 +47,7 @@ interface VendorsContextType {
 const VendorsContext = createContext<VendorsContextType | undefined>(undefined);
 
 export function VendorsProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   let locationFilter: ReturnType<typeof useLocationFilter> | undefined;
   try {
     locationFilter = useLocationFilter();
@@ -65,6 +67,7 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
   const inFlightPromise = useRef<Promise<void> | null>(null);
 
   const fetchVendorsForLocation = useCallback(async (locId: string, forceRefresh = false) => {
+    if (!isAuthenticated) return;
     if (!locId || locId === 'all') return;
 
     if (!forceRefresh && cacheMap.current.has(locId)) {
@@ -97,29 +100,42 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
 
     inFlightPromise.current = promise;
     return promise;
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (selectedLocationId && selectedLocationId !== 'all') {
+    if (isAuthenticated && selectedLocationId && selectedLocationId !== 'all') {
       activeLocationRef.current = selectedLocationId;
       fetchVendorsForLocation(selectedLocationId);
     }
-  }, [selectedLocationId, fetchVendorsForLocation]);
+  }, [isAuthenticated, selectedLocationId, fetchVendorsForLocation]);
+
+  // Reset state on logout
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setVendors([]);
+      setDepartments([]);
+      cacheMap.current.clear();
+      setIsInitialized(false);
+      inFlightPromise.current = null;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const ensureLoaded = useCallback(async () => {
+    if (!isAuthenticated) return;
     const locId = activeLocationRef.current || selectedLocationId;
     if (locId && locId !== 'all') {
       await fetchVendorsForLocation(locId);
     }
-  }, [fetchVendorsForLocation, selectedLocationId]);
+  }, [fetchVendorsForLocation, selectedLocationId, isAuthenticated]);
 
   const refreshVendors = useCallback(async () => {
+    if (!isAuthenticated) return;
     cacheMap.current.clear();
     const locId = activeLocationRef.current || selectedLocationId;
     if (locId && locId !== 'all') {
       await fetchVendorsForLocation(locId, true);
     }
-  }, [fetchVendorsForLocation, selectedLocationId]);
+  }, [fetchVendorsForLocation, selectedLocationId, isAuthenticated]);
 
   return (
     <VendorsContext.Provider

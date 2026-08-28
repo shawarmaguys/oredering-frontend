@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { resetLogoutFlag } from '../utils/api';
 
 export type Role = 'ADMIN' | 'MANAGER' | 'WORKER' | 'SUPER_MANAGER';
 
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = (newToken: string, newUser: User) => {
+    resetLogoutFlag();
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('access_token', newToken);
