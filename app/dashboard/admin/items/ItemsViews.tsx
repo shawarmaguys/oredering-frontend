@@ -99,6 +99,9 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
             </div>
             {item.spanishName && <span style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontStyle: 'italic', display: 'block' }}>🇪🇸 {item.spanishName}</span>}
             {item.vendor && <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{item.vendor.displayName}</span>}
+            {item.backupVendors && item.backupVendors.length > 0 && (
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', display: 'block' }}>+ Backup: {item.backupVendors.map(bv => bv.vendor.displayName).join(', ')}</span>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button type="button" onClick={() => onEdit(item)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }} title="Edit">
@@ -245,7 +248,14 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                       <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>—</span>
                     )}
                   </td>
-                  <td><span style={{ color: 'var(--text-secondary)' }}>{item.vendor?.displayName || 'Unknown Vendor'}</span></td>
+                  <td>
+                    <span style={{ color: 'var(--text-secondary)' }}>{item.vendor?.displayName || 'Unknown Vendor'}</span>
+                    {item.backupVendors && item.backupVendors.length > 0 && (
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                        + Backup: {item.backupVendors.map(bv => bv.vendor.displayName).join(', ')}
+                      </div>
+                    )}
+                  </td>
                   <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.productCode || '—'}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

@@ -81,7 +81,10 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
 
     // 1. Vendor Filter
     if (vendorFilter !== 'all') {
-      result = result.filter((item) => item.vendorId === vendorFilter);
+      result = result.filter((item) => 
+        item.vendorId === vendorFilter ||
+        (item.backupVendors && item.backupVendors.some(bv => bv.vendor.id === vendorFilter))
+      );
     }
 
     // 2. Product Type Filter

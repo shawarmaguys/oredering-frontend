@@ -21,6 +21,7 @@ export interface Item {
   parLevel?: number;
   activeLocationCount?: number;
   locationItems?: Array<{ locationId: string; parLevel: number; isActive: boolean }>;
+  backupVendors?: Array<{ vendor: { id: string; displayName: string } }>;
 }
 
 export type SortColumn = 'name' | 'vendor' | 'category' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'parLevel' | 'status';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../../../utils/api';
 import { Item, Vendor } from './types';
@@ -72,6 +72,50 @@ function UnitFields({ baseUnit, setBaseUnit, displayUnit, setDisplayUnit, multip
   );
 }
 
+// ─── Backup Vendors Selector ────────────────────────────────────────────────────
+interface BackupVendorsSelectProps {
+  allVendors: Vendor[];
+  primaryVendorId: string;
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+}
+
+function BackupVendorsSelect({ allVendors, primaryVendorId, selectedIds, onChange }: BackupVendorsSelectProps) {
+  const available = allVendors.filter(v => v.id !== primaryVendorId && !selectedIds.includes(v.id));
+  
+  return (
+    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
+      <label className="label">Backup Vendors (Optional)</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+        {selectedIds.map(id => {
+          const v = allVendors.find(v => v.id === id);
+          if (!v) return null;
+          return (
+            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--surface-sunken)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', border: '1px solid var(--border-subtle)' }}>
+              {v.displayName}
+              <button type="button" onClick={() => onChange(selectedIds.filter(x => x !== id))} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-tertiary)', fontWeight: 'bold' }}>&times;</button>
+            </span>
+          );
+        })}
+        {selectedIds.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No backup vendors configured.</span>}
+      </div>
+      {available.length > 0 && (
+        <select 
+          className="input" 
+          value=""
+          onChange={e => {
+            if (e.target.value) onChange([...selectedIds, e.target.value]);
+          }}
+          style={{ fontSize: '0.875rem', padding: '4px 8px', height: 'auto' }}
+        >
+          <option value="">+ Add Backup Vendor...</option>
+          {available.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
+        </select>
+      )}
+    </div>
+  );
+}
+
 // ─── Create Modal ─────────────────────────────────────────────────────────────
 interface CreateItemModalProps {
   vendors: Vendor[];
@@ -92,8 +136,16 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
   const [productCode, setProductCode] = useState('');
   const [note, setNote] = useState('');
   const [parLevel, setParLevel] = useState<number | ''>(0);
+  const [backupVendorIds, setBackupVendorIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-remove backup vendor if it becomes the primary vendor
+  useEffect(() => {
+    if (backupVendorIds.includes(vendorId)) {
+      setBackupVendorIds(prev => prev.filter(id => id !== vendorId));
+    }
+  }, [vendorId, backupVendorIds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +158,7 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
     setSubmitting(true);
     setError('');
     try {
-      await api.items.create({
+      const created = await api.items.create({
         displayName,
         spanishName: spanishName.trim() || undefined,
         vendorId,
@@ -119,6 +171,11 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
         locationId: selectedLocationId && selectedLocationId !== 'all' ? selectedLocationId : undefined,
         parLevel: parLevel !== '' ? Number(parLevel) : 0,
       });
+
+      if (backupVendorIds.length > 0) {
+        await Promise.all(backupVendorIds.map(bvid => api.items.addBackupVendor(created.id, bvid)));
+      }
+
       onCreated();
     } catch (err: any) {
       setError(err.message || 'Failed to create product.');
@@ -188,6 +245,7 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
               <input id="create-note" type="text" value={note} onChange={e => setNote(e.target.value)} className="input" placeholder="e.g. Premium Breast / Thigh Mix" />
             </div>
             <UnitFields baseUnit={baseUnitName} setBaseUnit={setBaseUnitName} displayUnit={displayUnitName} setDisplayUnit={setDisplayUnitName} multiplier={multiplier} setMultiplier={setMultiplier} idPrefix="create" />
+            <BackupVendorsSelect allVendors={vendors} primaryVendorId={vendorId} selectedIds={backupVendorIds} onChange={setBackupVendorIds} />
             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
               <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
               <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 1 }}>{submitting ? 'Saving...' : 'Save Product'}</button>
@@ -221,8 +279,17 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
   const [productCode, setProductCode] = useState(item.productCode ?? '');
   const [note, setNote] = useState(item.note ?? '');
   const [parLevel, setParLevel] = useState<number | ''>(item.parLevel ?? 0);
+  const initialBackupVendorIds = item.backupVendors?.map(bv => bv.vendor.id) || [];
+  const [backupVendorIds, setBackupVendorIds] = useState<string[]>(initialBackupVendorIds);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-remove backup vendor if it becomes the primary vendor
+  useEffect(() => {
+    if (backupVendorIds.includes(vendorId)) {
+      setBackupVendorIds(prev => prev.filter(id => id !== vendorId));
+    }
+  }, [vendorId, backupVendorIds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,6 +317,13 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
       if (selectedLocationId && selectedLocationId !== 'all') {
         await api.items.assignToLocation(item.id, selectedLocationId, parLevel !== '' ? Number(parLevel) : 0);
       }
+
+      const added = backupVendorIds.filter(id => !initialBackupVendorIds.includes(id));
+      const removed = initialBackupVendorIds.filter(id => !backupVendorIds.includes(id));
+      await Promise.all([
+        ...added.map(id => api.items.addBackupVendor(item.id, id)),
+        ...removed.map(id => api.items.removeBackupVendor(item.id, id))
+      ]);
 
       onUpdated();
     } catch (err: any) {
@@ -314,6 +388,7 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
             <input id="edit-note" type="text" value={note} onChange={e => setNote(e.target.value)} className="input" />
           </div>
           <UnitFields baseUnit={baseUnitName} setBaseUnit={setBaseUnitName} displayUnit={displayUnitName} setDisplayUnit={setDisplayUnitName} multiplier={multiplier} setMultiplier={setMultiplier} idPrefix="edit" />
+          <BackupVendorsSelect allVendors={vendors} primaryVendorId={vendorId} selectedIds={backupVendorIds} onChange={setBackupVendorIds} />
           <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
             <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
             <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 1 }}>{submitting ? 'Saving...' : 'Save Changes'}</button>
