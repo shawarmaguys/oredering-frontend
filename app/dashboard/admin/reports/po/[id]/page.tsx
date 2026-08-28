@@ -924,45 +924,62 @@ export default function PODetailsPage() {
                                     </span>
                                   )}
 
-                                  {poItem.parLevel !== null && (
-                                    <span
-                                      title="Configured store target par level"
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        padding: '2px 7px',
-                                        borderRadius: '4px',
-                                        backgroundColor: '#f3f4f6',
-                                        border: '1px solid #e5e7eb',
-                                        fontSize: '0.6875rem',
-                                        fontWeight: 600,
-                                        color: '#374151',
-                                      }}
-                                    >
-                                      <span style={{ color: '#9ca3af', fontWeight: 500 }}>Par:</span> {poItem.parLevel}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    const mult = item?.multiplier && Number(item.multiplier) > 1 ? Number(item.multiplier) : 1;
+                                    const isPack = !!(item?.displayUnitName && item.displayUnitName !== item.baseUnitName && mult > 1);
+                                    const parBase = poItem.parLevel !== null ? Number(poItem.parLevel) : null;
+                                    const normBase = poItem.normalizedQuantity !== null ? Number(poItem.normalizedQuantity) : null;
 
-                                  {user?.role === 'ADMIN' && poItem.normalizedQuantity !== null && (
-                                    <span
-                                      title="Total stock normalized in base units (Admin audit)"
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        padding: '2px 7px',
-                                        borderRadius: '4px',
-                                        backgroundColor: '#f3f4f6',
-                                        border: '1px solid #e5e7eb',
-                                        fontSize: '0.6875rem',
-                                        fontWeight: 600,
-                                        color: '#4b5563',
-                                      }}
-                                    >
-                                      <span style={{ color: '#9ca3af', fontWeight: 500 }}>Norm:</span> {Number(poItem.normalizedQuantity).toFixed(1)} {item?.baseUnitName || ''}
-                                    </span>
-                                  )}
+                                    const parVal = parBase !== null ? (isPack ? parBase / mult : parBase) : null;
+                                    const normVal = normBase !== null ? (isPack ? normBase / mult : normBase) : null;
+
+                                    const formatVal = (v: number) => Number.isInteger(v) ? v.toString() : (Math.round(v * 100) / 100).toString();
+                                    const displayUnit = isPack ? item.displayUnitName : (item?.baseUnitName || '');
+
+                                    return (
+                                      <>
+                                        {parVal !== null && (
+                                          <span
+                                            title={isPack ? `Par: ${parVal} ${displayUnit} (${parBase} ${item?.baseUnitName || ''})` : 'Configured store target par level'}
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '2px 7px',
+                                              borderRadius: '4px',
+                                              backgroundColor: '#f3f4f6',
+                                              border: '1px solid #e5e7eb',
+                                              fontSize: '0.6875rem',
+                                              fontWeight: 600,
+                                              color: '#374151',
+                                            }}
+                                          >
+                                            <span style={{ color: '#9ca3af', fontWeight: 500 }}>Par:</span> {formatVal(parVal)} {displayUnit}
+                                          </span>
+                                        )}
+
+                                        {user?.role === 'ADMIN' && normVal !== null && (
+                                          <span
+                                            title={isPack ? `Norm: ${normVal} ${displayUnit} (${normBase} ${item?.baseUnitName || ''})` : 'Total stock normalized in base units (Admin audit)'}
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '2px 7px',
+                                              borderRadius: '4px',
+                                              backgroundColor: '#f3f4f6',
+                                              border: '1px solid #e5e7eb',
+                                              fontSize: '0.6875rem',
+                                              fontWeight: 600,
+                                              color: '#4b5563',
+                                            }}
+                                          >
+                                            <span style={{ color: '#9ca3af', fontWeight: 500 }}>Norm:</span> {formatVal(normVal)} {displayUnit}
+                                          </span>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
                                 </div>
                               </td>
 

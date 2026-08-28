@@ -134,12 +134,29 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
               )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>PAR Level:</span>
-            <span className="mono" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-              {item.parLevel ?? 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>{item.displayUnitName || item.baseUnitName}</span>
-            </span>
-          </div>
+            {(() => {
+              const isSecondary = !!(item.displayUnitName && item.displayUnitName !== item.baseUnitName);
+              const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
+              const isPackDefined = isSecondary && multiplier > 1;
+              const parInBase = item.parLevel ?? 0;
+              const parInPack = isPackDefined ? parInBase / multiplier : parInBase;
+              const formattedPar = Number.isInteger(parInPack) ? parInPack.toFixed(0) : (Math.round(parInPack * 100) / 100).toString();
+              const parUnitLabel = isPackDefined ? item.displayUnitName : item.baseUnitName;
+
+              return (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>PAR Level:</span>
+                  <span className="mono" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {formattedPar} <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>{parUnitLabel}</span>
+                    {isPackDefined && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '4px' }}>
+                        ({parInBase} {item.baseUnitName})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })()}
           {item.note && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>Note:</span>
@@ -215,7 +232,7 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
               {th('category', 'Category')}
               {th('vendor', 'Assigned Vendor')}
               {th('code', 'Product Code')}
-              {th('parLevel', 'PAR Level', { width: '130px' })}
+              {th('parLevel', 'PAR Level', { width: '150px' })}
               {th('note', 'Notes')}
               {th('pack', 'Pack Size')}
               {th('baseUnit', 'Individual Stock Unit')}
@@ -226,10 +243,17 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
           </thead>
           <tbody>
             {items.map(item => {
-              const isSecondary = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
-              const originalPar = item.parLevel ?? 0;
+              const isSecondary = !!(item.displayUnitName && item.displayUnitName !== item.baseUnitName);
+              const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
+              const isPackDefined = isSecondary && multiplier > 1;
+
+              const originalParBase = item.parLevel ?? 0;
               const isEdited = pendingParEdits[item.id] !== undefined;
-              const currentPar = isEdited ? pendingParEdits[item.id] : originalPar;
+              const currentParBase = isEdited ? pendingParEdits[item.id] : originalParBase;
+
+              const displayParVal = isPackDefined ? currentParBase / multiplier : currentParBase;
+              const formattedParVal = Number.isInteger(displayParVal) ? displayParVal : Math.round(displayParVal * 100) / 100;
+              const unitLabel = isPackDefined ? item.displayUnitName : item.baseUnitName;
 
               return (
                 <tr key={item.id} style={{ backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.03)' : undefined }}>
@@ -258,42 +282,50 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                   </td>
                   <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.productCode || '—'}</td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        disabled={!canEdit}
-                        aria-label={`PAR level for ${item.displayName}`}
-                        value={currentPar}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? 0 : Number(e.target.value);
-                          if (onParChange) {
-                            onParChange(item.id, originalPar, val);
-                          } else if (onUpdatePar && val !== originalPar) {
-                            onUpdatePar(item.id, val);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        className="input mono"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '0.8125rem',
-                          height: '30px',
-                          width: '75px',
-                          textAlign: 'right',
-                          borderColor: isEdited ? 'var(--accent, #3b82f6)' : undefined,
-                          backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.12)' : undefined,
-                          fontWeight: isEdited ? 600 : undefined,
-                        }}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                        {item.displayUnitName ? item.displayUnitName : item.baseUnitName}
-                      </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          disabled={!canEdit}
+                          aria-label={`PAR level for ${item.displayName}`}
+                          value={formattedParVal}
+                          onChange={(e) => {
+                            const valInInput = e.target.value === '' ? 0 : Number(e.target.value);
+                            const valInBase = isPackDefined ? valInInput * multiplier : valInInput;
+                            if (onParChange) {
+                              onParChange(item.id, originalParBase, valInBase);
+                            } else if (onUpdatePar && valInBase !== originalParBase) {
+                              onUpdatePar(item.id, valInBase);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              (e.target as HTMLInputElement).blur();
+                            }
+                          }}
+                          className="input mono"
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '0.8125rem',
+                            height: '30px',
+                            width: '75px',
+                            textAlign: 'right',
+                            borderColor: isEdited ? 'var(--accent, #3b82f6)' : undefined,
+                            backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.12)' : undefined,
+                            fontWeight: isEdited ? 600 : undefined,
+                          }}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                          {unitLabel}
+                        </span>
+                      </div>
+                      {isPackDefined && (
+                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginLeft: '2px' }}>
+                          ({currentParBase} {item.baseUnitName})
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td style={{ color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note || '—'}</td>

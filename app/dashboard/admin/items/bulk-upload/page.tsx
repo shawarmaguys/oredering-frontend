@@ -416,6 +416,7 @@ export default function BulkUploadItemsPage() {
                     <ul style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.6, paddingLeft: '16px', margin: 0 }}>
                       <li>Rows containing a valid <strong>Product ID</strong> will update existing products.</li>
                       <li>Updates apply to name, units, SKU, PAR level, notes, and status.</li>
+                      <li><strong>PAR Level</strong> values in CSV must be provided in <strong>individual stock units</strong> (Base Unit).</li>
                       <li>Do not alter or edit the <strong>Product ID</strong> string.</li>
                     </ul>
                   </div>

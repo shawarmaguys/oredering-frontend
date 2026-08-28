@@ -158,6 +158,10 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
     setSubmitting(true);
     setError('');
     try {
+      const rawPar = parLevel !== '' ? Number(parLevel) : 0;
+      const multNum = hasSecondary && multiplier !== '' && Number(multiplier) > 0 ? Number(multiplier) : 1;
+      const finalParInBase = hasSecondary ? rawPar * multNum : rawPar;
+
       const created = await api.items.create({
         displayName,
         spanishName: spanishName.trim() || undefined,
@@ -169,7 +173,7 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
         productCode: productCode || undefined,
         note: note || undefined,
         locationId: selectedLocationId && selectedLocationId !== 'all' ? selectedLocationId : undefined,
-        parLevel: parLevel !== '' ? Number(parLevel) : 0,
+        parLevel: finalParInBase,
       });
 
       if (backupVendorIds.length > 0) {
@@ -183,6 +187,11 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
       setSubmitting(false);
     }
   };
+
+  const hasPackSize = displayUnitName.trim() !== '' && multiplier !== '' && Number(multiplier) > 0;
+  const currentMult = hasPackSize ? Number(multiplier) : 1;
+  const currentParVal = parLevel !== '' ? Number(parLevel) : 0;
+  const convertedParBase = hasPackSize ? currentParVal * currentMult : currentParVal;
 
   return (
     <div className="modal-backdrop">
@@ -236,8 +245,15 @@ export function CreateItemModal({ vendors, onClose, onCreated }: CreateItemModal
                 <input id="create-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" placeholder="e.g. SH-KIT-010" />
               </div>
               <div>
-                <label className="label" htmlFor="create-par">Stock PAR Level</label>
+                <label className="label" htmlFor="create-par">
+                  Stock PAR Level {hasPackSize ? `(in ${displayUnitName})` : baseUnitName ? `(in ${baseUnitName})` : '(Individual Units)'}
+                </label>
                 <input id="create-par" type="number" step="any" min="0" value={parLevel} onChange={e => setParLevel(e.target.value === '' ? '' : Number(e.target.value))} className="input mono" placeholder="0" />
+                {hasPackSize && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--accent, #3b82f6)', marginTop: '4px' }}>
+                    Taken in {displayUnitName}. Saves as <strong>{convertedParBase} {baseUnitName || 'units'}</strong> in DB ({currentParVal} × {currentMult}).
+                  </p>
+                )}
               </div>
             </div>
             <div>
@@ -268,17 +284,20 @@ interface EditItemModalProps {
 export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemModalProps) {
   const { productTypes } = useProductTypes();
   const { selectedLocationId } = useLocationFilter();
-  const isSecondaryConfigured = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
+  const isSecondaryConfigured = !!(item.displayUnitName && item.displayUnitName !== item.baseUnitName && item.multiplier && Number(item.multiplier) > 1);
+  const initialMult = isSecondaryConfigured ? Number(item.multiplier) : 1;
+  const initialParInInput = isSecondaryConfigured ? (item.parLevel ?? 0) / initialMult : (item.parLevel ?? 0);
+
   const [displayName, setDisplayName] = useState(item.displayName);
   const [spanishName, setSpanishName] = useState(item.spanishName ?? '');
   const [vendorId, setVendorId] = useState(item.vendorId);
   const [productTypeId, setProductTypeId] = useState(item.productTypeId ?? '');
   const [baseUnitName, setBaseUnitName] = useState(item.baseUnitName);
-  const [displayUnitName, setDisplayUnitName] = useState(isSecondaryConfigured ? item.displayUnitName : '');
+  const [displayUnitName, setDisplayUnitName] = useState(isSecondaryConfigured ? item.displayUnitName! : '');
   const [multiplier, setMultiplier] = useState<number | ''>(isSecondaryConfigured ? item.multiplier : '');
   const [productCode, setProductCode] = useState(item.productCode ?? '');
   const [note, setNote] = useState(item.note ?? '');
-  const [parLevel, setParLevel] = useState<number | ''>(item.parLevel ?? 0);
+  const [parLevel, setParLevel] = useState<number | ''>(initialParInInput);
   const initialBackupVendorIds = item.backupVendors?.map(bv => bv.vendor.id) || [];
   const [backupVendorIds, setBackupVendorIds] = useState<string[]>(initialBackupVendorIds);
   const [submitting, setSubmitting] = useState(false);
@@ -302,6 +321,10 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
     setSubmitting(true);
     setError('');
     try {
+      const rawPar = parLevel !== '' ? Number(parLevel) : 0;
+      const multNum = hasSecondary && multiplier !== '' && Number(multiplier) > 0 ? Number(multiplier) : 1;
+      const finalParInBase = hasSecondary ? rawPar * multNum : rawPar;
+
       await api.items.update(item.id, {
         displayName,
         spanishName: spanishName.trim() || undefined,
@@ -315,7 +338,7 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
       });
 
       if (selectedLocationId && selectedLocationId !== 'all') {
-        await api.items.assignToLocation(item.id, selectedLocationId, parLevel !== '' ? Number(parLevel) : 0);
+        await api.items.assignToLocation(item.id, selectedLocationId, finalParInBase);
       }
 
       const added = backupVendorIds.filter(id => !initialBackupVendorIds.includes(id));
@@ -332,6 +355,11 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
       setSubmitting(false);
     }
   };
+
+  const hasPackSize = displayUnitName.trim() !== '' && multiplier !== '' && Number(multiplier) > 0;
+  const currentMult = hasPackSize ? Number(multiplier) : 1;
+  const currentParVal = parLevel !== '' ? Number(parLevel) : 0;
+  const convertedParBase = hasPackSize ? currentParVal * currentMult : currentParVal;
 
   return (
     <div className="modal-backdrop">
@@ -379,8 +407,15 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
               <input id="edit-code" type="text" value={productCode} onChange={e => setProductCode(e.target.value)} className="input" />
             </div>
             <div>
-              <label className="label" htmlFor="edit-par">Stock PAR Level</label>
+              <label className="label" htmlFor="edit-par">
+                Stock PAR Level {hasPackSize ? `(in ${displayUnitName})` : baseUnitName ? `(in ${baseUnitName})` : '(Individual Units)'}
+              </label>
               <input id="edit-par" type="number" step="any" min="0" value={parLevel} onChange={e => setParLevel(e.target.value === '' ? '' : Number(e.target.value))} className="input mono" />
+              {hasPackSize && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--accent, #3b82f6)', marginTop: '4px' }}>
+                  Taken in {displayUnitName}. Saves as <strong>{convertedParBase} {baseUnitName || 'units'}</strong> in DB ({currentParVal} × {currentMult}).
+                </p>
+              )}
             </div>
           </div>
           <div>

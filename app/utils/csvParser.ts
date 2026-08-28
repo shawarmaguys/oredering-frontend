@@ -139,7 +139,7 @@ export function generateVendorProductsCsv(items: any[], defaultVendorName?: stri
     'Multiplier (Optional)',
     'Spanish Name (Optional)',
     'Note (Optional)',
-    'PAR Level (Optional)',
+    'PAR Level (in Individual Units) (Optional)',
     'Status (Optional: active/inactive)'
   ];
 
@@ -209,7 +209,7 @@ export function generateProductsCsvTemplate(): string {
     'Multiplier (Optional)',
     'Spanish Name (Optional)',
     'Note (Optional)',
-    'PAR Level (Optional)',
+    'PAR Level (in Individual Units) (Optional)',
     'Status (Optional: active/inactive)'
   ];
 
