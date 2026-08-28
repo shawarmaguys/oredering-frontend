@@ -177,7 +177,7 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
 
   const pendingReviews = useMemo(() => {
     return purchaseOrders.filter(
-      (po) => po.status === 'DRAFT' || po.status === 'GENERATED'
+      (po) => po.status !== 'SENT'
     );
   }, [purchaseOrders]);
 

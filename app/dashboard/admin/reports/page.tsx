@@ -72,7 +72,7 @@ export default function ReportsPage() {
           <div className="page-header">
             <div className="page-header-text">
               <h1>Purchase Orders & Stock Records <LocationBadge /></h1>
-              <p>Verify kitchen stock sheets and authorize supplier purchase orders.</p>
+              <p>Verify kitchen stock sheets and view/send supplier purchase orders.</p>
             </div>
           </div>
 
@@ -145,10 +145,8 @@ export default function ReportsPage() {
             {activeTab === 'pos' && (
               <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                 <option value="all">All Statuses</option>
-                <option value="DRAFT">Draft</option>
-                <option value="GENERATED">Generated</option>
+                <option value="DRAFT">Draft (Not Sent)</option>
                 <option value="SENT">Sent</option>
-                <option value="ACKNOWLEDGED">Acknowledged</option>
                 <option value="CANCELLED">Cancelled</option>
               </select>
             )}
@@ -232,9 +230,9 @@ export default function ReportsPage() {
                             Location: <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{po.location?.name || 'Store'}</strong>
                           </span>
                         </div>
-                        <span className={`badge ${po.status === 'SENT' || po.status === 'GENERATED' || po.status === 'APPROVED' ? 'badge-success' : 'badge-amber'}`}>
+                        <span className={`badge ${po.status === 'SENT' ? 'badge-success' : 'badge-amber'}`}>
                           <span className="badge-dot" />
-                          {po.status}
+                          {po.status === 'SENT' ? 'SENT' : 'DRAFT'}
                         </span>
                       </div>
 
@@ -272,9 +270,9 @@ export default function ReportsPage() {
                         <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{po.vendor?.displayName || 'Supplier'}</td>
                         <td>{po.location?.name || 'Store'}</td>
                         <td>
-                          <span className={`badge ${po.status === 'SENT' || po.status === 'GENERATED' || po.status === 'APPROVED' ? 'badge-success' : 'badge-amber'}`}>
+                          <span className={`badge ${po.status === 'SENT' ? 'badge-success' : 'badge-amber'}`}>
                             <span className="badge-dot" />
-                            {po.status}
+                            {po.status === 'SENT' ? 'SENT' : 'DRAFT'}
                           </span>
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px', fontSize: '0.8125rem' }}>

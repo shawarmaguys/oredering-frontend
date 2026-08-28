@@ -5,7 +5,6 @@ import { api } from '../../../../../utils/api';
 import AdminGuard from '../../../../components/AdminGuard';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ConfirmDialog } from '../../../../../components/ConfirmDialog';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useReports } from '../../../../../context/ReportsContext';
 
@@ -80,10 +79,6 @@ export default function PODetailsPage() {
 
   // Editable purchase order quantities state
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
-  const [isEditingDraft, setIsEditingDraft] = useState(false);
-
-  // Modals state
-  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
 
   const [sendEmailState, setSendEmailState] = useState<{
     isOpen: boolean;
@@ -135,18 +130,38 @@ export default function PODetailsPage() {
     return Number(item.quantity) !== (editedQuantities[item.itemId] ?? 0);
   });
 
-  const handleApproveClick = () => {
-    setApproveConfirmOpen(true);
-  };
-
-  const handleConfirmApprove = async () => {
-    if (!po) return;
-    setApproveConfirmOpen(false);
+  const handleSaveChanges = async () => {
+    if (!po || !isModified) return;
     setActionLoading(true);
     setError('');
 
     try {
-      if (isModified) {
+      const payloadItems = Object.keys(editedQuantities).map(itemId => {
+        const item = po.items?.find((i: POItem) => i.itemId === itemId);
+        return {
+          itemId,
+          quantity: editedQuantities[itemId],
+          displayUnitName: item?.item?.displayUnitName || item?.unitName || ''
+        };
+      });
+      await api.purchaseOrders.update(po.id, {
+        items: payloadItems
+      });
+      await Promise.all([fetchPODetails(), refreshPurchaseOrders()]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save purchase order changes.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleTriggerSendEmail = async () => {
+    if (!po) return;
+
+    if (isModified) {
+      setActionLoading(true);
+      setError('');
+      try {
         const payloadItems = Object.keys(editedQuantities).map(itemId => {
           const item = po.items?.find((i: POItem) => i.itemId === itemId);
           return {
@@ -158,45 +173,16 @@ export default function PODetailsPage() {
         await api.purchaseOrders.update(po.id, {
           items: payloadItems
         });
+        await fetchPODetails();
+      } catch (err: any) {
+        setError(err.message || 'Failed to update order quantities before emailing.');
+        setActionLoading(false);
+        return;
+      } finally {
+        setActionLoading(false);
       }
-
-      const approved = await api.purchaseOrders.approve(po.id);
-
-      const poIdShort = approved.id.slice(0, 8).toUpperCase();
-      const locationName = approved.location?.name || 'Store';
-      const defaultVendorEmails = (approved.vendor?.email || '')
-        .split(',')
-        .map((e: string) => e.trim())
-        .filter((e: string) => e.length > 0);
-      const otherVendorEmails = (approved.vendor?.otherEmails || '')
-        .split(',')
-        .map((e: string) => e.trim())
-        .filter((e: string) => e.length > 0);
-
-      setSendEmailState({
-        isOpen: true,
-        poId: approved.id,
-        vendorName: approved.vendor?.displayName || 'Supplier',
-        defaultVendorEmails,
-        otherVendorEmails,
-        selectedVendorEmails: [...defaultVendorEmails],
-        customEmails: '',
-        subject: `Purchase Order #${poIdShort} - Shawarma Guys (${locationName})`,
-        body: '',
-        notes: approved.notes || po.notes || ''
-      });
-
-      // Reload details and update global context
-      await Promise.all([fetchPODetails(), refreshPurchaseOrders()]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to approve purchase order.');
-    } finally {
-      setActionLoading(false);
     }
-  };
 
-  const handleTriggerSendEmail = () => {
-    if (!po) return;
     const poIdShort = po.id.slice(0, 8).toUpperCase();
     const locationName = po.location?.name || 'Store';
     const defaultVendorEmails = (po.vendor?.email || '')
@@ -370,8 +356,8 @@ export default function PODetailsPage() {
                 gap: '12px',
                 padding: '10px 16px',
                 borderRadius: 'var(--radius-lg)',
-                backgroundColor: isDraft ? 'rgba(217, 119, 6, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-                border: `1px solid ${isDraft ? 'rgba(217, 119, 6, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
+                backgroundColor: po.status === 'SENT' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+                border: `1px solid ${po.status === 'SENT' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(217, 119, 6, 0.25)'}`,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -383,76 +369,49 @@ export default function PODetailsPage() {
                     width: '28px',
                     height: '28px',
                     borderRadius: '50%',
-                    backgroundColor: isDraft ? '#d97706' : '#10b981',
+                    backgroundColor: po.status === 'SENT' ? '#10b981' : '#d97706',
                     color: '#fff',
                     fontSize: '0.875rem',
                     fontWeight: 'bold',
                   }}
                 >
-                  {isDraft ? '📝' : '✓'}
+                  {po.status === 'SENT' ? '✓' : '📝'}
                 </span>
                 <div>
                   <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Purchase Order Status: <strong style={{ color: isDraft ? '#d97706' : '#10b981' }}>{po.status}</strong>
+                    Purchase Order Status: <strong style={{ color: po.status === 'SENT' ? '#10b981' : '#d97706' }}>{po.status === 'SENT' ? 'SENT' : 'DRAFT'}</strong>
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {isDraft
-                      ? 'Review stock audit breakdown and adjust line item quantities before approving.'
-                      : po.approvedBy || po.approver
-                        ? `Approved by ${po.approver?.fullName || po.approvedBy || 'Manager'}${po.approvedAt ? ` on ${new Date(po.approvedAt).toLocaleDateString()}` : ''}`
-                        : 'Completed & verified purchase order document.'}
+                    {po.status === 'SENT'
+                      ? `Sent to supplier${po.emailsSent ? ` (${po.emailsSent})` : ''}. You can resend the order at any time.`
+                      : 'Review item quantities and send the purchase order directly to the supplier.'}
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                {isDraft && (
+                {isModified && (
                   <button
                     type="button"
-                    onClick={handleApproveClick}
-                    disabled={actionLoading}
-                    className="btn btn-primary btn-sm"
-                    style={{ padding: '8px 20px', backgroundColor: '#C0212F', borderColor: '#C0212F' }}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    {actionLoading ? 'Approving...' : 'Approve Purchase Order'}
-                  </button>
-                )}
-
-                {/* Re-Email / Dispatch Action Button */}
-                {po.status !== 'DRAFT' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const defaultVendorEmails = po.vendor?.email
-                        ? po.vendor.email.split(',').map(e => e.trim()).filter(Boolean)
-                        : [];
-                      const otherVendorEmails = po.vendor?.otherEmails
-                        ? po.vendor.otherEmails.split(',').map(e => e.trim()).filter(Boolean)
-                        : [];
-                      setSendEmailState({
-                        isOpen: true,
-                        poId: po.id,
-                        vendorName: po.vendor?.displayName || 'Supplier',
-                        defaultVendorEmails,
-                        otherVendorEmails,
-                        selectedVendorEmails: defaultVendorEmails,
-                        customEmails: '',
-                        subject: `Purchase Order #${shortPoId}`,
-                        body: '',
-                        notes: po.notes || '',
-                      });
-                    }}
+                    onClick={handleSaveChanges}
                     disabled={actionLoading}
                     className="btn btn-secondary btn-sm"
                     style={{ padding: '8px 16px' }}
-                    title="Send or resend this Purchase Order via email"
                   >
-                    ✉️ {po.emailsSent ? 'Re-email Supplier' : 'Email Order to Supplier'}
+                    {actionLoading ? 'Saving...' : '💾 Save Changes'}
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={handleTriggerSendEmail}
+                  disabled={actionLoading}
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '8px 20px', backgroundColor: '#C0212F', borderColor: '#C0212F' }}
+                  title="Send or resend this Purchase Order via email"
+                >
+                  ✉️ {po.status === 'SENT' ? 'Resend Order Email' : 'Email Order to Supplier'}
+                </button>
               </div>
             </div>
           )}
@@ -708,9 +667,9 @@ export default function PODetailsPage() {
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Approved By</div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: po.approvedBy || po.approver ? '#111827' : '#9ca3af', marginTop: '2px' }}>
-                      {po.approver?.fullName || po.approvedBy || (isDraft ? 'Pending Approval' : 'Verified')}
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Status</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: po.status === 'SENT' ? '#059669' : '#d97706', marginTop: '2px' }}>
+                      {po.status === 'SENT' ? 'Sent' : 'Draft / Not Sent'}
                     </div>
                   </div>
                 </div>
@@ -930,8 +889,8 @@ export default function PODetailsPage() {
                                     const parBase = poItem.parLevel !== null ? Number(poItem.parLevel) : null;
                                     const normBase = poItem.normalizedQuantity !== null ? Number(poItem.normalizedQuantity) : null;
 
-                                    const parVal = parBase !== null ? (isPack ? parBase / mult : parBase) : null;
-                                    const normVal = normBase !== null ? (isPack ? normBase / mult : normBase) : null;
+                                    const parVal = parBase !== null ? Math.round(isPack ? parBase / mult : parBase) : null;
+                                    const normVal = normBase !== null ? Math.round(isPack ? normBase / mult : normBase) : null;
 
                                     const formatVal = (v: number) => Number.isInteger(v) ? v.toString() : (Math.round(v * 100) / 100).toString();
                                     const displayUnit = isPack ? item.displayUnitName : (item?.baseUnitName || '');
@@ -974,7 +933,7 @@ export default function PODetailsPage() {
                                               color: '#4b5563',
                                             }}
                                           >
-                                            <span style={{ color: '#9ca3af', fontWeight: 500 }}>Norm:</span> {formatVal(normVal)} {displayUnit}
+                                            <span style={{ color: '#9ca3af', fontWeight: 500 }}>Total:</span> {formatVal(normVal)} {displayUnit}
                                           </span>
                                         )}
                                       </>
@@ -1046,7 +1005,7 @@ export default function PODetailsPage() {
                                   verticalAlign: 'middle',
                                 }}
                               >
-                                {isDraft ? (
+                                {true ? (
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                     <button
                                       type="button"
@@ -1191,15 +1150,6 @@ export default function PODetailsPage() {
             </div>
           </div>
         ) : null}
-
-        {/* Approve Confirmation Modal */}
-        <ConfirmDialog
-          isOpen={approveConfirmOpen}
-          title="Approve Purchase Order?"
-          message={`Are you sure you want to approve this purchase order for ${approveConfirmOpen && po ? po.vendor?.displayName : ''}?`}
-          onConfirm={handleConfirmApprove}
-          onCancel={() => setApproveConfirmOpen(false)}
-        />
 
         {/* Send Purchase Order Email Modal */}
         {sendEmailState && (
