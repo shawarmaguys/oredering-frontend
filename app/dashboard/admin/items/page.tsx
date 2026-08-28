@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useVendors } from '../../../context/VendorsContext';
 import { useLocations } from '../../../context/LocationsContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
 import { useAuth } from '../../../context/AuthContext';
 
 import { useItemsStore } from './useItemsStore';
@@ -22,7 +23,7 @@ export default function ItemsPage() {
 
   const { vendors: contextVendors } = useVendors();
   const { locations } = useLocations();
-  const { selectedLocationId } = useLocationFilter();
+  const { selectedLocationId, selectedLocation } = useLocationFilter();
   const activeLocationObj = locations.find((l) => l.id === selectedLocationId);
 
   const store = useItemsStore(contextVendors);
@@ -252,7 +253,7 @@ export default function ItemsPage() {
           {/* Header */}
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Product Catalog</h1>
+              <h1>Product Catalog <LocationBadge /></h1>
               <p>Manage and organize your product SKU library, store PAR levels, and vendor assignments.</p>
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -288,32 +289,6 @@ export default function ItemsPage() {
                 </svg>
                 New Product
               </button>
-
-              {hasPendingEdits && (
-                <div style={{ display: 'flex', gap: '8px', marginLeft: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--border-default)' }}>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handleSaveParEdits}
-                    disabled={isSavingParEdits}
-                    style={{
-                      backgroundColor: 'var(--accent, #3b82f6)',
-                      fontWeight: 600,
-                      boxShadow: '0 0 10px rgba(59, 130, 246, 0.3)',
-                    }}
-                  >
-                    {isSavingParEdits ? 'Saving...' : `Save Edits (${Object.keys(pendingParEdits).length})`}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleDiscardParEdits}
-                    disabled={isSavingParEdits}
-                  >
-                    Discard
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 

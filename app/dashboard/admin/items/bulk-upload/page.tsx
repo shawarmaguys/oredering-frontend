@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AdminGuard from '../../../components/AdminGuard';
 import { api } from '../../../../utils/api';
 import { useLocationFilter } from '../../../../context/LocationFilterContext';
+import { LocationBadge } from '../../../components/LocationBadge';
 import { useLocations } from '../../../../context/LocationsContext';
 import {
   parseCSV,
@@ -49,7 +50,7 @@ interface ValidationResponse {
 export default function BulkUploadItemsPage() {
   const router = useRouter();
   const { locations } = useLocations();
-  const { selectedLocationId } = useLocationFilter();
+  const { selectedLocationId, selectedLocation } = useLocationFilter();
 
   const [file, setFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ParsedCsvRow[]>([]);
@@ -235,7 +236,7 @@ export default function BulkUploadItemsPage() {
 
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Bulk Add New Products (CSV)</h1>
+              <h1>Bulk Add New Products (CSV) <LocationBadge /></h1>
               <p>
                 Upload a CSV spreadsheet to add new products to your catalog for{' '}
                 <strong>{activeLocation ? activeLocation.name : 'All Locations'}</strong>.

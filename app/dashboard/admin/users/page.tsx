@@ -7,12 +7,15 @@ import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useUsers, User } from '../../../context/UsersContext';
 import { useLocations } from '../../../context/LocationsContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
 
 // User type is imported from UsersContext
 
 export default function UsersPage() {
   const { users, usersLoading: loading, refreshUsers } = useUsers();
   const { locations: locationsList } = useLocations();
+  const { selectedLocation } = useLocationFilter();
   const [error, setError] = useState('');
 
   // Form State
@@ -160,7 +163,7 @@ export default function UsersPage() {
           {/* Header */}
           <div className="page-header">
             <div className="page-header-text">
-              <h1>User Accounts</h1>
+              <h1>User Accounts <LocationBadge /></h1>
               <p>Manage employee dashboard roles, system access credentials, and portal activity.</p>
             </div>
             <button

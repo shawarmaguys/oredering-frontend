@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLocationFilter } from '../../context/LocationFilterContext';
+import { LocationBadge } from './LocationBadge';
 import { useStockRecords, StockRecord } from '../../context/ReportsContext';
 
 export default function WorkerDashboard() {
@@ -11,7 +12,7 @@ export default function WorkerDashboard() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { selectedLocationId, setSelectedLocationId, allowedLocations } = useLocationFilter();
+  const { selectedLocationId, selectedLocation, setSelectedLocationId, allowedLocations } = useLocationFilter();
 
   const handleStartSubmission = (recordId: string) => {
     router.push(`/dashboard?recordId=${recordId}`);
@@ -29,7 +30,7 @@ export default function WorkerDashboard() {
       <div className="page-header-sticky">
         <div className="page-header" style={{ marginBottom: 0 }}>
           <div className="page-header-text">
-            <h1>{t('store_portal')}</h1>
+            <h1>{t('store_portal')} <LocationBadge /></h1>
             <p>{t('worker_desc')}</p>
           </div>
         </div>

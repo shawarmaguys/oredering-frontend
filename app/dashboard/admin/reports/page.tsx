@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocations } from '../../../context/LocationsContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
 import { useReports, PurchaseOrder, StockRecord } from '../../../context/ReportsContext';
 
 export default function ReportsPage() {
   const router = useRouter();
   const { locations } = useLocations();
-  const { selectedLocationId } = useLocationFilter();
+  const { selectedLocationId, selectedLocation } = useLocationFilter();
   const [activeTab, setActiveTab] = useState<'pos' | 'stock'>('pos');
   const {
     purchaseOrders: pos,
@@ -70,7 +71,7 @@ export default function ReportsPage() {
           {/* Header */}
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Purchase Orders and Stock records</h1>
+              <h1>Purchase Orders & Stock Records <LocationBadge /></h1>
               <p>Verify kitchen stock sheets and authorize supplier purchase orders.</p>
             </div>
           </div>

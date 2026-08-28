@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useVendors, Vendor } from '../../../context/VendorsContext';
 import { useLocations } from '../../../context/LocationsContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
 import { useAuth } from '../../../context/AuthContext';
 import { useItems } from '../../../context/ItemsContext';
 
@@ -20,7 +21,7 @@ export default function VendorsPage() {
   const { vendors, departments, vendorsLoading: loading, refreshVendors } = useVendors();
   const { refreshAllItems } = useItems();
   const { locations } = useLocations();
-  const { selectedLocationId } = useLocationFilter();
+  const { selectedLocationId, selectedLocation } = useLocationFilter();
 
   const activeLocationObj = locations.find((l) => l.id === selectedLocationId);
 
@@ -250,7 +251,7 @@ export default function VendorsPage() {
           {/* Header */}
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Vendors & Suppliers</h1>
+              <h1>Vendors & Suppliers <LocationBadge /></h1>
               <p>Manage wholesale vendor accounts, Slack channels, and contact information.</p>
             </div>
             {isAdmin && (

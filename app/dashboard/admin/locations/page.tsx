@@ -6,8 +6,24 @@ import AdminGuard from '../../components/AdminGuard';
 import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useLocations, StoreLocation } from '../../../context/LocationsContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
+export const LOCATION_COLORS = [
+  { hex: '#ef4444', label: 'Crimson' },
+  { hex: '#f97316', label: 'Orange' },
+  { hex: '#f59e0b', label: 'Amber' },
+  { hex: '#10b981', label: 'Emerald' },
+  { hex: '#14b8a6', label: 'Teal' },
+  { hex: '#06b6d4', label: 'Cyan' },
+  { hex: '#3b82f6', label: 'Blue' },
+  { hex: '#6366f1', label: 'Indigo' },
+  { hex: '#8b5cf6', label: 'Purple' },
+  { hex: '#ec4899', label: 'Pink' },
+];
+
 export default function LocationsPage() {
   const { locations, locationsLoading: loading, refreshLocations } = useLocations();
+  const { selectedLocation: activeFilterLocation } = useLocationFilter();
 
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
@@ -20,6 +36,7 @@ export default function LocationsPage() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [color, setColor] = useState('#3b82f6');
   const [slackBotToken, setSlackBotToken] = useState('');
   const [slackUserToken, setSlackUserToken] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -31,6 +48,7 @@ export default function LocationsPage() {
   const [editAddress, setEditAddress] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editColor, setEditColor] = useState('#3b82f6');
   const [editSlackBotToken, setEditSlackBotToken] = useState('');
   const [editSlackUserToken, setEditSlackUserToken] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -228,11 +246,12 @@ export default function LocationsPage() {
     setError('');
 
     try {
-      await api.locations.create({ name, address, phone, email, slackBotToken, slackUserToken });
+      await api.locations.create({ name, address, phone, email, color, slackBotToken, slackUserToken });
       setName('');
       setAddress('');
       setPhone('');
       setEmail('');
+      setColor('#3b82f6');
       setSlackBotToken('');
       setSlackUserToken('');
       setShowModal(false);
@@ -256,6 +275,7 @@ export default function LocationsPage() {
         address: editAddress,
         phone: editPhone,
         email: editEmail,
+        color: editColor,
         slackBotToken: editSlackBotToken,
         slackUserToken: editSlackUserToken,
       });
@@ -284,7 +304,7 @@ export default function LocationsPage() {
           {/* Header */}
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Store Locations</h1>
+              <h1>Store Locations <LocationBadge /></h1>
               <p>Onboard and manage franchise store branches, contact credentials, and delivery directions.</p>
             </div>
             <div className='d-flex flex-column flex-md-row gap-5'>
@@ -446,24 +466,10 @@ export default function LocationsPage() {
                       justifyContent: 'space-between',
                       gap: '20px',
                       position: 'relative',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      borderLeft: `3px solid ${loc.color || '#3b82f6'}`,
                     }}
                   >
-                    {/* Accent element */}
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: '80px',
-                      height: '80px',
-                      background: 'var(--accent-subtle)',
-                      borderRadius: '50%',
-                      filter: 'blur(30px)',
-                      marginRight: '-20px',
-                      marginTop: '-20px',
-                      pointerEvents: 'none'
-                    }} />
-
                     <div style={{ position: 'relative', zIndex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
@@ -471,15 +477,15 @@ export default function LocationsPage() {
                             width: '32px',
                             height: '32px',
                             borderRadius: 'var(--radius-md)',
-                            backgroundColor: 'var(--bg-sunken)',
-                            border: '1px solid var(--border-subtle)',
+                            backgroundColor: loc.color ? `${loc.color}15` : 'var(--bg-sunken)',
+                            border: `1px solid ${loc.color ? `${loc.color}40` : 'var(--border-subtle)'}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'var(--accent)'
+                            color: loc.color || 'var(--accent)'
                           }}>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 01-6 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                             </svg>
                           </div>
@@ -497,6 +503,7 @@ export default function LocationsPage() {
                               setEditAddress(loc.address);
                               setEditPhone(loc.phone);
                               setEditEmail(loc.email);
+                              setEditColor(loc.color || '#3b82f6');
                               setEditSlackBotToken(loc.slackBotToken || '');
                               setEditSlackUserToken(loc.slackUserToken || '');
                               setError('');
@@ -611,7 +618,21 @@ export default function LocationsPage() {
                     <tbody>
                       {filtered.map(loc => (
                         <tr key={loc.id}>
-                          <td style={{ paddingLeft: 24, fontWeight: 600, color: 'var(--text-primary)' }}>{loc.name}</td>
+                          <td style={{ paddingLeft: 24, fontWeight: 600, color: 'var(--text-primary)' }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                backgroundColor: loc.color || '#3b82f6',
+                                marginRight: 10,
+                                verticalAlign: 'middle',
+                                boxShadow: `0 0 6px ${loc.color || '#3b82f6'}`,
+                              }}
+                            />
+                            {loc.name}
+                          </td>
                           <td style={{ color: 'var(--text-secondary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.address || '—'}</td>
                           <td>{loc.phone || '—'}</td>
                           <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.email || '—'}</td>
@@ -619,7 +640,7 @@ export default function LocationsPage() {
                           <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{loc.createdAt ? new Date(loc.createdAt).toLocaleDateString() : '—'}</td>
                           <td style={{ textAlign: 'right', paddingRight: 24 }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditColor(loc.color || '#3b82f6'); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
                               <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDuplicateClick(loc)}>Duplicate</button>
                               <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDeleteLocClick(loc.id, loc.name)} style={{ color: 'var(--error)' }}>Delete</button>
                             </div>
@@ -716,6 +737,65 @@ export default function LocationsPage() {
                     className="input"
                     placeholder="e.g. 555 Broadway, San Diego, CA 92101"
                   />
+                </div>
+
+                <div>
+                  <label className="label">Location Theme Color</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                    {LOCATION_COLORS.map(c => {
+                      const isSelected = (color || '#3b82f6').toLowerCase() === c.hex.toLowerCase();
+                      return (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => setColor(c.hex)}
+                          title={c.label}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            backgroundColor: c.hex,
+                            border: isSelected ? '2px solid var(--bg-elevated)' : '2px solid transparent',
+                            boxShadow: isSelected ? `0 0 0 2px ${c.hex}` : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                            padding: 0,
+                          }}
+                        >
+                          {isSelected && (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14, color: '#ffffff' }}>
+                              <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 011.04-.207z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                    <div style={{ height: 16, width: 1, backgroundColor: 'var(--border-subtle)', margin: '0 4px' }} />
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-tertiary)',
+                        fontWeight: 500,
+                      }}
+                      title="Custom Color"
+                    >
+                      <input
+                        type="color"
+                        value={color || '#3b82f6'}
+                        onChange={(e) => setColor(e.target.value)}
+                        style={{ width: 22, height: 22, padding: 0, border: 'none', background: 'none', cursor: 'pointer', borderRadius: '50%' }}
+                      />
+                      <span>Custom</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -848,6 +928,65 @@ export default function LocationsPage() {
                     rows={3}
                     className="input"
                   />
+                </div>
+
+                <div>
+                  <label className="label">Location Theme Color</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                    {LOCATION_COLORS.map(c => {
+                      const isSelected = (editColor || '#3b82f6').toLowerCase() === c.hex.toLowerCase();
+                      return (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => setEditColor(c.hex)}
+                          title={c.label}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            backgroundColor: c.hex,
+                            border: isSelected ? '2px solid var(--bg-elevated)' : '2px solid transparent',
+                            boxShadow: isSelected ? `0 0 0 2px ${c.hex}` : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                            transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                            padding: 0,
+                          }}
+                        >
+                          {isSelected && (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14, color: '#ffffff' }}>
+                              <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 011.04-.207z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                    <div style={{ height: 16, width: 1, backgroundColor: 'var(--border-subtle)', margin: '0 4px' }} />
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-tertiary)',
+                        fontWeight: 500,
+                      }}
+                      title="Custom Color"
+                    >
+                      <input
+                        type="color"
+                        value={editColor || '#3b82f6'}
+                        onChange={(e) => setEditColor(e.target.value)}
+                        style={{ width: 22, height: 22, padding: 0, border: 'none', background: 'none', cursor: 'pointer', borderRadius: '50%' }}
+                      />
+                      <span>Custom</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

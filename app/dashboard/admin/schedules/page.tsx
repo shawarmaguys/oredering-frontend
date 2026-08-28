@@ -8,6 +8,7 @@ import { useVendors } from '../../../context/VendorsContext';
 import { useLocations } from '../../../context/LocationsContext';
 import { useSchedules } from '../../../context/SchedulesContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
 
 // Location and Vendor types now come from shared contexts
 
@@ -61,7 +62,7 @@ export default function SchedulesPage() {
   const { vendors, vendorsLoading } = useVendors();
   const { locations, locationsLoading } = useLocations();
   const { schedules, schedulesLoading, refreshSchedules } = useSchedules();
-  const { selectedLocationId } = useLocationFilter();
+  const { selectedLocationId, selectedLocation } = useLocationFilter();
 
   const [error, setError] = useState('');
 
@@ -260,7 +261,7 @@ export default function SchedulesPage() {
           {/* Header */}
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Ordering Schedules & Triggers</h1>
+              <h1>Ordering Schedules & Triggers <LocationBadge /></h1>
               <p>Configure automated Slack notification schedules and multiple triggers for storefront stock audits.</p>
             </div>
             <button

@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLocationFilter } from '../../context/LocationFilterContext';
+import { LocationBadge } from './LocationBadge';
 import { useReports } from '../../context/ReportsContext';
 
 export default function ManagerDashboard() {
   const { pendingReviews, posLoading: loading } = useReports();
   const { t } = useLanguage();
-  const { selectedLocationId } = useLocationFilter();
+  const { selectedLocationId, selectedLocation } = useLocationFilter();
 
   const displayedReviews = pendingReviews.filter(
     (po) => selectedLocationId === 'all' || po.locationId === selectedLocationId
@@ -19,7 +20,7 @@ export default function ManagerDashboard() {
       <div className="page-header-sticky">
         <div className="page-header" style={{ marginBottom: 0 }}>
           <div className="page-header-text">
-            <h1>{t('manager_portal')}</h1>
+            <h1>{t('manager_portal')} <LocationBadge /></h1>
             <p>{t('manager_desc')}</p>
           </div>
         </div>

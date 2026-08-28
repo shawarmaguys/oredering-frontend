@@ -5,6 +5,8 @@ import Link from 'next/link';
 import AdminGuard from '../../components/AdminGuard';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useProductTypes, ProductType } from '../../../context/ProductTypesContext';
+import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { LocationBadge } from '../../components/LocationBadge';
 
 const DEFAULT_COLORS = [
   '#3b82f6', // Blue
@@ -25,6 +27,7 @@ export default function ProductTypesPage() {
     updateProductType,
     deleteProductType,
   } = useProductTypes();
+  const { selectedLocation } = useLocationFilter();
 
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -143,7 +146,7 @@ export default function ProductTypesPage() {
 
           <div className="page-header">
             <div className="page-header-text">
-              <h1>Product Categories</h1>
+              <h1>Product Categories <LocationBadge /></h1>
               <p>Configure product types & categories for grouping inventory items and filtering catalog listings.</p>
             </div>
             <button

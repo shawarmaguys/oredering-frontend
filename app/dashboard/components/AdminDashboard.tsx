@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { useLanguage } from '../../context/LanguageContext';
+import { useLocationFilter } from '../../context/LocationFilterContext';
+import { LocationBadge } from './LocationBadge';
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
+  const { selectedLocation } = useLocationFilter();
 
   const actions = [
     {
@@ -85,7 +88,7 @@ export default function AdminDashboard() {
       <div className="page-header-sticky">
         <div className="page-header" style={{ marginBottom: 0 }}>
           <div className="page-header-text">
-            <h1>{t('admin_portal')}</h1>
+            <h1>{t('admin_portal')} <LocationBadge /></h1>
             <p>{t('admin_desc')}</p>
           </div>
         </div>

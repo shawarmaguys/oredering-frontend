@@ -1,15 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useLocations } from './LocationsContext';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocations, StoreLocation } from './LocationsContext';
 import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'sg_selected_location';
 
 interface LocationFilterContextType {
   selectedLocationId: string; // 'all' or a location UUID
+  selectedLocation?: StoreLocation;
   setSelectedLocationId: (id: string) => void;
-  allowedLocations: { id: string; name: string }[];
+  allowedLocations: StoreLocation[];
 }
 
 const LocationFilterContext = createContext<LocationFilterContextType | undefined>(undefined);
@@ -19,7 +20,7 @@ export function LocationFilterProvider({ children }: { children: React.ReactNode
   const { user } = useAuth();
 
   // Derive the locations this user is allowed to see
-  const allowedLocations = React.useMemo(() => {
+  const allowedLocations = useMemo(() => {
     if (!user) return locations;
     // Workers & managers restricted by locationIds; admins see all
     if (user.role === 'ADMIN' || user.role === 'SUPER_MANAGER') return locations;
@@ -63,8 +64,12 @@ export function LocationFilterProvider({ children }: { children: React.ReactNode
     }
   }, []);
 
+  const selectedLocation = useMemo(() => {
+    return allowedLocations.find(l => l.id === selectedLocationId);
+  }, [allowedLocations, selectedLocationId]);
+
   return (
-    <LocationFilterContext.Provider value={{ selectedLocationId, setSelectedLocationId, allowedLocations }}>
+    <LocationFilterContext.Provider value={{ selectedLocationId, selectedLocation, setSelectedLocationId, allowedLocations }}>
       {children}
     </LocationFilterContext.Provider>
   );

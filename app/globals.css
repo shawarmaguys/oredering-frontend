@@ -919,6 +919,25 @@ code,
   }
 }
 
+@keyframes switchSlideDown {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(0.95);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.98);
+  }
+}
+
 .animate-fade-up {
   animation: fadeUp 240ms ease both;
 }
