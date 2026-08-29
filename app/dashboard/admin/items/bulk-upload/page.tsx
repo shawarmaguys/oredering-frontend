@@ -58,7 +58,7 @@ export default function BulkUploadItemsPage() {
   const { selectedLocationId } = useLocationFilter();
 
   const [vendors, setVendors] = useState<any[]>([]);
-  const [selectedVendorId, setSelectedVendorId] = useState<string>('');
+  const [selectedVendorId, setSelectedVendorId] = useState<string>('all');
   const [downloadingVendorCsv, setDownloadingVendorCsv] = useState<boolean>(false);
 
   const [file, setFile] = useState<File | null>(null);
@@ -84,9 +84,9 @@ export default function BulkUploadItemsPage() {
         const data = await api.vendors.list(activeLocationId);
         setVendors(data || []);
         if (data && data.length > 0) {
-          setSelectedVendorId((prev) => (prev && data.some((v: any) => v.id === prev) ? prev : data[0].id));
+          setSelectedVendorId((prev) => (prev && (prev === 'all' || data.some((v: any) => v.id === prev)) ? prev : 'all'));
         } else {
-          setSelectedVendorId('');
+          setSelectedVendorId('all');
         }
       } catch (err: any) {
         console.error('Failed to load vendors for selection', err);
@@ -95,29 +95,30 @@ export default function BulkUploadItemsPage() {
     loadVendors();
   }, [selectedLocationId]);
 
-  // Download vendor specific pre-populated CSV
+  // Download vendor specific or all vendors pre-populated CSV
   const handleDownloadVendorCsv = async () => {
     if (!selectedVendorId) {
       setError('Please select a vendor to download products.');
       return;
     }
 
-    const vendorObj = vendors.find((v) => v.id === selectedVendorId);
-    const vendorName = vendorObj?.displayName || vendorObj?.name || 'Vendor';
+    const isAllVendors = selectedVendorId === 'all';
+    const vendorObj = isAllVendors ? null : vendors.find((v) => v.id === selectedVendorId);
+    const vendorName = isAllVendors ? 'All Vendors' : (vendorObj?.displayName || vendorObj?.name || 'Vendor');
 
     setDownloadingVendorCsv(true);
     setError('');
 
     try {
       const res = await api.items.list({
-        vendorId: selectedVendorId,
+        vendorId: isAllVendors ? undefined : selectedVendorId,
         locationId: activeLocationId,
         limit: 10000,
       });
 
       const itemsList = res?.data || [];
-      const csvContent = generateVendorProductsCsv(itemsList, vendorName);
-      const sanitizedVendorName = vendorName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const csvContent = generateVendorProductsCsv(itemsList, isAllVendors ? 'All Vendors' : vendorName);
+      const sanitizedVendorName = isAllVendors ? 'all_vendors' : vendorName.toLowerCase().replace(/[^a-z0-9]/g, '_');
       const locationSlug = activeLocation ? activeLocation.name.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'all_locations';
       const filename = `${sanitizedVendorName}_products_${locationSlug}.csv`;
 
@@ -351,7 +352,7 @@ export default function BulkUploadItemsPage() {
                       Step 1: Download Vendor Product CSV
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-                      Select a vendor to download all enabled products with their system Product IDs for editing or adding new products.
+                      Select a specific vendor or "All Vendors" to download product data with system Product IDs for editing or adding new products.
                     </p>
                   </div>
 
@@ -362,15 +363,12 @@ export default function BulkUploadItemsPage() {
                       className="form-control"
                       style={{ minWidth: '220px', padding: '7px 12px', fontSize: '0.875rem' }}
                     >
-                      {vendors.length === 0 ? (
-                        <option value="">No Vendors Found</option>
-                      ) : (
-                        vendors.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.displayName || v.name}
-                          </option>
-                        ))
-                      )}
+                      <option value="all">All Vendors</option>
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.displayName || v.name}
+                        </option>
+                      ))}
                     </select>
 
                     <button
@@ -383,7 +381,11 @@ export default function BulkUploadItemsPage() {
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                       </svg>
-                      {downloadingVendorCsv ? 'Generating CSV...' : 'Download Vendor Products CSV'}
+                      {downloadingVendorCsv
+                        ? 'Generating CSV...'
+                        : selectedVendorId === 'all'
+                        ? 'Download All Vendors CSV'
+                        : 'Download Vendor Products CSV'}
                     </button>
 
                     <button
