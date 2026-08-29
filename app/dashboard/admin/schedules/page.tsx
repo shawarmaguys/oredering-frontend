@@ -106,7 +106,7 @@ export default function SchedulesPage() {
   const handleOpenCreateModal = () => {
     setEditingGroup(null);
     setError('');
-    const defaultLoc = locations[0]?.id || '';
+    const defaultLoc = selectedLocationId !== 'all' ? selectedLocationId : (locations[0]?.id || '');
     const defaultVendor = (vendors[0] as any)?.id || '';
     setLocationId(defaultLoc);
     setVendorId(defaultVendor);
@@ -720,40 +720,21 @@ export default function SchedulesPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmitGroup} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                      <label className="label" htmlFor="sched-loc">Store Location *</label>
-                      <select
-                        id="sched-loc"
-                        value={locationId}
-                        disabled={!!editingGroup}
-                        onChange={(e) => setLocationId(e.target.value)}
-                        className="input"
-                      >
-                        {locations.map((loc) => (
-                          <option key={loc.id} value={loc.id}>
-                            {loc.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="label" htmlFor="sched-vendor">Supplier/Vendor *</label>
-                      <select
-                        id="sched-vendor"
-                        value={vendorId}
-                        disabled={!!editingGroup}
-                        onChange={(e) => setVendorId(e.target.value)}
-                        className="input"
-                      >
-                        {vendors.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.displayName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label className="label" htmlFor="sched-vendor">Supplier/Vendor *</label>
+                    <select
+                      id="sched-vendor"
+                      value={vendorId}
+                      disabled={!!editingGroup}
+                      onChange={(e) => setVendorId(e.target.value)}
+                      className="input"
+                    >
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.displayName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
