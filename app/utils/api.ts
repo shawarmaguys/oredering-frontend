@@ -179,6 +179,8 @@ export const api = {
     trigger: (id: string) => request<any>(`/schedules/${id}/trigger`, { method: 'POST' }),
     deactivateLocation: (locationId: string) => request<any>(`/schedules/location/${locationId}/deactivate`, { method: 'PUT' }),
     activateLocation: (locationId: string) => request<any>(`/schedules/location/${locationId}/activate`, { method: 'PUT' }),
+    deactivateVendor: (vendorId: string, locationId?: string) => request<any>(`/schedules/vendor/${vendorId}/deactivate`, { method: 'PUT', body: JSON.stringify({ locationId }) }),
+    activateVendor: (vendorId: string, locationId?: string) => request<any>(`/schedules/vendor/${vendorId}/activate`, { method: 'PUT', body: JSON.stringify({ locationId }) }),
   },
   translations: {
     list: () => request<any[]>('/translations'),
