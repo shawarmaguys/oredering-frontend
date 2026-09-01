@@ -177,6 +177,8 @@ export const api = {
     update: (id: string, data: any) => request<any>(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request<any>(`/schedules/${id}`, { method: 'DELETE' }),
     trigger: (id: string) => request<any>(`/schedules/${id}/trigger`, { method: 'POST' }),
+    deactivateLocation: (locationId: string) => request<any>(`/schedules/location/${locationId}/deactivate`, { method: 'PUT' }),
+    activateLocation: (locationId: string) => request<any>(`/schedules/location/${locationId}/activate`, { method: 'PUT' }),
   },
   translations: {
     list: () => request<any[]>('/translations'),

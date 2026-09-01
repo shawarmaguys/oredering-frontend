@@ -95,11 +95,56 @@ export default function SchedulesPage() {
   const [triggeringId, setTriggeringId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Deactivate Location Modal State
+  const [deactivateLocationTarget, setDeactivateLocationTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deactivatingLocation, setDeactivatingLocation] = useState(false);
+  const [showLocationSelectModal, setShowLocationSelectModal] = useState(false);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       setViewMode('tile');
     }
   }, []);
+
+  const handleConfirmDeactivateLocation = async () => {
+    if (!deactivateLocationTarget) return;
+    setDeactivatingLocation(true);
+    setError('');
+    try {
+      await api.schedules.deactivateLocation(deactivateLocationTarget.id);
+      setSuccessMessage(`All triggers for ${deactivateLocationTarget.name} have been deactivated.`);
+      setTimeout(() => setSuccessMessage(''), 5000);
+      setDeactivateLocationTarget(null);
+      await refreshSchedules();
+    } catch (err: any) {
+      setError(err.message || 'Failed to deactivate location triggers.');
+    } finally {
+      setDeactivatingLocation(false);
+    }
+  };
+
+  const handleConfirmActivateLocation = async (loc: { id: string; name: string }) => {
+    setError('');
+    try {
+      await api.schedules.activateLocation(loc.id);
+      setSuccessMessage(`All triggers for ${loc.name} have been activated.`);
+      setTimeout(() => setSuccessMessage(''), 5000);
+      await refreshSchedules();
+    } catch (err: any) {
+      setError(err.message || 'Failed to activate location triggers.');
+    }
+  };
+
+  const handleHeaderDeactivateClick = () => {
+    if (selectedLocationId !== 'all') {
+      const loc = locations.find(l => l.id === selectedLocationId);
+      if (loc) {
+        setDeactivateLocationTarget({ id: loc.id, name: loc.name });
+      }
+    } else {
+      setShowLocationSelectModal(true);
+    }
+  };
 
   // schedules data comes from SchedulesContext — no local fetch needed
 
@@ -264,16 +309,30 @@ export default function SchedulesPage() {
               <h1>Ordering Schedules & Triggers <LocationBadge /></h1>
               <p>Configure automated Slack notification schedules and multiple triggers for storefront stock audits.</p>
             </div>
-            <button
-              type="button"
-              onClick={handleOpenCreateModal}
-              className="btn btn-primary"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Add New Trigger
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={handleHeaderDeactivateClick}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#d97706', borderColor: 'var(--border-default)' }}
+                title="Deactivate triggers for a location"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9v6m-4.5-6v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Deactivate Triggers
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="btn btn-primary"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Add New Trigger
+              </button>
+            </div>
           </div>
 
           {error && !showModal && (
@@ -513,6 +572,27 @@ export default function SchedulesPage() {
                           >
                             ✏️ Edit Triggers
                           </button>
+                          {group.items.some(s => s.isActive) ? (
+                            <button
+                              type="button"
+                              onClick={() => setDeactivateLocationTarget({ id: group.locationId, name: group.locationName })}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '6px 10px', fontSize: '0.8125rem', color: '#d97706', fontWeight: 500 }}
+                              title="Deactivate all triggers for this location"
+                            >
+                              ⏸️ Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmActivateLocation({ id: group.locationId, name: group.locationName })}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '6px 10px', fontSize: '0.8125rem', color: 'var(--green)', fontWeight: 500 }}
+                              title="Activate all triggers for this location"
+                            >
+                              ▶️ Activate
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleDeleteGroup(group)}
@@ -654,6 +734,27 @@ export default function SchedulesPage() {
                                 >
                                   ✏️ Edit Triggers
                                 </button>
+                                {group.items.some(s => s.isActive) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeactivateLocationTarget({ id: group.locationId, name: group.locationName })}
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#d97706', fontWeight: 500 }}
+                                    title="Deactivate location triggers"
+                                  >
+                                    ⏸️ Deactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConfirmActivateLocation({ id: group.locationId, name: group.locationName })}
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--green)', fontWeight: 500 }}
+                                    title="Activate location triggers"
+                                  >
+                                    ▶️ Activate
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteGroup(group)}
@@ -864,6 +965,140 @@ export default function SchedulesPage() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Deactivate Location Confirmation Modal */}
+        {deactivateLocationTarget && (
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm" style={{ maxWidth: '440px' }}>
+              <button
+                type="button"
+                onClick={() => setDeactivateLocationTarget(null)}
+                className="modal-close"
+                aria-label="Close modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="modal-header">
+                <h2 style={{ color: '#d97706', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>⏸️</span> Deactivate Triggers
+                </h2>
+                <p style={{ marginTop: '8px' }}>
+                  Are you sure you want to deactivate all ordering triggers for <strong>{deactivateLocationTarget.name}</strong>?
+                </p>
+              </div>
+
+              <div style={{ padding: '12px 16px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                Automated Slack notification schedules for this store location will be paused until reactivated.
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeactivateLocationTarget(null)}
+                  className="btn btn-secondary"
+                  disabled={deactivatingLocation}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeactivateLocation}
+                  className="btn btn-primary"
+                  style={{ backgroundColor: '#d97706', borderColor: '#b45309' }}
+                  disabled={deactivatingLocation}
+                >
+                  {deactivatingLocation ? 'Deactivating...' : 'Confirm Deactivation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Location Selector Modal for Header Deactivate Action */}
+        {showLocationSelectModal && (
+          <div className="modal-backdrop">
+            <div className="modal-panel modal-panel-sm" style={{ maxWidth: '480px' }}>
+              <button
+                type="button"
+                onClick={() => setShowLocationSelectModal(false)}
+                className="modal-close"
+                aria-label="Close modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="modal-header">
+                <h2>Deactivate Triggers by Location</h2>
+                <p>Select a storefront location to pause its automated ordering schedules & triggers.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                {locations.length === 0 ? (
+                  <div style={{ padding: '16px', color: 'var(--text-secondary)', textAlign: 'center' }}>No locations found.</div>
+                ) : (
+                  locations.map((loc) => {
+                    const activeCount = schedules.filter(s => s.locationId === loc.id && s.isActive).length;
+                    const totalCount = schedules.filter(s => s.locationId === loc.id).length;
+                    return (
+                      <div
+                        key={loc.id}
+                        style={{
+                          padding: '12px 16px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-default)',
+                          backgroundColor: 'var(--bg-surface)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'block' }}>{loc.name}</strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {activeCount} active trigger{activeCount === 1 ? '' : 's'} ({totalCount} total)
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {activeCount > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowLocationSelectModal(false);
+                                setDeactivateLocationTarget({ id: loc.id, name: loc.name });
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ color: '#d97706', fontSize: '0.8125rem' }}
+                            >
+                              ⏸️ Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowLocationSelectModal(false);
+                                handleConfirmActivateLocation({ id: loc.id, name: loc.name });
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ color: 'var(--green)', fontSize: '0.8125rem' }}
+                              disabled={totalCount === 0}
+                            >
+                              ▶️ Activate
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         )}
