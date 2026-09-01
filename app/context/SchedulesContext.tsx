@@ -76,11 +76,11 @@ export function SchedulesProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await api.schedules.list();
         setSchedules(data.map(normalise));
-        initializedRef.current = true;
-        setIsInitialized(true);
       } catch (err) {
         console.error('[SchedulesContext] Failed to load schedules:', err);
       } finally {
+        initializedRef.current = true;
+        setIsInitialized(true);
         setSchedulesLoading(false);
         inFlightPromise.current = null;
       }

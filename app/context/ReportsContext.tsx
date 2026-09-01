@@ -132,10 +132,15 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     if (inFlightPromise.current) return inFlightPromise.current;
 
     const promise = (async () => {
-      await Promise.all([fetchPurchaseOrders(), fetchStockRecords()]);
-      initializedRef.current = true;
-      setIsInitialized(true);
-      inFlightPromise.current = null;
+      try {
+        await Promise.all([fetchPurchaseOrders(), fetchStockRecords()]);
+      } catch (err) {
+        console.error('[ReportsContext] Failed to load reports:', err);
+      } finally {
+        initializedRef.current = true;
+        setIsInitialized(true);
+        inFlightPromise.current = null;
+      }
     })();
 
     inFlightPromise.current = promise;

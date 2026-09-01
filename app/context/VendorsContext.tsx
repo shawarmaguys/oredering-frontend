@@ -89,10 +89,11 @@ export function VendorsProvider({ children }: { children: React.ReactNode }) {
         cacheMap.current.set(locId, vendorsData);
         setVendors(vendorsData);
         setDepartments(deptsData);
-        setIsInitialized(true);
       } catch (err) {
         console.error('[VendorsContext] Failed to load vendors/departments:', err);
+        cacheMap.current.set(locId, []);
       } finally {
+        setIsInitialized(true);
         setVendorsLoading(false);
         inFlightPromise.current = null;
       }

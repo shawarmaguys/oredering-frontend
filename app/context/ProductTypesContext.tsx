@@ -53,11 +53,11 @@ export function ProductTypesProvider({ children }: { children: React.ReactNode }
       try {
         const data = await api.productTypes.list(true);
         setProductTypes(data || []);
-        initializedRef.current = true;
-        setIsInitialized(true);
       } catch (err) {
         console.error('[ProductTypesContext] Failed to load product types:', err);
       } finally {
+        initializedRef.current = true;
+        setIsInitialized(true);
         setProductTypesLoading(false);
         inFlightPromise.current = null;
       }

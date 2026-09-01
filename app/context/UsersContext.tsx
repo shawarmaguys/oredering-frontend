@@ -71,17 +71,14 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
           locationIds: u.locationIds || [],
         }));
         setUsers(mapped);
-        initializedRef.current = true;
-        setIsInitialized(true);
       } catch (err: any) {
-        if (err?.message?.includes('Forbidden')) {
-          setUsers([]);
-          initializedRef.current = true;
-          setIsInitialized(true);
-        } else {
+        if (!err?.message?.includes('Forbidden')) {
           console.error('[UsersContext] Failed to load users:', err);
         }
+        setUsers([]);
       } finally {
+        initializedRef.current = true;
+        setIsInitialized(true);
         setUsersLoading(false);
         inFlightPromise.current = null;
       }

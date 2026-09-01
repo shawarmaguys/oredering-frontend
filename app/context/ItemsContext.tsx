@@ -70,12 +70,13 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
 
         cacheMap.current.set(locId, combined);
         setAllItems(combined);
+      } catch (err) {
+        console.error('[ItemsContext] Failed to load items cache:', err);
+        cacheMap.current.set(locId, []);
+      } finally {
         setItemsReady(true);
         initializedRef.current = true;
         setIsInitialized(true);
-      } catch (err) {
-        console.error('[ItemsContext] Failed to load items cache:', err);
-      } finally {
         setItemsLoading(false);
         inFlightPromise.current = null;
       }

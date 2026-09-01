@@ -51,11 +51,11 @@ export function LocationsProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await api.locations.list();
         setLocations(data);
-        initializedRef.current = true;
-        setIsInitialized(true);
       } catch (err) {
         console.error('[LocationsContext] Failed to load locations:', err);
       } finally {
+        initializedRef.current = true;
+        setIsInitialized(true);
         setLocationsLoading(false);
         inFlightPromise.current = null;
       }
