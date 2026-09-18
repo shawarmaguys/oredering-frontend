@@ -20,7 +20,19 @@ function DashboardContent() {
 
   if (recordId) {
     return (
-      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
+      <div
+        style={{
+          maxWidth: '860px',
+          width: '100%',
+          height: '100%',
+          minHeight: 0,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          padding: '4px 4px 8px 4px',
+        }}
+      >
         <StockTakeForm recordId={recordId} onClose={handleClose} />
       </div>
     );

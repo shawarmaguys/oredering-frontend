@@ -148,9 +148,16 @@ export default function WorkerDashboard() {
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {t('pending_stock_audit')}: {t(draft.location?.name || 'Store Location', undefined, draft.location?.name)}
-                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                            {t('pending_stock_audit')}: {t(draft.location?.name || 'Store Location', undefined, draft.location?.name)}
+                          </h3>
+                          {(draft.vendorName || draft.vendor?.displayName) && (
+                            <span className="badge badge-teal" style={{ fontSize: '0.7rem', padding: '2px 8px', fontWeight: 700 }}>
+                              🏢 {draft.vendorName || draft.vendor?.displayName}
+                            </span>
+                          )}
+                        </div>
                         <span className="badge badge-amber" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
                           <span className="badge-dot" />
                           {t('awaiting_count')}
@@ -184,9 +191,16 @@ export default function WorkerDashboard() {
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {t('submitted_audit')}: {t(comp.location?.name || 'Store Location', undefined, comp.location?.name)}
-                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                            {t('submitted_audit')}: {t(comp.location?.name || 'Store Location', undefined, comp.location?.name)}
+                          </h3>
+                          {(comp.vendorName || comp.vendor?.displayName) && (
+                            <span className="badge badge-teal" style={{ fontSize: '0.7rem', padding: '2px 8px', fontWeight: 700 }}>
+                              🏢 {comp.vendorName || comp.vendor?.displayName}
+                            </span>
+                          )}
+                        </div>
                         <span className="badge badge-green" style={{ alignSelf: 'flex-start', marginTop: '2px' }}>
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: 12, height: 12 }}>
                             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />

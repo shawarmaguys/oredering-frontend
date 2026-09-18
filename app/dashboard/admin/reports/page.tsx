@@ -289,7 +289,12 @@ export default function ReportsPage() {
           (() => {
             const filtered = stockRecords.filter(sr => {
               const q = search.toLowerCase();
-              if (q && !sr.location?.name?.toLowerCase().includes(q) && !sr.submittedBy?.toLowerCase().includes(q)) return false;
+              if (
+                q &&
+                !sr.location?.name?.toLowerCase().includes(q) &&
+                !sr.submittedBy?.toLowerCase().includes(q) &&
+                !(sr.vendorName || sr.vendor?.displayName)?.toLowerCase().includes(q)
+              ) return false;
               if (selectedLocationId !== 'all' && sr.locationId !== selectedLocationId) return false;
               return true;
             }).sort((a, b) => {
@@ -339,6 +344,13 @@ export default function ReportsPage() {
                         <div>
                           <span className="mono" style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)' }}>ID: {sr.id.substring(0, 8)}...</span>
                           <h4 style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>{sr.location?.name || 'Store Location'}</h4>
+                          {(sr.vendorName || sr.vendor?.displayName) && (
+                            <div style={{ marginBottom: '6px' }}>
+                              <span className="badge badge-teal" style={{ fontSize: '0.7rem', padding: '2px 8px', fontWeight: 700 }}>
+                                🏢 {sr.vendorName || sr.vendor?.displayName}
+                              </span>
+                            </div>
+                          )}
                           <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                             Submitted by: <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{sr.submittedBy || 'Worker'}</strong>
                           </span>
@@ -370,6 +382,7 @@ export default function ReportsPage() {
                     <tr>
                       <th style={{ paddingLeft: '24px' }}>Record ID</th>
                       <th onClick={() => handleSort('location')} style={{ cursor: 'pointer', userSelect: 'none' }}>Store Location {sortColumn === 'location' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                      <th>Vendor</th>
                       <th onClick={() => handleSort('submittedBy')} style={{ cursor: 'pointer', userSelect: 'none' }}>Submitted By {sortColumn === 'submittedBy' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                       <th onClick={() => handleSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>Status {sortColumn === 'status' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                       <th onClick={() => handleSort('submittedAt')} style={{ textAlign: 'right', paddingRight: '24px', cursor: 'pointer', userSelect: 'none' }}>Timestamp {sortColumn === 'submittedAt' ? (sortDir === 'asc' ? '▲' : '▼') : ''}</th>
@@ -380,6 +393,15 @@ export default function ReportsPage() {
                       <tr key={sr.id} onClick={() => router.push(`/dashboard/admin/reports/stock-record/${sr.id}`)} style={{ cursor: 'pointer' }} className="card-hover">
                         <td className="mono" style={{ paddingLeft: '24px', fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{sr.id.substring(0, 8)}</td>
                         <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{sr.location?.name || 'Store Location'}</td>
+                        <td>
+                          {(sr.vendorName || sr.vendor?.displayName) ? (
+                            <span className="badge badge-teal" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                              {sr.vendorName || sr.vendor?.displayName}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem' }}>—</span>
+                          )}
+                        </td>
                         <td>{sr.submittedBy || 'Worker'}</td>
                         <td>
                           <span className={`badge ${sr.isCompleted ? 'badge-success' : 'badge-amber'}`}>

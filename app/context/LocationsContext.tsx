@@ -20,6 +20,7 @@ export interface StoreLocation {
   slackBotToken?: string;
   slackUserToken?: string;
   color?: string;
+  bohEnabled?: boolean;
   createdAt: string;
 }
 

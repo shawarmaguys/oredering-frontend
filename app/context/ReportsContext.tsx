@@ -42,6 +42,12 @@ export interface StockRecord {
     id?: string;
     name: string;
   };
+  vendor?: {
+    id?: string;
+    displayName?: string;
+    name?: string;
+  } | null;
+  vendorName?: string;
   submittedBy: string;
   slackMessageTs?: string;
   submittedAt: string;
@@ -114,6 +120,8 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
         id: sr.id,
         locationId: sr.locationId || sr.location_id,
         location: sr.location,
+        vendor: sr.vendor || sr.purchaseOrders?.[0]?.vendor || sr.items?.[0]?.item?.vendor || null,
+        vendorName: sr.vendor?.displayName || sr.vendor?.name || sr.purchaseOrders?.[0]?.vendor?.displayName || sr.items?.[0]?.item?.vendor?.displayName || undefined,
         submittedBy: sr.submittedBy || sr.submitted_by || 'Worker',
         slackMessageTs: sr.slackMessageTs || sr.slack_message_ts,
         submittedAt: sr.submittedAt || sr.submitted_at,

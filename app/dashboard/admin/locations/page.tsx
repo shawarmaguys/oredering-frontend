@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { useLocations, StoreLocation } from '../../../context/LocationsContext';
 import { useLocationFilter } from '../../../context/LocationFilterContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { LocationBadge } from '../../components/LocationBadge';
 export const LOCATION_COLORS = [
   { hex: '#ef4444', label: 'Crimson' },
@@ -24,6 +25,7 @@ export const LOCATION_COLORS = [
 export default function LocationsPage() {
   const { locations, locationsLoading: loading, refreshLocations } = useLocations();
   const { selectedLocation: activeFilterLocation } = useLocationFilter();
+  const { t } = useLanguage();
 
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<'tile' | 'list'>('list');
@@ -37,6 +39,7 @@ export default function LocationsPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [color, setColor] = useState('#3b82f6');
+  const [bohEnabled, setBohEnabled] = useState(true);
   const [slackBotToken, setSlackBotToken] = useState('');
   const [slackUserToken, setSlackUserToken] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -49,6 +52,7 @@ export default function LocationsPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editColor, setEditColor] = useState('#3b82f6');
+  const [editBohEnabled, setEditBohEnabled] = useState(true);
   const [editSlackBotToken, setEditSlackBotToken] = useState('');
   const [editSlackUserToken, setEditSlackUserToken] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -243,12 +247,13 @@ export default function LocationsPage() {
     setError('');
 
     try {
-      await api.locations.create({ name, address, phone, email, color, slackBotToken, slackUserToken });
+      await api.locations.create({ name, address, phone, email, color, bohEnabled, slackBotToken, slackUserToken });
       setName('');
       setAddress('');
       setPhone('');
       setEmail('');
       setColor('#3b82f6');
+      setBohEnabled(true);
       setSlackBotToken('');
       setSlackUserToken('');
       setShowModal(false);
@@ -273,6 +278,7 @@ export default function LocationsPage() {
         phone: editPhone,
         email: editEmail,
         color: editColor,
+        bohEnabled: editBohEnabled,
         slackBotToken: editSlackBotToken,
         slackUserToken: editSlackUserToken,
       });
@@ -501,6 +507,7 @@ export default function LocationsPage() {
                               setEditPhone(loc.phone);
                               setEditEmail(loc.email);
                               setEditColor(loc.color || '#3b82f6');
+                              setEditBohEnabled(loc.bohEnabled !== undefined ? loc.bohEnabled : true);
                               setEditSlackBotToken(loc.slackBotToken || '');
                               setEditSlackUserToken(loc.slackUserToken || '');
                               setError('');
@@ -567,6 +574,15 @@ export default function LocationsPage() {
                               Slack: {loc.slackBotToken && loc.slackUserToken ? 'Configured' : 'Not configured'}
                             </span>
                           </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>📋</span>
+                            <span style={{
+                              color: loc.bohEnabled === false ? '#f59e0b' : 'var(--text-secondary)',
+                              fontWeight: loc.bohEnabled === false ? '600' : 'normal',
+                            }}>
+                              Stock Count: {loc.bohEnabled === false ? 'FOH Only' : 'BOH + FOH'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -629,6 +645,11 @@ export default function LocationsPage() {
                               }}
                             />
                             {loc.name}
+                            {loc.bohEnabled === false && (
+                              <span className="badge badge-amber" style={{ marginLeft: 8, fontSize: '0.6875rem' }}>
+                                FOH Only
+                              </span>
+                            )}
                           </td>
                           <td style={{ color: 'var(--text-secondary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc.address || '—'}</td>
                           <td>{loc.phone || '—'}</td>
@@ -637,7 +658,7 @@ export default function LocationsPage() {
                           <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{loc.createdAt ? new Date(loc.createdAt).toLocaleDateString() : '—'}</td>
                           <td style={{ textAlign: 'right', paddingRight: 24 }}>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditColor(loc.color || '#3b82f6'); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
+                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedLocation(loc); setEditName(loc.name); setEditAddress(loc.address); setEditPhone(loc.phone); setEditEmail(loc.email); setEditColor(loc.color || '#3b82f6'); setEditBohEnabled(loc.bohEnabled !== undefined ? loc.bohEnabled : true); setEditSlackBotToken(loc.slackBotToken || ''); setEditSlackUserToken(loc.slackUserToken || ''); setError(''); setShowEditModal(true); }}>Edit</button>
                               <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDuplicateClick(loc)}>Duplicate</button>
                               <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDeleteLocClick(loc.id, loc.name)} style={{ color: 'var(--error)' }}>Delete</button>
                             </div>
@@ -793,6 +814,62 @@ export default function LocationsPage() {
                       <span>Custom</span>
                     </label>
                   </div>
+                </div>
+
+                <div style={{
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--bg-sunken)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}>
+                  <div>
+                    <label htmlFor="create-boh-toggle" style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', cursor: 'pointer', display: 'block' }}>
+                      {t('boh_toggle_label')}
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', lineHeight: 1.4, display: 'block' }}>
+                      {t('boh_toggle_desc')}
+                    </span>
+                  </div>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', flexShrink: 0, cursor: 'pointer' }}>
+                    <input
+                      id="create-boh-toggle"
+                      type="checkbox"
+                      checked={bohEnabled}
+                      onChange={(e) => setBohEnabled(e.target.checked)}
+                      style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: bohEnabled ? 'var(--primary)' : 'var(--bg-surface)',
+                        borderRadius: '24px',
+                        border: '1px solid ' + (bohEnabled ? 'var(--primary)' : 'var(--border-subtle)'),
+                        transition: '0.2s ease',
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: 'absolute',
+                          height: '18px',
+                          width: '18px',
+                          left: bohEnabled ? '22px' : '2px',
+                          bottom: '2px',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '50%',
+                          transition: '0.2s ease',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        }}
+                      />
+                    </span>
+                  </label>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -984,6 +1061,62 @@ export default function LocationsPage() {
                       <span>Custom</span>
                     </label>
                   </div>
+                </div>
+
+                <div style={{
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--bg-sunken)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}>
+                  <div>
+                    <label htmlFor="edit-boh-toggle" style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', cursor: 'pointer', display: 'block' }}>
+                      {t('boh_toggle_label')}
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', lineHeight: 1.4, display: 'block' }}>
+                      {t('boh_toggle_desc')}
+                    </span>
+                  </div>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', flexShrink: 0, cursor: 'pointer' }}>
+                    <input
+                      id="edit-boh-toggle"
+                      type="checkbox"
+                      checked={editBohEnabled}
+                      onChange={(e) => setEditBohEnabled(e.target.checked)}
+                      style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: editBohEnabled ? 'var(--primary)' : 'var(--bg-surface)',
+                        borderRadius: '24px',
+                        border: '1px solid ' + (editBohEnabled ? 'var(--primary)' : 'var(--border-subtle)'),
+                        transition: '0.2s ease',
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: 'absolute',
+                          height: '18px',
+                          width: '18px',
+                          left: editBohEnabled ? '22px' : '2px',
+                          bottom: '2px',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '50%',
+                          transition: '0.2s ease',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        }}
+                      />
+                    </span>
+                  </label>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

@@ -27,7 +27,12 @@ interface StockRecord {
   locationId: string;
   location?: {
     name: string;
+    bohEnabled?: boolean;
   };
+  vendor?: {
+    displayName?: string;
+    name?: string;
+  } | null;
   submittedBy: string;
   submittedAt: string;
   isCompleted: boolean;
@@ -93,11 +98,24 @@ export default function StockRecordDetailsPage() {
               <div className="card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderTop: '3px solid var(--accent)' }}>
                 <div>
                   <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>RECORD ID: {record.id}</span>
-                  <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0 8px 0' }}>
-                    {record.location?.name || 'Store Location'} Stock Take
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0 8px 0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span>{record.location?.name || 'Store Location'} Stock Take</span>
+                    {record.vendor && (
+                      <span className="badge badge-teal" style={{ fontSize: '0.8125rem', padding: '4px 10px', fontWeight: 700 }}>
+                        🏢 {record.vendor.displayName || record.vendor.name}
+                      </span>
+                    )}
                   </h1>
 
-                  <div style={{ display: 'flex', gap: '24px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    {record.vendor && (
+                      <div>
+                        <span style={{ color: 'var(--text-tertiary)' }}>Vendor: </span>
+                        <strong style={{ color: 'var(--text-primary)' }}>
+                          {record.vendor.displayName || record.vendor.name}
+                        </strong>
+                      </div>
+                    )}
                     <div>
                       <span style={{ color: 'var(--text-tertiary)' }}>Submitted By: </span>
                       <strong style={{ color: 'var(--text-primary)' }}>{record.submittedBy || 'Unknown'}</strong>
@@ -113,10 +131,21 @@ export default function StockRecordDetailsPage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Status</span>
-                  <span className={`badge ${record.isCompleted ? 'badge-success' : 'badge-amber'}`} style={{ fontSize: '0.875rem', padding: '6px 12px' }}>
-                    <span className="badge-dot" />
-                    {record.isCompleted ? 'Completed' : 'In Progress'}
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {record.location?.bohEnabled === false ? (
+                      <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontSize: '0.75rem', padding: '4px 10px' }}>
+                        FOH Only
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ backgroundColor: 'rgba(217,119,6,0.1)', color: '#d97706', border: '1px solid rgba(217,119,6,0.3)', fontSize: '0.75rem', padding: '4px 10px' }}>
+                        BOH + FOH
+                      </span>
+                    )}
+                    <span className={`badge ${record.isCompleted ? 'badge-success' : 'badge-amber'}`} style={{ fontSize: '0.875rem', padding: '6px 12px' }}>
+                      <span className="badge-dot" />
+                      {record.isCompleted ? 'Completed' : 'In Progress'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -168,27 +197,82 @@ export default function StockRecordDetailsPage() {
                             )}
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px 16px', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                            <div>
-                              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', display: 'block' }}>Front Basic</span>
-                              <strong style={{ color: 'var(--text-primary)' }}>{item.frontBasicQuantity} {baseUnit}</strong>
-                            </div>
-                            {displayUnit && (
-                              <div>
-                                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', display: 'block' }}>Front Secondary</span>
-                                <strong style={{ color: 'var(--text-primary)' }}>{item.frontSecondaryQuantity} {displayUnit}</strong>
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {/* BOH Section (if enabled) */}
+                            {record.location?.bohEnabled !== false && (
+                              <div style={{
+                                padding: '8px 12px',
+                                backgroundColor: 'rgba(217,119,6,0.06)',
+                                border: '1px solid rgba(217,119,6,0.2)',
+                                borderRadius: 'var(--radius-md)',
+                                minWidth: '140px',
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', fontWeight: 700, color: '#d97706', marginBottom: '2px' }}>
+                                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#d97706' }} />
+                                  BOH (Kitchen)
+                                </div>
+                                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                  {displayUnit ? (
+                                    <>
+                                      <span>{item.secondaryQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{displayUnit}</small></span>
+                                      <span style={{ margin: '0 4px', color: 'var(--text-quaternary)' }}>+</span>
+                                      <span>{item.basicQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{baseUnit}</small></span>
+                                    </>
+                                  ) : (
+                                    <span>{item.basicQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{baseUnit}</small></span>
+                                  )}
+                                </div>
                               </div>
                             )}
-                            <div>
-                              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', display: 'block' }}>Main Basic</span>
-                              <strong style={{ color: 'var(--text-primary)' }}>{item.basicQuantity} {baseUnit}</strong>
-                            </div>
-                            {displayUnit && (
-                              <div>
-                                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', display: 'block' }}>Main Secondary</span>
-                                <strong style={{ color: 'var(--text-primary)' }}>{item.secondaryQuantity} {displayUnit}</strong>
+
+                            {/* FOH Section */}
+                            <div style={{
+                              padding: '8px 12px',
+                              backgroundColor: 'rgba(16,185,129,0.06)',
+                              border: '1px solid rgba(16,185,129,0.2)',
+                              borderRadius: 'var(--radius-md)',
+                              minWidth: '140px',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', fontWeight: 700, color: '#10b981', marginBottom: '2px' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                                FOH (Front)
                               </div>
-                            )}
+                              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {displayUnit ? (
+                                  <>
+                                    <span>{item.frontSecondaryQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{displayUnit}</small></span>
+                                    <span style={{ margin: '0 4px', color: 'var(--text-quaternary)' }}>+</span>
+                                    <span>{item.frontBasicQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{baseUnit}</small></span>
+                                  </>
+                                ) : (
+                                  <span>{item.frontBasicQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{baseUnit}</small></span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Total Section */}
+                            <div style={{
+                              padding: '8px 12px',
+                              backgroundColor: 'var(--bg-surface)',
+                              border: '1px solid var(--border-default)',
+                              borderRadius: 'var(--radius-md)',
+                              minWidth: '130px',
+                            }}>
+                              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                Total
+                              </div>
+                              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {displayUnit ? (
+                                  <>
+                                    <span>{item.secondaryQuantity + item.frontSecondaryQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{displayUnit}</small></span>
+                                    <span style={{ margin: '0 4px', color: 'var(--text-quaternary)' }}>+</span>
+                                    <span>{item.basicQuantity + item.frontBasicQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{baseUnit}</small></span>
+                                  </>
+                                ) : (
+                                  <span>{item.basicQuantity + item.frontBasicQuantity} <small style={{ fontWeight: 500, color: 'var(--text-tertiary)' }}>{baseUnit}</small></span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
