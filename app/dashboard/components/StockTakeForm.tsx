@@ -429,13 +429,11 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             <h1 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               {t(locationName, undefined, locationName)}
             </h1>
-            <span className="badge badge-indigo" style={{ fontSize: '0.6875rem', padding: '2px 7px' }}>
-              {t('stock_count_audit')}
-            </span>
+
           </div>
           {vendorName && (
             <span style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-              {t('vendor_label')}: <strong style={{ color: 'var(--text-secondary)' }}>{t(vendorName, undefined, vendorName)}</strong>
+              <strong style={{ color: 'var(--text-secondary)' }}>{t(vendorName, undefined, vendorName)}</strong>
             </span>
           )}
         </div>
