@@ -39,6 +39,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [locationName, setLocationName] = useState('');
   const [vendorName, setVendorName] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
+  const [bohEnabled, setBohEnabled] = useState(true);
   const [formItems, setFormItems] = useState<FormItem[]>([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [step, setStep] = useState<Step>('boh');
@@ -71,6 +72,9 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
       setLocationName(detailedRecord.location?.name || 'Store Location');
       setVendorName(detailedRecord.vendor?.displayName || detailedRecord.vendor?.name || '');
       setIsCompleted(detailedRecord.isCompleted || false);
+      const isBoh = detailedRecord.location?.bohEnabled !== false;
+      setBohEnabled(isBoh);
+      setStep(isBoh ? 'boh' : 'foh');
 
       const initialItems = (detailedRecord.items || []).map((ri: any) => {
         const baseUnit = ri.item?.baseUnitName;
@@ -129,8 +133,8 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
       const payloadItems = formItems.map(item => ({
         itemId: item.itemId,
-        basicQuantity: item.backBaseInput,
-        secondaryQuantity: item.backSecondaryInput,
+        basicQuantity: bohEnabled ? item.backBaseInput : 0,
+        secondaryQuantity: bohEnabled ? item.backSecondaryInput : 0,
         frontBasicQuantity: item.frontBaseInput,
         frontSecondaryQuantity: item.frontSecondaryInput,
       }));
@@ -231,9 +235,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
   // ─── Step indicator helper ────────────────────────────────────────────────────
   const steps = [
-    { id: 'boh', label: t('boh'), short: t('boh_short'), color: '#d97706' },
-    { id: 'foh', label: t('foh'), short: t('foh_short'), color: '#10b981' },
+    ...(bohEnabled ? [{ id: 'boh' as Step, label: t('boh'), short: t('boh_short'), color: '#d97706' }] : []),
+    { id: 'foh' as Step, label: t('foh'), short: t('foh_short'), color: '#10b981' },
   ];
+  const activeZone: 'boh' | 'foh' = (!bohEnabled || step !== 'boh') ? 'foh' : 'boh';
 
   // ─── Item input card ──────────────────────────────────────────────────────────
   const renderItemCard = (item: FormItem, zone: 'boh' | 'foh') => {
@@ -326,14 +331,14 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
   // ─── Main form ────────────────────────────────────────────────────────────────
   return (
-    <div className="card animate-fade-up stock-form-pad" style={{ position: 'relative', overflow: 'hidden', padding: '24px' }}>
+    <div className="card animate-fade-up stock-form-pad" style={{ position: 'relative', overflow: 'hidden', padding: '16px 20px' }}>
       <style>{`
         @keyframes pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.3); }
           50% { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
         }
         @media (max-width: 640px) {
-          .stock-form-pad { padding: 16px !important; }
+          .stock-form-pad { padding: 12px 14px !important; }
           .stock-step-label { display: none !important; }
         }
       `}</style>
@@ -341,83 +346,114 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
       {/* Decorative glow */}
       <div style={{
         position: 'absolute', top: 0, right: 0,
-        width: '200px', height: '200px',
-        background: step === 'boh' ? 'rgba(217,119,6,0.06)' : 'rgba(16,185,129,0.06)',
-        borderRadius: '50%', filter: 'blur(60px)',
-        marginRight: '-50px', marginTop: '-50px', pointerEvents: 'none',
+        width: '180px', height: '180px',
+        background: activeZone === 'boh' ? 'rgba(217,119,6,0.06)' : 'rgba(16,185,129,0.06)',
+        borderRadius: '50%', filter: 'blur(50px)',
+        marginRight: '-40px', marginTop: '-40px', pointerEvents: 'none',
         transition: 'background 0.4s ease'
       }} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', zIndex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
 
-        {/* Header */}
-        <div>
-          <span className="badge badge-indigo" style={{ marginBottom: '8px', display: 'inline-block' }}>
-            {t('stock_count_audit')}
-          </span>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            {t(locationName, undefined, locationName)}
-          </h1>
+        {/* Compact Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              {t(locationName, undefined, locationName)}
+            </h1>
+            <span className="badge badge-indigo" style={{ fontSize: '0.6875rem', padding: '2px 7px' }}>
+              {t('stock_count_audit')}
+            </span>
+          </div>
           {vendorName && (
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px', marginBottom: 0 }}>
-              {t('vendor_label')}: <strong>{t(vendorName, undefined, vendorName)}</strong>
-            </p>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
+              {t('vendor_label')}: <strong style={{ color: 'var(--text-secondary)' }}>{t(vendorName, undefined, vendorName)}</strong>
+            </span>
           )}
         </div>
 
-        {/* Already completed alert */}
+        {/* Already completed subtle note (low attention) */}
         {isCompleted && (
-          <div className="alert" style={{ backgroundColor: 'var(--warning-subtle)', color: 'var(--warning)', border: '1px solid rgba(217,119,6,0.2)', fontSize: '0.8125rem' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16, flexShrink: 0 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 8px',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--bg-sunken)',
+            border: '1px solid var(--border-subtle)',
+            fontSize: '0.75rem',
+            color: 'var(--text-tertiary)',
+            lineHeight: 1.3,
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" style={{ width: 13, height: 13, color: 'var(--text-quaternary)', flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
             </svg>
-            {t('audit_already_submitted')}
+            <span>{t('audit_already_submitted')}</span>
           </div>
         )}
 
-        {/* Combined step tab selector */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch' }}>
-          {steps.map((s) => {
-            const isActive = s.id === step;
-            const color = s.color;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setStep(s.id as Step)}
-                style={{
-                  flex: isActive ? 2 : 1,
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '9px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${isActive ? color : 'var(--border-subtle)'}`,
-                  backgroundColor: isActive
-                    ? (s.id === 'boh' ? 'rgba(217,119,6,0.08)' : 'rgba(16,185,129,0.08)')
-                    : 'var(--bg-sunken)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.25s ease',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <div style={{
-                  width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                  backgroundColor: isActive ? color : 'var(--border-default)',
-                  transition: 'background 0.2s ease',
-                }} />
-                <span style={{
-                  fontSize: isActive ? '0.875rem' : '0.8rem',
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? color : 'var(--text-tertiary)',
-                  transition: 'all 0.2s ease',
-                }}>
-                  {isActive ? s.label : s.short}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Step indicator selector */}
+        {bohEnabled ? (
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch' }}>
+            {steps.map((s) => {
+              const isActive = s.id === activeZone;
+              const color = s.color;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStep(s.id as Step)}
+                  style={{
+                    flex: isActive ? 2 : 1,
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '7px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${isActive ? color : 'var(--border-subtle)'}`,
+                    backgroundColor: isActive
+                      ? (s.id === 'boh' ? 'rgba(217,119,6,0.08)' : 'rgba(16,185,129,0.08)')
+                      : 'var(--bg-sunken)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'all 0.25s ease',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <div style={{
+                    width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+                    backgroundColor: isActive ? color : 'var(--border-default)',
+                    transition: 'background 0.2s ease',
+                  }} />
+                  <span style={{
+                    fontSize: isActive ? '0.8125rem' : '0.75rem',
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? color : 'var(--text-tertiary)',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    {isActive ? s.label : s.short}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '7px 12px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(16,185,129,0.25)',
+            backgroundColor: 'rgba(16,185,129,0.06)',
+          }}>
+            <div style={{
+              width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+              backgroundColor: '#10b981',
+            }} />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#10b981' }}>
+              {t('foh')} ({t('foh_short')})
+            </span>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -489,7 +525,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         })()}
 
         {/* Items list */}
-        <div className="flex-1 max-h-[400px] overflow-y-auto pr-1">
+        <div className="flex-1 max-h-[500px] overflow-y-auto pr-1">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
             {formItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
@@ -510,14 +546,14 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 );
               }
 
-              return displayedFormItems.map(item => renderItemCard(item, step as 'boh' | 'foh'));
+              return displayedFormItems.map(item => renderItemCard(item, activeZone));
             })()}
           </div>
         </div>
 
         {/* Navigation buttons */}
         <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
-          {step === 'boh' ? (
+          {activeZone === 'boh' ? (
             <>
               <button
                 type="button"
@@ -544,14 +580,20 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             <>
               <button
                 type="button"
-                onClick={() => setStep('boh')}
+                onClick={bohEnabled ? () => setStep('boh') : onClose}
                 className="btn btn-secondary"
                 style={{ flex: 1, justifyContent: 'center', gap: '8px' }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-                {t('back')}
+                {bohEnabled ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    {t('back')}
+                  </>
+                ) : (
+                  t('cancel')
+                )}
               </button>
               <button
                 type="button"
