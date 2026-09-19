@@ -1153,6 +1153,22 @@ code,
   }
 }
 
+.dashboard-body-stock {
+  padding: 10px 16px 14px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-body-stock {
+    padding: 6px 8px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-body-stock {
+    padding: 2px 4px 4px;
+  }
+}
+
 /* ============================================================
    PAGE LAYOUT SYSTEM — non-scrollable shell & internal scroll
    ============================================================ */

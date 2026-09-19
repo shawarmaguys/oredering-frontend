@@ -255,9 +255,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         border: '1px solid var(--border-subtle)',
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
+        flexShrink: 0,
       }}>
         {/* Item name header */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+        <div className="stock-card-header" style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
@@ -285,10 +286,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         </div>
 
         {/* Input area */}
-        <div style={{ padding: '16px', backgroundColor: bgColor, border: `1px solid ${borderColor}`, margin: '12px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+        <div className="stock-input-area" style={{ padding: '10px 14px', backgroundColor: bgColor, border: `1px solid ${borderColor}`, margin: '8px 12px 10px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
           {item.displayUnitName && (
             <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
                 <input
                   type="number"
                   step="any"
@@ -296,19 +297,19 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                   inputMode="decimal"
                   value={(item[secField] as number) || ''}
                   onChange={e => updateItem(item.itemId, secField, e.target.value)}
-                  className="input"
+                  className="input stock-qty-input"
                   placeholder="0"
-                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
+                  style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor, width: '100%' }}
                 />
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                   {t(item.displayUnitName, undefined, item.displayUnitName)}
                 </span>
               </div>
-              <span style={{ color: 'var(--text-quaternary)', fontWeight: 700, fontSize: '1.25rem', paddingBottom: '20px' }}>+</span>
+              <span style={{ color: 'var(--text-quaternary)', fontWeight: 700, fontSize: '1.125rem', paddingBottom: '16px', flexShrink: 0 }}>+</span>
             </>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
             <input
               type="number"
               step="any"
@@ -316,11 +317,11 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               inputMode="decimal"
               value={(item[baseField] as number) || ''}
               onChange={e => updateItem(item.itemId, baseField, e.target.value)}
-              className="input"
+              className="input stock-qty-input"
               placeholder="0"
-              style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor }}
+              style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.125rem', color: accentColor, width: '100%' }}
             />
-            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
               {t(item.baseUnitName, undefined, item.baseUnitName)}
             </span>
           </div>
@@ -331,15 +332,69 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
   // ─── Main form ────────────────────────────────────────────────────────────────
   return (
-    <div className="card animate-fade-up stock-form-pad" style={{ position: 'relative', overflow: 'hidden', padding: '16px 20px' }}>
+    <div
+      className="card animate-fade-up stock-form-card stock-form-pad"
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '14px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        flex: 1,
+        minHeight: 0,
+      }}
+    >
       <style>{`
         @keyframes pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.3); }
           50% { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
         }
+        .stock-form-card {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+          flex: 1 !important;
+          min-height: 0 !important;
+        }
         @media (max-width: 640px) {
-          .stock-form-pad { padding: 12px 14px !important; }
+          .stock-form-pad {
+            padding: 8px 10px 10px !important;
+            border-radius: var(--radius-md) !important;
+          }
+          .stock-card-header {
+            padding: 8px 10px !important;
+          }
+          .stock-input-area {
+            margin: 4px 6px 6px !important;
+            padding: 6px 8px !important;
+            gap: 6px !important;
+          }
+          .stock-qty-input {
+            font-size: 1rem !important;
+            padding: 6px 4px !important;
+            height: 38px !important;
+          }
           .stock-step-label { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .stock-form-pad {
+            padding: 6px 6px 8px !important;
+            border-radius: 8px !important;
+          }
+          .stock-card-header {
+            padding: 6px 8px !important;
+          }
+          .stock-input-area {
+            margin: 3px 4px 5px !important;
+            padding: 5px 6px !important;
+            gap: 4px !important;
+          }
+          .stock-qty-input {
+            font-size: 0.9375rem !important;
+            padding: 4px 2px !important;
+            height: 36px !important;
+          }
         }
       `}</style>
 
@@ -353,7 +408,16 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         transition: 'background 0.4s ease'
       }} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        position: 'relative',
+        zIndex: 1,
+        height: '100%',
+        flex: 1,
+        minHeight: 0,
+      }}>
 
         {/* Compact Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
@@ -524,35 +588,41 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           );
         })()}
 
-        {/* Items list */}
-        <div className="flex-1 max-h-[500px] overflow-y-auto pr-1">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', paddingRight: '2px' }}>
-            {formItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
-                {t('no_items_assigned')}
-              </div>
-            ) : (() => {
-              const displayedFormItems = formItems.filter(item => {
-                if (selectedCategoryFilter === 'all') return true;
-                if (selectedCategoryFilter === 'none') return !item.productType;
-                return item.productType?.id === selectedCategoryFilter;
-              });
+        {/* Items list - scrollable, fills all available height */}
+        <div style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          paddingRight: '2px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}>
+          {formItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
+              {t('no_items_assigned')}
+            </div>
+          ) : (() => {
+            const displayedFormItems = formItems.filter(item => {
+              if (selectedCategoryFilter === 'all') return true;
+              if (selectedCategoryFilter === 'none') return !item.productType;
+              return item.productType?.id === selectedCategoryFilter;
+            });
 
-              if (displayedFormItems.length === 0) {
-                return (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
-                    No items in this category.
-                  </div>
-                );
-              }
+            if (displayedFormItems.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+                  No items in this category.
+                </div>
+              );
+            }
 
-              return displayedFormItems.map(item => renderItemCard(item, activeZone));
-            })()}
-          </div>
+            return displayedFormItems.map(item => renderItemCard(item, activeZone));
+          })()}
         </div>
 
         {/* Navigation buttons */}
-        <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
+        <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexShrink: 0 }}>
           {activeZone === 'boh' ? (
             <>
               <button

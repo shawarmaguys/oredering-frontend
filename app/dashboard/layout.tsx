@@ -72,7 +72,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
         <main style={{ flex: 1, overflow: 'hidden', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div className="dashboard-body animate-fade-up">
+          <div className={`dashboard-body animate-fade-up ${recordId ? 'dashboard-body-stock' : ''}`}>
             {children}
           </div>
         </main>
@@ -287,7 +287,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <main style={{ flex: 1, overflow: 'hidden', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {/* Kick off all context fetches in the background as soon as the dashboard mounts */}
         <ContextPrefetcher />
-        <div key={selectedLocationId} className="dashboard-body animate-fade-up">
+        <div key={selectedLocationId} className={`dashboard-body animate-fade-up ${recordId ? 'dashboard-body-stock' : ''}`}>
           {children}
         </div>
       </main>

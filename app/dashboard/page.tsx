@@ -22,15 +22,16 @@ function DashboardContent() {
     return (
       <div
         style={{
-          maxWidth: '860px',
+          maxWidth: '960px',
           width: '100%',
           height: '100%',
           minHeight: 0,
           margin: '0 auto',
           display: 'flex',
           flexDirection: 'column',
+          flex: 1,
           overflow: 'hidden',
-          padding: '4px 4px 8px 4px',
+          padding: 0,
         }}
       >
         <StockTakeForm recordId={recordId} onClose={handleClose} />
