@@ -44,6 +44,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   // Search & Filtering State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+  const [uncountedSnapshot, setUncountedSnapshot] = useState<Set<string> | null>(null);
 
   // Submitter & Confirmation State
   const [showSubmitterModal, setShowSubmitterModal] = useState(false);
@@ -54,6 +55,18 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const { language, t } = useLanguage();
   const { refreshAll } = useReports();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Snapshot uncounted items upon activating the filter so they don't vanish mid-count
+  useEffect(() => {
+    if (selectedCategoryFilter === 'uncounted') {
+      const initialUncounted = new Set(
+        formItems.filter(item => !isItemCounted(item)).map(item => item.itemId)
+      );
+      setUncountedSnapshot(initialUncounted);
+    } else {
+      setUncountedSnapshot(null);
+    }
+  }, [selectedCategoryFilter]);
 
   useEffect(() => {
     if (recordId) {
@@ -200,11 +213,16 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
       // 2. Category / Uncounted tab filter
       if (selectedCategoryFilter === 'all') return true;
-      if (selectedCategoryFilter === 'uncounted') return !isItemCounted(item);
+      if (selectedCategoryFilter === 'uncounted') {
+        if (uncountedSnapshot) {
+          return uncountedSnapshot.has(item.itemId);
+        }
+        return !isItemCounted(item);
+      }
       if (selectedCategoryFilter === 'none') return !item.productType;
       return item.productType?.id === selectedCategoryFilter;
     });
-  }, [formItems, searchQuery, selectedCategoryFilter, touchedItems]);
+  }, [formItems, searchQuery, selectedCategoryFilter, touchedItems, uncountedSnapshot]);
 
   // Categories list
   const availableCategories = useMemo(() => {
@@ -374,7 +392,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
+        gap: '4px',
         width: '100%',
       }}>
         {/* Decrement Button */}
@@ -382,9 +400,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           type="button"
           onClick={() => onAdjust(-1)}
           aria-label="Decrease quantity"
+          className="stepper-btn"
           style={{
-            width: '38px',
-            height: '38px',
+            width: '32px',
+            height: '34px',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border-default)',
             backgroundColor: 'var(--bg-surface)',
@@ -393,7 +412,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '1.25rem',
+            fontSize: '1.2rem',
             fontWeight: 700,
             flexShrink: 0,
             userSelect: 'none',
@@ -408,7 +427,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
         </button>
 
         {/* Numeric Input */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '32px' }}>
           <input
             type="number"
             step="any"
@@ -420,15 +439,15 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             onFocus={(e) => e.target.select()}
             style={{
               width: '100%',
-              height: '38px',
+              height: '34px',
               textAlign: 'center',
               fontWeight: 800,
-              fontSize: '1.05rem',
+              fontSize: '0.98rem',
               color: accentColor,
               backgroundColor: 'var(--bg-surface)',
               border: `1.5px solid ${value > 0 ? accentColor : 'var(--border-default)'}`,
               borderRadius: 'var(--radius-sm)',
-              padding: '4px 8px',
+              padding: '2px 4px',
               outline: 'none',
               boxShadow: value > 0 ? `0 0 0 1px ${accentColor}30` : 'none',
               transition: 'border 0.2s ease, box-shadow 0.2s ease',
@@ -441,9 +460,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           type="button"
           onClick={() => onAdjust(1)}
           aria-label="Increase quantity"
+          className="stepper-btn"
           style={{
-            width: '38px',
-            height: '38px',
+            width: '32px',
+            height: '34px',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border-default)',
             backgroundColor: 'var(--bg-surface)',
@@ -452,7 +472,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '1.25rem',
+            fontSize: '1.2rem',
             fontWeight: 700,
             flexShrink: 0,
             userSelect: 'none',
@@ -468,17 +488,17 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
 
         {/* Unit Label */}
         <span style={{
-          fontSize: '0.72rem',
+          fontSize: '0.68rem',
           fontWeight: 700,
           color: 'var(--text-tertiary)',
           textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-          width: '52px',
+          letterSpacing: '0.02em',
+          maxWidth: '46px',
           flexShrink: 0,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-        }}>
+        }} title={t(unitName, undefined, unitName)}>
           {t(unitName, undefined, unitName)}
         </span>
       </div>
@@ -493,52 +513,71 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
       <div
         key={item.itemId}
         style={{
-          backgroundColor: isCounted ? 'var(--bg-surface)' : 'var(--bg-sunken)',
-          border: `1.5px solid ${isCounted ? 'rgba(16,185,129,0.35)' : 'var(--border-subtle)'}`,
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: isCounted ? '0 2px 8px rgba(16,185,129,0.06)' : 'none',
-          padding: '12px 14px',
+          backgroundColor: isCounted ? 'rgba(16,185,129,0.02)' : 'var(--bg-elevated)',
+          border: `1px solid ${isCounted ? 'rgba(16,185,129,0.35)' : 'var(--border-default)'}`,
+          borderRadius: 'var(--radius-md)',
+          padding: '10px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
-          transition: 'border 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease',
+          gap: '8px',
+          transition: 'border 0.2s ease, background-color 0.2s ease',
         }}
       >
-        {/* Item Card Header */}
+        {/* Item Header: Title, Category Badge, Status Indicator */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-            <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-              {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                color: 'var(--text-primary)',
+                lineHeight: 1.3,
+              }}>
+                {(language === 'es' && item.spanishName) ? item.spanishName : t(item.displayName, undefined, item.displayName)}
+              </span>
+              {item.spanishName && language === 'es' && (
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                  ({item.spanishName})
+                </span>
+              )}
+              {item.productType && (
+                <span
+                  className="badge"
+                  style={{
+                    fontSize: '0.65rem',
+                    padding: '1px 6px',
+                    backgroundColor: item.productType.color ? `${item.productType.color}15` : 'var(--bg-tertiary)',
+                    color: item.productType.color || 'var(--text-secondary)',
+                    borderColor: item.productType.color || 'var(--border-default)',
+                  }}
+                >
+                  {item.productType.name}
+                </span>
+              )}
+            </div>
+
+            {/* Note or Packaging hint or Item Vendor */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
               {item.vendorName && (
                 <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                   🏢 {item.vendorName}
                 </span>
               )}
-              {item.note && item.note.trim() !== '' && (
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500, lineHeight: 1.3 }}>
-                  {t(item.note, undefined, item.note)}
+              {item.note && (
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                  📝 {t(item.note, undefined, item.note)}
+                </span>
+              )}
+              {item.displayUnitName && item.multiplier > 1 && (
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+                  1 {item.displayUnitName} = {item.multiplier} {item.baseUnitName}
                 </span>
               )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            {item.productType && (
-              <span
-                className="badge"
-                style={{
-                  backgroundColor: item.productType.color ? `${item.productType.color}18` : 'var(--bg-tertiary)',
-                  color: item.productType.color || 'var(--text-secondary)',
-                  borderColor: item.productType.color || 'var(--border-default)',
-                  fontSize: '0.65rem',
-                  padding: '2px 6px',
-                }}
-              >
-                {item.productType.name}
-              </span>
-            )}
+          {/* Counted / Uncounted Pill Badge */}
+          <div style={{ flexShrink: 0 }}>
             {isCounted ? (
               <span style={{
                 display: 'inline-flex',
@@ -547,10 +586,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 color: '#10b981',
-                backgroundColor: 'rgba(16,185,129,0.12)',
-                border: '1px solid rgba(16,185,129,0.3)',
+                backgroundColor: 'rgba(16,185,129,0.1)',
                 padding: '2px 6px',
                 borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(16,185,129,0.25)',
               }}>
                 ✓ {t('counted_status')}
               </span>
@@ -571,12 +610,12 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           </div>
         </div>
 
-        {/* Inputs Layout: 2 Columns on Desktop/Tablet, Responsive Stacking on Small Mobile */}
+        {/* Inputs Layout: 2 Columns Side-by-Side (BOH & FOH), 1 Column if BOH Disabled */}
         <div
-          className="stock-columns-grid"
+          className={`stock-columns-grid ${!bohEnabled ? 'foh-only' : ''}`}
           style={{
             display: 'grid',
-            gridTemplateColumns: bohEnabled ? 'repeat(auto-fit, minmax(240px, 1fr))' : '1fr',
+            gridTemplateColumns: bohEnabled ? 'repeat(2, minmax(0, 1fr))' : '1fr',
             gap: '8px',
           }}
         >
@@ -586,13 +625,13 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               backgroundColor: 'rgba(217,119,6,0.03)',
               border: '1px solid rgba(217,119,6,0.18)',
               borderRadius: 'var(--radius-md)',
-              padding: '8px 10px',
+              padding: '6px 8px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px',
+              gap: '6px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 700, color: '#d97706' }}>
-                <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#d97706' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', fontWeight: 700, color: '#d97706' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#d97706' }} />
                 <span>{t('boh')} ({t('boh_short')})</span>
               </div>
 
@@ -621,13 +660,13 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
             backgroundColor: 'rgba(16,185,129,0.03)',
             border: '1px solid rgba(16,185,129,0.18)',
             borderRadius: 'var(--radius-md)',
-            padding: '8px 10px',
+            padding: '6px 8px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
+            gap: '6px',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
               <span>{t('foh')} ({t('foh_short')})</span>
             </div>
 
@@ -684,7 +723,10 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           -moz-appearance: textfield;
         }
         @media (max-width: 640px) {
-          .stock-form-wrapper { padding: 10px 10px 0 10px !important; }
+          .stock-form-wrapper { padding: 8px 8px 0 8px !important; }
+          .stock-columns-grid { gap: 6px !important; }
+        }
+        @media (max-width: 350px) {
           .stock-columns-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>

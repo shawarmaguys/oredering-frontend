@@ -11,23 +11,27 @@ function handleUnauthorized() {
   window.location.href = '/login';
 }
 
+interface RequestOptions extends RequestInit {
+  isPublic?: boolean;
+}
+
 /**
  * Central fetch wrapper.
- * - Skips the request entirely when no token is stored (throws early).
- * - Auto-logs out the user on any 401 response.
+ * - Skips the request entirely when no token is stored (unless options.isPublic is true).
+ * - Auto-logs out the user on any 401 response (for authenticated requests).
  */
-async function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T = any>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
   // Guard: never fire authenticated requests without a token
-  if (!token) {
+  if (!options.isPublic && !token) {
     throw new Error('Not authenticated');
   }
 
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
 
   const response = await fetch(`${API_URL}/v1${path}`, {
@@ -40,8 +44,8 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
     return {} as T;
   }
 
-  // Auto-logout on 401 (expired / invalid token)
-  if (response.status === 401) {
+  // Auto-logout on 401 (expired / invalid token) for authenticated requests
+  if (response.status === 401 && !options.isPublic) {
     handleUnauthorized();
     throw new Error('Session expired');
   }
@@ -195,9 +199,9 @@ export const api = {
       const query = q.toString() ? `?${q.toString()}` : '';
       return request<any>(`/stock-records${query}`);
     },
-    get: (id: string) => request<any>(`/stock-records/${id}`),
+    get: (id: string) => request<any>(`/stock-records/${id}`, { isPublic: true }),
     create: (data: any) => request<any>('/stock-records', { method: 'POST', body: JSON.stringify(data) }),
-    complete: (id: string, data: any) => request<any>(`/stock-records/${id}/complete`, { method: 'PATCH', body: JSON.stringify(data) }),
+    complete: (id: string, data: any) => request<any>(`/stock-records/${id}/complete`, { method: 'PATCH', body: JSON.stringify(data), isPublic: true }),
   },
   purchaseOrders: {
     list: (params?: { status?: string; page?: number; limit?: number } | string) => {

@@ -54,24 +54,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // Show nothing while loading auth state (but not for public stock take links)
   if (isLoading && !isPublicStockTake) return null;
 
-  // Unauthenticated but accessing a public stock take form — minimal wrapper
-  if (!isAuthenticated && isPublicStockTake) {
+  // Stock take form via Slack link — always render clean standalone wrapper, even if user has an existing session
+  if (isPublicStockTake) {
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--bg-base)' }}>
         {/* Minimal branded navbar */}
         <nav className="navbar">
           <div className="navbar-inner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Link href="/dashboard" className="navbar-brand">
+              <div className="navbar-brand" style={{ cursor: 'default' }}>
                 <div className="navbar-logo">SG</div>
                 <span className="navbar-wordmark">{t('brand_name')}</span>
-              </Link>
+              </div>
               <div className="navbar-sep" />
               <span className="navbar-context">{t('stock_count_audit')}</span>
             </div>
-            {/* <div className="navbar-actions">
-              <LanguageSwitcher />
-            </div> */}
           </div>
         </nav>
         <main style={{ flex: 1, overflow: 'hidden', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
