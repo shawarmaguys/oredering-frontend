@@ -42,6 +42,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
   const [bohEnabled, setBohEnabled] = useState(true);
   const [formItems, setFormItems] = useState<FormItem[]>([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [step, setStep] = useState<Step>('boh');
   const [showSubmitterModal, setShowSubmitterModal] = useState(false);
   const [submitterName, setSubmitterName] = useState('');
@@ -95,6 +96,9 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           productType: ri.item?.productType || null,
         };
       });
+      initialItems.sort((a: FormItem, b: FormItem) =>
+        a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })
+      );
       setFormItems(initialItems);
     } catch (err: any) {
       setError(err.message || 'Failed to load stock record details.');
@@ -529,6 +533,64 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           </div>
         )}
 
+        {/* Search Bar - Responsive and Touch-friendly for Mobile */}
+        <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
+          <div style={{
+            position: 'absolute',
+            left: '10px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            pointerEvents: 'none',
+            color: 'var(--text-tertiary)',
+            display: 'flex',
+            alignItems: 'center',
+          }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={t('search_items_placeholder') || 'Search items by name or note...'}
+            className="input"
+            style={{
+              width: '100%',
+              height: '36px',
+              paddingLeft: '32px',
+              paddingRight: searchQuery ? '32px' : '10px',
+              fontSize: '0.875rem',
+              borderRadius: '8px',
+            }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                padding: '6px',
+                cursor: 'pointer',
+                color: 'var(--text-tertiary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.875rem',
+                lineHeight: 1,
+              }}
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
         {/* Category Pills Filter */}
         {(() => {
           const availableCategories = Array.from(
@@ -543,12 +605,21 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
           if (availableCategories.length === 0) return null;
 
           return (
-            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div style={{
+              display: 'flex',
+              gap: '6px',
+              overflowX: 'auto',
+              paddingBottom: '2px',
+              flexShrink: 0,
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}>
               <button
                 type="button"
                 onClick={() => setSelectedCategoryFilter('all')}
                 className={`badge ${selectedCategoryFilter === 'all' ? 'badge-indigo' : 'badge-neutral'}`}
-                style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem' }}
+                style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 All ({formItems.length})
               </button>
@@ -565,6 +636,8 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                       cursor: 'pointer',
                       padding: '4px 10px',
                       fontSize: '0.75rem',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
                       backgroundColor: isSelected ? (cat.color || 'var(--accent)') : 'var(--bg-tertiary)',
                       color: isSelected ? '#fff' : (cat.color || 'var(--text-secondary)'),
                       borderColor: cat.color || 'var(--border-default)',
@@ -579,7 +652,7 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
                   type="button"
                   onClick={() => setSelectedCategoryFilter('none')}
                   className={`badge ${selectedCategoryFilter === 'none' ? 'badge-indigo' : 'badge-neutral'}`}
-                  style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem' }}
+                  style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.75rem', flexShrink: 0, whiteSpace: 'nowrap' }}
                 >
                   Uncategorized ({formItems.filter(i => !i.productType).length})
                 </button>
@@ -603,16 +676,52 @@ export default function StockTakeForm({ recordId, onClose, onSuccess }: StockTak
               {t('no_items_assigned')}
             </div>
           ) : (() => {
-            const displayedFormItems = formItems.filter(item => {
-              if (selectedCategoryFilter === 'all') return true;
-              if (selectedCategoryFilter === 'none') return !item.productType;
-              return item.productType?.id === selectedCategoryFilter;
-            });
+            const q = searchQuery.trim().toLowerCase();
+            const displayedFormItems = formItems
+              .filter(item => {
+                if (selectedCategoryFilter !== 'all') {
+                  if (selectedCategoryFilter === 'none') {
+                    if (item.productType) return false;
+                  } else if (item.productType?.id !== selectedCategoryFilter) {
+                    return false;
+                  }
+                }
+                if (!q) return true;
+                const name = (item.displayName || '').toLowerCase();
+                const spName = (item.spanishName || '').toLowerCase();
+                const note = (item.note || '').toLowerCase();
+                const catName = (item.productType?.name || '').toLowerCase();
+                return name.includes(q) || spName.includes(q) || note.includes(q) || catName.includes(q);
+              })
+              .sort((a, b) => {
+                const nameA = (language === 'es' && a.spanishName ? a.spanishName : a.displayName) || '';
+                const nameB = (language === 'es' && b.spanishName ? b.spanishName : b.displayName) || '';
+                return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+              });
 
             if (displayedFormItems.length === 0) {
               return (
-                <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
-                  No items in this category.
+                <div style={{
+                  textAlign: 'center',
+                  padding: '24px',
+                  color: 'var(--text-tertiary)',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}>
+                  <span>{searchQuery ? `No items found matching "${searchQuery}"` : 'No items in this category.'}</span>
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="btn btn-secondary"
+                      style={{ padding: '4px 12px', fontSize: '0.75rem', height: '28px' }}
+                    >
+                      Clear Search
+                    </button>
+                  )}
                 </div>
               );
             }
