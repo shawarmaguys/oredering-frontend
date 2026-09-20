@@ -82,7 +82,7 @@ interface BackupVendorsSelectProps {
 
 function BackupVendorsSelect({ allVendors, primaryVendorId, selectedIds, onChange }: BackupVendorsSelectProps) {
   const available = allVendors.filter(v => v.id !== primaryVendorId && !selectedIds.includes(v.id));
-  
+
   return (
     <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
       <label className="label">Backup Vendors (Optional)</label>
@@ -100,8 +100,8 @@ function BackupVendorsSelect({ allVendors, primaryVendorId, selectedIds, onChang
         {selectedIds.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No backup vendors configured.</span>}
       </div>
       {available.length > 0 && (
-        <select 
-          className="input" 
+        <select
+          className="input"
           value=""
           onChange={e => {
             if (e.target.value) onChange([...selectedIds, e.target.value]);
@@ -284,7 +284,7 @@ interface EditItemModalProps {
 export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemModalProps) {
   const { productTypes } = useProductTypes();
   const { selectedLocationId } = useLocationFilter();
-  const isSecondaryConfigured = !!(item.displayUnitName && item.displayUnitName !== item.baseUnitName && item.multiplier && Number(item.multiplier) > 1);
+  const isSecondaryConfigured = !!(item.displayUnitName && item.multiplier && Number(item.multiplier) > 1);
   const initialMult = isSecondaryConfigured ? Number(item.multiplier) : 1;
   const initialParInInput = isSecondaryConfigured ? (item.parLevel ?? 0) / initialMult : (item.parLevel ?? 0);
 

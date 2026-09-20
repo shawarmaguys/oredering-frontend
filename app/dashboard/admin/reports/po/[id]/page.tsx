@@ -885,7 +885,7 @@ export default function PODetailsPage() {
 
                                   {(() => {
                                     const mult = item?.multiplier && Number(item.multiplier) > 1 ? Number(item.multiplier) : 1;
-                                    const isPack = !!(item?.displayUnitName && item.displayUnitName !== item.baseUnitName && mult > 1);
+                                    const isPack = !!(item?.displayUnitName && mult > 1);
                                     const parBase = poItem.parLevel !== null ? Number(poItem.parLevel) : null;
                                     const normBase = poItem.normalizedQuantity !== null ? Number(poItem.normalizedQuantity) : null;
 

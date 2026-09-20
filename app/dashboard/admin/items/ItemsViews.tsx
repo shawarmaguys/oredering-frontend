@@ -83,7 +83,7 @@ interface ItemTileCardProps {
 }
 
 export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
-  const isSecondary = item.displayUnitName && item.displayUnitName !== item.baseUnitName;
+  const isSecondary = item.displayUnitName;
   return (
     <div className="card card-hover" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', position: 'relative' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -134,29 +134,29 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
               )}
             </div>
           </div>
-            {(() => {
-              const isSecondary = !!(item.displayUnitName && item.displayUnitName !== item.baseUnitName);
-              const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
-              const isPackDefined = isSecondary && multiplier > 1;
-              const parInBase = item.parLevel ?? 0;
-              const parInPack = isPackDefined ? parInBase / multiplier : parInBase;
-              const formattedPar = Number.isInteger(parInPack) ? parInPack.toFixed(0) : (Math.round(parInPack * 100) / 100).toString();
-              const parUnitLabel = isPackDefined ? item.displayUnitName : item.baseUnitName;
+          {(() => {
+            const isSecondary = !!(item.displayUnitName);
+            const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
+            const isPackDefined = isSecondary && multiplier > 1;
+            const parInBase = item.parLevel ?? 0;
+            const parInPack = isPackDefined ? parInBase / multiplier : parInBase;
+            const formattedPar = Number.isInteger(parInPack) ? parInPack.toFixed(0) : (Math.round(parInPack * 100) / 100).toString();
+            const parUnitLabel = isPackDefined ? item.displayUnitName : item.baseUnitName;
 
-              return (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>PAR Level:</span>
-                  <span className="mono" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {formattedPar} <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>{parUnitLabel}</span>
-                    {isPackDefined && (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '4px' }}>
-                        ({parInBase} {item.baseUnitName})
-                      </span>
-                    )}
-                  </span>
-                </div>
-              );
-            })()}
+            return (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>PAR Level:</span>
+                <span className="mono" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {formattedPar} <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>{parUnitLabel}</span>
+                  {isPackDefined && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '4px' }}>
+                      ({parInBase} {item.baseUnitName})
+                    </span>
+                  )}
+                </span>
+              </div>
+            );
+          })()}
           {item.note && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, width: '60px', flexShrink: 0 }}>Note:</span>
@@ -243,7 +243,7 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
           </thead>
           <tbody>
             {items.map(item => {
-              const isSecondary = !!(item.displayUnitName && item.displayUnitName !== item.baseUnitName);
+              const isSecondary = !!(item.displayUnitName);
               const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
               const isPackDefined = isSecondary && multiplier > 1;
 
