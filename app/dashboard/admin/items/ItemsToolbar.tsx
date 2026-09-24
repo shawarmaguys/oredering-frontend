@@ -12,6 +12,8 @@ interface ItemsToolbarProps {
   onVendorFilterChange: (val: string) => void;
   productTypeFilter?: string;
   onProductTypeFilterChange?: (val: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (val: string) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   totalItems: number;
@@ -27,6 +29,8 @@ export function ItemsToolbar({
   onVendorFilterChange,
   productTypeFilter = 'all',
   onProductTypeFilterChange,
+  statusFilter = 'all',
+  onStatusFilterChange,
   viewMode,
   onViewModeChange,
   totalItems,
@@ -61,6 +65,15 @@ export function ItemsToolbar({
           <option value="all">All Vendors</option>
           {vendors.map(v => <option key={v.id} value={v.id}>{v.displayName}</option>)}
         </select>
+
+        {/* Status filter */}
+        {onStatusFilterChange && (
+          <select className="input" style={{ flex: '0 0 auto', width: 'auto' }} value={statusFilter} onChange={e => onStatusFilterChange(e.target.value)}>
+            <option value="all">All Status</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
+          </select>
+        )}
 
         {/* View toggle */}
         <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>

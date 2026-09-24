@@ -15,7 +15,8 @@ import { useItemsStore } from './useItemsStore';
 import { ItemsToolbar } from './ItemsToolbar';
 import { ItemsTileView, ItemsTableView } from './ItemsViews';
 import { CreateItemModal, EditItemModal } from './ItemFormModal';
-import type { Item, ViewMode } from './types';
+import { EnableProductsModal } from './EnableProductsModal';
+import type { Item, ViewMode, PendingItemEdit } from './types';
 
 export default function ItemsPage() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ export default function ItemsPage() {
     vendors, productTypes, items, loading, error, setError,
     visibleCount, totalItems, hasMore, loadMore,
     vendorFilter, setVendorFilter, productTypeFilter, setProductTypeFilter,
+    statusFilter, setStatusFilter,
     search, handleSearchChange,
     sortCol, sortDir, toggleSort,
     refreshItems, invalidateCache,
@@ -44,19 +46,17 @@ export default function ItemsPage() {
 
   // Enable existing items modal state
   const [showEnableModal, setShowEnableModal] = useState(false);
-  const [masterItems, setMasterItems] = useState<Item[]>([]);
-  const [unassignedVendors, setUnassignedVendors] = useState<any[]>([]);
-  const [masterLoading, setMasterLoading] = useState(false);
-  const [masterSearch, setMasterSearch] = useState('');
-  const [masterVendorFilter, setMasterVendorFilter] = useState('all');
-  const [selectedMasterIds, setSelectedMasterIds] = useState<string[]>([]);
-  const [batchEnabling, setBatchEnabling] = useState(false);
 
-  // Pending PAR edits state
-  const [pendingParEdits, setPendingParEdits] = useState<Record<string, number>>({});
-  const [isSavingParEdits, setIsSavingParEdits] = useState(false);
+  // Pending spreadsheet edits state
+  const [pendingEdits, setPendingEdits] = useState<Record<string, PendingItemEdit>>({});
+  const [isSavingEdits, setIsSavingEdits] = useState(false);
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
-  const hasPendingEdits = Object.keys(pendingParEdits).length > 0;
+  const hasPendingEdits = Object.keys(pendingEdits).length > 0;
+  const pendingItemsCount = Object.keys(pendingEdits).length;
+  const totalFieldsCount = Object.values(pendingEdits).reduce(
+    (sum, edits) => sum + Object.keys(edits).length,
+    0
+  );
 
   // Warning on browser unload/close when there are unsaved edits
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function ItemsPage() {
   const prevLocRef = useRef(selectedLocationId);
   useEffect(() => {
     if (prevLocRef.current !== selectedLocationId) {
-      setPendingParEdits({});
+      setPendingEdits({});
       prevLocRef.current = selectedLocationId;
     }
   }, [selectedLocationId]);
@@ -87,104 +87,104 @@ export default function ItemsPage() {
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; isLastLocation: boolean } | null>(null);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
-  const handleParChange = (itemId: string, originalPar: number, newPar: number) => {
-    setPendingParEdits((prev) => {
-      if (newPar === originalPar || Number.isNaN(newPar)) {
+  const handleFieldChange = (
+    itemId: string,
+    field: keyof PendingItemEdit,
+    originalVal: any,
+    newVal: any
+  ) => {
+    setPendingEdits((prev) => {
+      const itemEdits = { ...(prev[itemId] || {}) };
+
+      let isSame = false;
+      if (field === 'parLevel' || field === 'multiplier') {
+        isSame = Number(newVal) === Number(originalVal) || (Number.isNaN(newVal) && Number.isNaN(originalVal));
+      } else if (field === 'productTypeId') {
+        const orig = originalVal || null;
+        const cur = newVal || null;
+        isSame = orig === cur;
+      } else if (field === 'isActive') {
+        isSame = Boolean(originalVal) === Boolean(newVal);
+      } else {
+        isSame = (originalVal ?? '') === (newVal ?? '');
+      }
+
+      if (isSame) {
+        delete itemEdits[field];
+      } else {
+        (itemEdits as any)[field] = newVal;
+      }
+
+      if (Object.keys(itemEdits).length === 0) {
         const next = { ...prev };
         delete next[itemId];
         return next;
       }
-      return { ...prev, [itemId]: newPar };
+
+      return { ...prev, [itemId]: itemEdits };
     });
   };
 
-  const handleSaveParEdits = async () => {
+  const handleSaveEdits = async () => {
     if (!hasPendingEdits) return;
-    setIsSavingParEdits(true);
+    setIsSavingEdits(true);
     setError('');
     try {
-      const entries = Object.entries(pendingParEdits);
+      const entries = Object.entries(pendingEdits);
       await Promise.all(
-        entries.map(([itemId, newPar]) =>
-          api.items.assignToLocation(itemId, selectedLocationId, newPar)
-        )
+        entries.map(async ([itemId, edits]) => {
+          const originalItem = items.find((i) => i.id === itemId);
+          if (!originalItem) return;
+
+          const metaFields: (keyof PendingItemEdit)[] = [
+            'productTypeId',
+            'productCode',
+            'note',
+            'displayUnitName',
+            'baseUnitName',
+            'multiplier',
+            'isActive',
+          ];
+          const hasMetaChange = metaFields.some((f) => edits[f] !== undefined);
+
+          if (hasMetaChange) {
+            await api.items.update(itemId, {
+              displayName: originalItem.displayName,
+              productTypeId: edits.productTypeId !== undefined ? edits.productTypeId : (originalItem.productTypeId || null),
+              productCode: edits.productCode !== undefined ? edits.productCode : (originalItem.productCode || undefined),
+              note: edits.note !== undefined ? edits.note : (originalItem.note || undefined),
+              displayUnitName: edits.displayUnitName !== undefined ? edits.displayUnitName : (originalItem.displayUnitName || ''),
+              baseUnitName: edits.baseUnitName !== undefined ? edits.baseUnitName : originalItem.baseUnitName,
+              multiplier: edits.multiplier !== undefined ? edits.multiplier : (Number(originalItem.multiplier) || 1),
+              isActive: edits.isActive !== undefined ? edits.isActive : originalItem.isActive,
+            });
+          }
+
+          if (edits.parLevel !== undefined && selectedLocationId && selectedLocationId !== 'all') {
+            await api.items.assignToLocation(itemId, selectedLocationId, edits.parLevel);
+          }
+        })
       );
-      setPendingParEdits({});
+      setPendingEdits({});
       invalidateCache();
       refreshItems();
     } catch (err: any) {
-      setError(err?.message || 'Failed to save PAR level edits.');
+      setError(err?.message || 'Failed to save product edits.');
     } finally {
-      setIsSavingParEdits(false);
+      setIsSavingEdits(false);
     }
   };
 
-  const handleDiscardParEdits = () => {
+  const handleDiscardEdits = () => {
     setDiscardConfirmOpen(true);
   };
 
   const handleConfirmDiscard = () => {
-    setPendingParEdits({});
+    setPendingEdits({});
     setDiscardConfirmOpen(false);
   };
 
-  const openEnableModal = async () => {
-    setShowEnableModal(true);
-    setMasterLoading(true);
-    setSelectedMasterIds([]);
-    setMasterVendorFilter('all');
-    setMasterSearch('');
-    try {
-      const [itemsData, unassignedVendorsData] = await Promise.all([
-        api.items.listUnassigned(selectedLocationId),
-        api.vendors.listUnassigned(selectedLocationId),
-      ]);
-      setMasterItems(itemsData);
-      setUnassignedVendors(unassignedVendorsData);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load available products.');
-    } finally {
-      setMasterLoading(false);
-    }
-  };
 
-  const handleEnableItemForLocation = async (item: Item, initialPar = 0) => {
-    try {
-      await api.items.assignToLocation(item.id, selectedLocationId, initialPar);
-      setMasterItems((prev) => prev.filter((i) => i.id !== item.id));
-      setSelectedMasterIds((prev) => prev.filter((id) => id !== item.id));
-      invalidateCache();
-      refreshItems();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to enable product for location.');
-    }
-  };
-
-  const handleToggleSelectMaster = (itemId: string) => {
-    setSelectedMasterIds((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-    );
-  };
-
-  const handleEnableSelectedMaster = async () => {
-    if (selectedMasterIds.length === 0) return;
-    setBatchEnabling(true);
-    try {
-      await Promise.all(
-        selectedMasterIds.map((itemId) =>
-          api.items.assignToLocation(itemId, selectedLocationId, 0)
-        )
-      );
-      setMasterItems((prev) => prev.filter((i) => !selectedMasterIds.includes(i.id)));
-      setSelectedMasterIds([]);
-      invalidateCache();
-      refreshItems();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to enable selected products.');
-    } finally {
-      setBatchEnabling(false);
-    }
-  };
 
   const handleUpdateParLevel = async (itemId: string, newPar: number) => {
     try {
@@ -275,7 +275,7 @@ export default function ItemsPage() {
               )}
 
               {isAdmin && selectedLocationId && selectedLocationId !== 'all' && (
-                <button type="button" className="btn btn-secondary" onClick={openEnableModal}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowEnableModal(true)}>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 15, height: 15 }}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                   </svg>
@@ -310,13 +310,14 @@ export default function ItemsPage() {
             onVendorFilterChange={setVendorFilter}
             productTypeFilter={productTypeFilter}
             onProductTypeFilterChange={setProductTypeFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             totalItems={totalItems}
             visibleItemsCount={visibleCount}
           />
         </div>
-
         {/* Content */}
         {loading ? (
           <div className="page-content-scroll">
@@ -335,7 +336,7 @@ export default function ItemsPage() {
                 <p>Use "Enable Existing Products" to assign items from master catalog or add a new product.</p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                   {isAdmin && selectedLocationId && selectedLocationId !== 'all' && (
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={openEnableModal}>Enable Existing Products</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowEnableModal(true)}>Enable Existing Products</button>
                   )}
                   <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>Add New Product</button>
                 </div>
@@ -351,14 +352,15 @@ export default function ItemsPage() {
             ) : (
               <ItemsTableView
                 items={items}
+                productTypes={productTypes}
                 sortCol={sortCol}
                 sortDir={sortDir}
                 onSort={toggleSort}
                 onEdit={handleEdit}
                 onDelete={handleDeleteClick}
                 onUpdatePar={handleUpdateParLevel}
-                pendingParEdits={pendingParEdits}
-                onParChange={handleParChange}
+                pendingEdits={pendingEdits}
+                onFieldChange={handleFieldChange}
                 canEdit={isAdmin}
                 hasMore={hasMore}
                 onLoadMore={loadMore}
@@ -388,23 +390,23 @@ export default function ItemsPage() {
             }}
           >
             <span style={{ fontSize: '0.875rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b' }} />
-              You have {Object.keys(pendingParEdits).length} unsaved PAR level edit{Object.keys(pendingParEdits).length > 1 ? 's' : ''}
+              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--accent, #0d9488)' }} />
+              You have {totalFieldsCount} unsaved change{totalFieldsCount !== 1 ? 's' : ''} across {pendingItemsCount} product{pendingItemsCount !== 1 ? 's' : ''}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
-                onClick={handleSaveParEdits}
-                disabled={isSavingParEdits}
+                onClick={handleSaveEdits}
+                disabled={isSavingEdits}
                 className="btn btn-primary"
                 style={{ padding: '6px 16px', fontSize: '0.875rem' }}
               >
-                {isSavingParEdits ? 'Saving...' : 'Save Changes'}
+                {isSavingEdits ? 'Saving...' : 'Save Changes'}
               </button>
               <button
                 type="button"
-                onClick={handleDiscardParEdits}
-                disabled={isSavingParEdits}
+                onClick={handleDiscardEdits}
+                disabled={isSavingEdits}
                 className="btn btn-secondary"
                 style={{ padding: '6px 12px', fontSize: '0.875rem', color: '#94a3b8' }}
               >
@@ -434,240 +436,18 @@ export default function ItemsPage() {
 
         {/* Enable Existing Products Modal */}
         {showEnableModal && (
-          <div className="modal-backdrop">
-            <div className="modal-panel modal-panel-lg" style={{ maxWidth: '800px', width: '90vw' }}>
-              <button
-                type="button"
-                onClick={() => setShowEnableModal(false)}
-                className="modal-close"
-                aria-label="Close modal"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 16, height: 16 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              <div className="modal-header">
-                <h2>Enable Existing Catalog Products</h2>
-                <p>
-                  Choose catalog items from the master catalog to make active for{' '}
-                  <strong>{activeLocationObj?.name || 'this location'}</strong>.
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  className="input"
-                  style={{ flex: 1, minWidth: '220px' }}
-                  placeholder="Search products by name, SKU, or vendor..."
-                  value={masterSearch}
-                  onChange={(e) => setMasterSearch(e.target.value)}
-                />
-                <select
-                  className="input"
-                  style={{ width: 'auto', minWidth: '180px' }}
-                  value={masterVendorFilter}
-                  onChange={(e) => setMasterVendorFilter(e.target.value)}
-                >
-                  <option value="all">All Vendors</option>
-                  {(() => {
-                    const enabledVendorsList = vendors || [];
-                    const enabledNames = new Set(enabledVendorsList.map((v) => v.displayName));
-
-                    const list: { id: string; name: string; isEnabled: boolean }[] = [];
-                    enabledVendorsList.forEach((v) => {
-                      list.push({ id: v.id, name: v.displayName, isEnabled: true });
-                    });
-                    (unassignedVendors || []).forEach((v) => {
-                      if (!enabledNames.has(v.displayName)) {
-                        list.push({ id: v.id, name: v.displayName, isEnabled: false });
-                      }
-                    });
-
-                    list.sort((a, b) => a.name.localeCompare(b.name));
-
-                    return list.map((v) => (
-                      <option key={v.id} value={v.name} disabled={!v.isEnabled}>
-                        {v.name}{!v.isEnabled ? ' (Disabled)' : ''}
-                      </option>
-                    ));
-                  })()}
-                </select>
-              </div>
-
-              {masterLoading ? (
-                <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                  Loading catalog items...
-                </div>
-              ) : (
-                (() => {
-                  const enabledVendorIds = new Set((vendors || []).map((v) => v.id));
-                  const enabledVendorNames = new Set((vendors || []).map((v) => v.displayName));
-
-                  const filtered = masterItems
-                    .filter((i) => {
-                      const q = masterSearch.toLowerCase();
-                      const matchesSearch = (
-                        i.displayName.toLowerCase().includes(q) ||
-                        (i.productCode && i.productCode.toLowerCase().includes(q)) ||
-                        (i.vendor && i.vendor.displayName.toLowerCase().includes(q))
-                      );
-                      const matchesVendor = masterVendorFilter === 'all' || i.vendor?.displayName === masterVendorFilter;
-                      const isVendorEnabled = i.vendorId
-                        ? enabledVendorIds.has(i.vendorId)
-                        : (i.vendor as any)?.id
-                        ? enabledVendorIds.has((i.vendor as any).id)
-                        : i.vendor?.displayName
-                        ? enabledVendorNames.has(i.vendor.displayName)
-                        : false;
-
-                      return matchesSearch && matchesVendor && isVendorEnabled;
-                    })
-                    .sort((a, b) => a.displayName.localeCompare(b.displayName));
-
-                  if (filtered.length === 0) {
-                    return (
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          padding: '32px 16px',
-                          background: 'var(--bg-sunken, var(--bg-surface))',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px dashed var(--border-default)',
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '15px' }}>
-                          {masterSearch || masterVendorFilter !== 'all' ? 'No matching products found' : 'All products are active'}
-                        </div>
-                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                          {masterSearch || masterVendorFilter !== 'all'
-                            ? 'Try clearing filters or searching for a different product.'
-                            : `All catalog products are currently active at ${activeLocationObj?.name || 'this location'}.`}
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  const allFilteredSelected = filtered.length > 0 && filtered.every((i) => selectedMasterIds.includes(i.id));
-
-                  const handleSelectAllFiltered = () => {
-                    if (allFilteredSelected) {
-                      const filteredIds = filtered.map((i) => i.id);
-                      setSelectedMasterIds((prev) => prev.filter((id) => !filteredIds.includes(id)));
-                    } else {
-                      const filteredIds = filtered.map((i) => i.id);
-                      setSelectedMasterIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
-                    }
-                  };
-
-                  return (
-                    <div>
-                      {/* Select All Bar */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          marginBottom: '8px',
-                          background: 'var(--bg-sunken, var(--bg-surface))',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid var(--border-subtle)',
-                          fontSize: '13px',
-                        }}
-                      >
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          <input
-                            type="checkbox"
-                            checked={allFilteredSelected}
-                            onChange={handleSelectAllFiltered}
-                            style={{ cursor: 'pointer', width: 16, height: 16 }}
-                          />
-                          Select All ({filtered.length} products)
-                        </label>
-                        {selectedMasterIds.length > 0 && (
-                          <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 600 }}>
-                            {selectedMasterIds.length} selected
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Items List */}
-                      <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
-                        {filtered.map((item) => {
-                          const isSelected = selectedMasterIds.includes(item.id);
-                          return (
-                            <label
-                              key={item.id}
-                              htmlFor={`master-item-${item.id}`}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '10px 14px',
-                                borderRadius: 'var(--radius-md)',
-                                background: isSelected ? 'var(--accent-subtle, rgba(235, 94, 40, 0.08))' : 'var(--bg-sunken, var(--bg-surface))',
-                                border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-default)',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <input
-                                  id={`master-item-${item.id}`}
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleToggleSelectMaster(item.id)}
-                                  style={{ cursor: 'pointer', width: 16, height: 16 }}
-                                />
-                                <div>
-                                  <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px', display: 'block' }}>
-                                    {item.displayName}
-                                  </span>
-                                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px', display: 'flex', gap: '8px' }}>
-                                    <span>SKU: <span className="mono">{item.productCode || '—'}</span></span>
-                                    <span>• Vendor: {item.vendor?.displayName || '—'}</span>
-                                    <span>• Unit: {item.displayUnitName || item.baseUnitName}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()
-              )}
-
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  {selectedMasterIds.length > 0 ? `${selectedMasterIds.length} item(s) selected` : 'Click items or checkboxes to select multiple.'}
-                </span>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {selectedMasterIds.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleEnableSelectedMaster}
-                      disabled={batchEnabling}
-                      className="btn btn-primary"
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: 14, height: 14 }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      {batchEnabling ? 'Enabling...' : `Enable Selected (${selectedMasterIds.length})`}
-                    </button>
-                  )}
-                  <button type="button" onClick={() => setShowEnableModal(false)} className="btn btn-secondary">
-                    Done
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <EnableProductsModal
+            isOpen={showEnableModal}
+            onClose={() => setShowEnableModal(false)}
+            locationId={selectedLocationId}
+            locationName={activeLocationObj?.name || 'this location'}
+            vendors={vendors}
+            onEnabled={() => {
+              invalidateCache();
+              refreshItems();
+            }}
+            onError={(msg) => setError(msg)}
+          />
         )}
 
         <ConfirmDialog
@@ -688,7 +468,7 @@ export default function ItemsPage() {
         <ConfirmDialog
           isOpen={discardConfirmOpen}
           title="Discard Unsaved Edits?"
-          message="Are you sure you want to discard all unsaved PAR level edits? Any changes you made will be lost."
+          message="Are you sure you want to discard all unsaved edits? Any changes you made will be lost."
           onConfirm={handleConfirmDiscard}
           onCancel={() => setDiscardConfirmOpen(false)}
         />

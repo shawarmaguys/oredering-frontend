@@ -27,3 +27,16 @@ export interface Item {
 export type SortColumn = 'name' | 'vendor' | 'category' | 'code' | 'note' | 'pack' | 'baseUnit' | 'multiplier' | 'parLevel' | 'status';
 export type SortDir = 'asc' | 'desc';
 export type ViewMode = 'tile' | 'list';
+export type StatusFilter = 'all' | 'active' | 'inactive';
+
+export interface PendingItemEdit {
+  productTypeId?: string | null;
+  productCode?: string;
+  parLevel?: number;
+  note?: string;
+  displayUnitName?: string;
+  baseUnitName?: string;
+  multiplier?: number;
+  isActive?: boolean;
+}
+

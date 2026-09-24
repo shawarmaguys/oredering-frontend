@@ -47,7 +47,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
     const promise = (async () => {
       try {
         const queryParam = locId;
-        const first: any = await api.items.list({ limit: ALL_LIMIT, page: 1, locationId: queryParam });
+        const first: any = await api.items.list({ limit: ALL_LIMIT, page: 1, locationId: queryParam, includeInactive: true });
         
         let combined: Item[] = [];
         if (Array.isArray(first)) {
@@ -57,7 +57,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
           const totalPages = typeof first?.totalPages === 'number' ? first.totalPages : 1;
           const extraFetches: Promise<any>[] = [];
           for (let p = 2; p <= totalPages; p++) {
-            extraFetches.push(api.items.list({ limit: ALL_LIMIT, page: p, locationId: queryParam }));
+            extraFetches.push(api.items.list({ limit: ALL_LIMIT, page: p, locationId: queryParam, includeInactive: true }));
           }
           const rest = await Promise.all(extraFetches);
           combined = [

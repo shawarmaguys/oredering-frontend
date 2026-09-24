@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Item, SortColumn, SortDir } from './types';
+import { Item, SortColumn, SortDir, PendingItemEdit } from './types';
+import { ProductType } from '../../../context/ProductTypesContext';
 
 // ─── Infinite Scroll Sentinel ────────────────────────────────────────────────
 interface InfiniteScrollSentinelProps {
@@ -83,7 +84,12 @@ interface ItemTileCardProps {
 }
 
 export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
-  const isSecondary = item.displayUnitName;
+  const isSecondary = !!(
+    item.displayUnitName &&
+    item.displayUnitName.trim() !== '' &&
+    item.multiplier &&
+    Number(item.multiplier) > 1
+  );
   return (
     <div className="card card-hover" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', position: 'relative' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -135,7 +141,6 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
             </div>
           </div>
           {(() => {
-            const isSecondary = !!(item.displayUnitName);
             const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
             const isPackDefined = isSecondary && multiplier > 1;
             const parInBase = item.parLevel ?? 0;
@@ -198,12 +203,20 @@ export function ItemsTileView({ items, onEdit, onDelete, hasMore, onLoadMore }: 
 // ─── Table View ──────────────────────────────────────────────────────────────
 interface ItemsTableViewProps {
   items: Item[];
+  productTypes?: ProductType[];
   sortCol: SortColumn;
   sortDir: SortDir;
   onSort: (col: SortColumn) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string, name: string, activeLocationCount?: number) => void;
   onUpdatePar?: (itemId: string, newPar: number) => void;
+  pendingEdits?: Record<string, PendingItemEdit>;
+  onFieldChange?: (
+    itemId: string,
+    field: keyof PendingItemEdit,
+    originalVal: any,
+    newVal: any
+  ) => void;
   pendingParEdits?: Record<string, number>;
   onParChange?: (itemId: string, originalPar: number, newPar: number) => void;
   canEdit?: boolean;
@@ -215,7 +228,23 @@ function SortIndicator({ col, active, dir }: { col: string; active: boolean; dir
   return <>{active ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</>;
 }
 
-export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDelete, onUpdatePar, pendingParEdits = {}, onParChange, canEdit = true, hasMore, onLoadMore }: ItemsTableViewProps) {
+export function ItemsTableView({
+  items,
+  productTypes = [],
+  sortCol,
+  sortDir,
+  onSort,
+  onEdit,
+  onDelete,
+  onUpdatePar,
+  pendingEdits = {},
+  onFieldChange,
+  pendingParEdits = {},
+  onParChange,
+  canEdit = true,
+  hasMore,
+  onLoadMore,
+}: ItemsTableViewProps) {
   const th = (col: SortColumn, label: string, extraStyle?: React.CSSProperties) => (
     <th style={{ cursor: 'pointer', ...extraStyle }} onClick={() => onSort(col)}>
       {label}<SortIndicator col={col} active={sortCol === col} dir={sortDir} />
@@ -228,59 +257,196 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
         <table className="data-table">
           <thead>
             <tr>
-              {th('name', 'Display Name', { paddingLeft: '24px' })}
-              {th('category', 'Category')}
-              {th('vendor', 'Assigned Vendor')}
-              {th('code', 'Product Code')}
+              {th('name', 'Display Name', { paddingLeft: '24px', minWidth: '180px' })}
+              {th('category', 'Category', { minWidth: '140px' })}
+              {th('vendor', 'Assigned Vendor', { minWidth: '140px' })}
+              {th('code', 'Product Code', { width: '120px' })}
               {th('parLevel', 'PAR Level', { width: '150px' })}
-              {th('note', 'Notes')}
-              {th('pack', 'Pack Size')}
-              {th('baseUnit', 'Individual Stock Unit')}
-              {th('multiplier', 'Multiplier', { textAlign: 'center' })}
-              {th('status', 'Status', { textAlign: 'center' })}
-              <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
+              {th('note', 'Notes', { minWidth: '160px' })}
+              {th('pack', 'Pack Size', { width: '110px' })}
+              {th('baseUnit', 'Stock Unit', { width: '110px' })}
+              {th('multiplier', 'Multiplier', { textAlign: 'center', width: '85px' })}
+              {th('status', 'Status', { textAlign: 'center', width: '115px' })}
+              <th style={{ textAlign: 'right', paddingRight: '24px', width: '130px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {items.map(item => {
-              const isSecondary = !!(item.displayUnitName);
-              const multiplier = item.multiplier && Number(item.multiplier) > 0 ? Number(item.multiplier) : 1;
-              const isPackDefined = isSecondary && multiplier > 1;
+            {items.map((item) => {
+              const itemEdits: PendingItemEdit =
+                pendingEdits[item.id] ||
+                (pendingParEdits[item.id] !== undefined
+                  ? { parLevel: pendingParEdits[item.id] }
+                  : {});
+
+              const isEdited = (field: keyof PendingItemEdit) => itemEdits[field] !== undefined;
+
+              const currentProductTypeId =
+                itemEdits.productTypeId !== undefined
+                  ? itemEdits.productTypeId
+                  : (item.productTypeId || null);
+              const currentProductCode =
+                itemEdits.productCode !== undefined
+                  ? itemEdits.productCode
+                  : (item.productCode || '');
+              const currentNote =
+                itemEdits.note !== undefined ? itemEdits.note : (item.note || '');
+              const currentBaseUnitName =
+                itemEdits.baseUnitName !== undefined
+                  ? itemEdits.baseUnitName
+                  : (item.baseUnitName || '');
+
+              const isSecondaryConfigured = !!(
+                item.displayUnitName &&
+                item.displayUnitName.trim() !== '' &&
+                item.displayUnitName.trim().toLowerCase() !== (item.baseUnitName || '').trim().toLowerCase() &&
+                item.multiplier &&
+                Number(item.multiplier) > 1
+              );
+              const initialPackSize = isSecondaryConfigured ? item.displayUnitName : '';
+
+              const currentDisplayUnitName =
+                itemEdits.displayUnitName !== undefined
+                  ? itemEdits.displayUnitName
+                  : initialPackSize;
+
+              const hasPack =
+                currentDisplayUnitName.trim() !== '' &&
+                currentDisplayUnitName.trim().toLowerCase() !== currentBaseUnitName.trim().toLowerCase();
+
+              const currentMultiplier = hasPack
+                ? (itemEdits.multiplier !== undefined
+                  ? itemEdits.multiplier
+                  : (isSecondaryConfigured ? (Number(item.multiplier) || 1) : 1))
+                : 1;
+
+              const currentIsActive =
+                itemEdits.isActive !== undefined
+                  ? itemEdits.isActive
+                  : (item.isActive ?? true);
+
+              const mult = currentMultiplier > 0 ? currentMultiplier : 1;
+              const isPackDefined = hasPack && mult > 1;
 
               const originalParBase = item.parLevel ?? 0;
-              const isEdited = pendingParEdits[item.id] !== undefined;
-              const currentParBase = isEdited ? pendingParEdits[item.id] : originalParBase;
+              const currentParBase =
+                itemEdits.parLevel !== undefined ? itemEdits.parLevel : originalParBase;
 
-              const displayParVal = isPackDefined ? currentParBase / multiplier : currentParBase;
-              const formattedParVal = Number.isInteger(displayParVal) ? displayParVal : Math.round(displayParVal * 100) / 100;
-              const unitLabel = isPackDefined ? item.displayUnitName : item.baseUnitName;
+              const displayParVal = isPackDefined
+                ? currentParBase / mult
+                : currentParBase;
+              const formattedParVal = Number.isInteger(displayParVal)
+                ? displayParVal
+                : Math.round(displayParVal * 100) / 100;
+              const unitLabel = isPackDefined ? currentDisplayUnitName : currentBaseUnitName;
+
+              const hasAnyEdits = Object.keys(itemEdits).length > 0;
 
               return (
-                <tr key={item.id} style={{ backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.03)' : undefined }}>
+                <tr
+                  key={item.id}
+                  style={{
+                    backgroundColor: hasAnyEdits
+                      ? 'rgba(13, 148, 136, 0.05)'
+                      : undefined,
+                  }}
+                >
+                  {/* Display Name */}
                   <td style={{ paddingLeft: '24px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     <div>{item.displayName}</div>
-                    <div style={{ fontSize: '0.75rem', color: item.spanishName ? 'var(--accent)' : 'transparent', fontWeight: 400, fontStyle: 'italic', marginTop: '2px', userSelect: item.spanishName ? 'auto' : 'none' }}>
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        color: item.spanishName ? 'var(--accent)' : 'transparent',
+                        fontWeight: 400,
+                        fontStyle: 'italic',
+                        marginTop: '2px',
+                        userSelect: item.spanishName ? 'auto' : 'none',
+                      }}
+                    >
                       {item.spanishName ? `🇪🇸 ${item.spanishName}` : '🇪🇸 placeholder'}
                     </div>
                   </td>
+
+                  {/* Category */}
                   <td>
-                    {item.productType ? (
-                      <span className="badge" style={{ backgroundColor: item.productType.color ? `${item.productType.color}22` : 'var(--bg-tertiary)', color: item.productType.color || 'var(--text-secondary)', borderColor: item.productType.color || 'var(--border-default)', fontSize: '0.75rem' }}>
-                        {item.productType.name}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>—</span>
-                    )}
+                    <select
+                      disabled={!canEdit}
+                      aria-label={`Category for ${item.displayName}`}
+                      value={currentProductTypeId ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value || null;
+                        if (onFieldChange) {
+                          onFieldChange(item.id, 'productTypeId', item.productTypeId || null, val);
+                        }
+                      }}
+                      className="input"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.8125rem',
+                        height: '30px',
+                        width: '100%',
+                        minWidth: '125px',
+                        borderColor: isEdited('productTypeId') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('productTypeId')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                        fontWeight: isEdited('productTypeId') ? 600 : undefined,
+                      }}
+                    >
+                      <option value="">Uncategorized</option>
+                      {productTypes.map((pt) => (
+                        <option key={pt.id} value={pt.id}>
+                          {pt.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
+
+                  {/* Assigned Vendor */}
                   <td>
-                    <span style={{ color: 'var(--text-secondary)' }}>{item.vendor?.displayName || 'Unknown Vendor'}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      {item.vendor?.displayName || 'Unknown Vendor'}
+                    </span>
                     {item.backupVendors && item.backupVendors.length > 0 && (
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                        + Backup: {item.backupVendors.map(bv => bv.vendor.displayName).join(', ')}
+                        + Backup: {item.backupVendors.map((bv) => bv.vendor.displayName).join(', ')}
                       </div>
                     )}
                   </td>
-                  <td className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{item.productCode || '—'}</td>
+
+                  {/* Product Code */}
+                  <td>
+                    <input
+                      type="text"
+                      disabled={!canEdit}
+                      aria-label={`Product code for ${item.displayName}`}
+                      value={currentProductCode}
+                      placeholder="Code / SKU"
+                      onChange={(e) => {
+                        if (onFieldChange) {
+                          onFieldChange(item.id, 'productCode', item.productCode || '', e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      }}
+                      className="input mono"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.8125rem',
+                        height: '30px',
+                        width: '100%',
+                        minWidth: '95px',
+                        borderColor: isEdited('productCode') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('productCode')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                        fontWeight: isEdited('productCode') ? 600 : undefined,
+                      }}
+                    />
+                  </td>
+
+                  {/* PAR Level */}
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -293,8 +459,10 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                           value={formattedParVal}
                           onChange={(e) => {
                             const valInInput = e.target.value === '' ? 0 : Number(e.target.value);
-                            const valInBase = isPackDefined ? valInInput * multiplier : valInInput;
-                            if (onParChange) {
+                            const valInBase = isPackDefined ? valInInput * mult : valInInput;
+                            if (onFieldChange) {
+                              onFieldChange(item.id, 'parLevel', originalParBase, valInBase);
+                            } else if (onParChange) {
                               onParChange(item.id, originalParBase, valInBase);
                             } else if (onUpdatePar && valInBase !== originalParBase) {
                               onUpdatePar(item.id, valInBase);
@@ -312,41 +480,236 @@ export function ItemsTableView({ items, sortCol, sortDir, onSort, onEdit, onDele
                             height: '30px',
                             width: '75px',
                             textAlign: 'right',
-                            borderColor: isEdited ? 'var(--accent, #3b82f6)' : undefined,
-                            backgroundColor: isEdited ? 'rgba(59, 130, 246, 0.12)' : undefined,
-                            fontWeight: isEdited ? 600 : undefined,
+                            borderColor: isEdited('parLevel') ? 'var(--accent, #0d9488)' : undefined,
+                            backgroundColor: isEdited('parLevel')
+                              ? 'rgba(13, 148, 136, 0.12)'
+                              : undefined,
+                            fontWeight: isEdited('parLevel') ? 600 : undefined,
                           }}
                         />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                          {unitLabel}
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                          {unitLabel || 'units'}
                         </span>
                       </div>
-                      {isPackDefined && (
-                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginLeft: '2px' }}>
-                          ({currentParBase} {item.baseUnitName})
-                        </span>
-                      )}
                     </div>
                   </td>
-                  <td style={{ color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note || '—'}</td>
+
+                  {/* Notes */}
                   <td>
-                    {isSecondary
-                      ? <span className="badge badge-teal">{item.displayUnitName}</span>
-                      : <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>—</span>}
+                    <input
+                      type="text"
+                      disabled={!canEdit}
+                      aria-label={`Notes for ${item.displayName}`}
+                      value={currentNote}
+                      placeholder="Add note..."
+                      onChange={(e) => {
+                        if (onFieldChange) {
+                          onFieldChange(item.id, 'note', item.note || '', e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      }}
+                      className="input"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.8125rem',
+                        height: '30px',
+                        width: '100%',
+                        minWidth: '140px',
+                        borderColor: isEdited('note') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('note')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                        fontWeight: isEdited('note') ? 600 : undefined,
+                      }}
+                    />
                   </td>
-                  <td><span className="badge badge-neutral">{item.baseUnitName}</span></td>
-                  <td className="mono" style={{ textAlign: 'center', fontSize: '0.8125rem' }}>{isSecondary ? item.multiplier : '1'}</td>
+
+                  {/* Pack Size */}
+                  <td>
+                    <input
+                      type="text"
+                      disabled={!canEdit}
+                      aria-label={`Pack size for ${item.displayName}`}
+                      value={currentDisplayUnitName}
+                      placeholder="e.g. Case"
+                      onChange={(e) => {
+                        if (onFieldChange) {
+                          onFieldChange(item.id, 'displayUnitName', initialPackSize, e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      }}
+                      className="input"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.8125rem',
+                        height: '30px',
+                        width: '100%',
+                        minWidth: '85px',
+                        borderColor: isEdited('displayUnitName') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('displayUnitName')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                        fontWeight: isEdited('displayUnitName') ? 600 : undefined,
+                      }}
+                    />
+                  </td>
+
+                  {/* Stock Unit */}
+                  <td>
+                    <input
+                      type="text"
+                      disabled={!canEdit}
+                      aria-label={`Stock unit for ${item.displayName}`}
+                      value={currentBaseUnitName}
+                      placeholder="e.g. Each"
+                      onChange={(e) => {
+                        if (onFieldChange) {
+                          onFieldChange(item.id, 'baseUnitName', item.baseUnitName || '', e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      }}
+                      className="input"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.8125rem',
+                        height: '30px',
+                        width: '100%',
+                        minWidth: '85px',
+                        borderColor: isEdited('baseUnitName') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('baseUnitName')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                        fontWeight: isEdited('baseUnitName') ? 600 : undefined,
+                      }}
+                    />
+                  </td>
+
+                  {/* Multiplier */}
                   <td style={{ textAlign: 'center' }}>
-                    <span className="badge badge-green"><span className="badge-dot" />Active</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.0001"
+                      disabled={!canEdit || !hasPack}
+                      title={!hasPack ? 'Enter a pack size first to set multiplier' : undefined}
+                      aria-label={`Multiplier for ${item.displayName}`}
+                      value={currentMultiplier}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 1 : Number(e.target.value);
+                        if (onFieldChange) {
+                          const origMult = isSecondaryConfigured ? (Number(item.multiplier) || 1) : 1;
+                          onFieldChange(item.id, 'multiplier', origMult, val);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      }}
+                      className="input mono"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.8125rem',
+                        height: '30px',
+                        width: '65px',
+                        textAlign: 'center',
+                        opacity: !hasPack ? 0.5 : 1,
+                        borderColor: isEdited('multiplier') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('multiplier')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                        fontWeight: isEdited('multiplier') ? 600 : undefined,
+                      }}
+                    />
                   </td>
+
+                  {/* Status */}
+                  <td style={{ textAlign: 'center' }}>
+                    <select
+                      disabled={!canEdit}
+                      aria-label={`Status for ${item.displayName}`}
+                      value={currentIsActive ? 'active' : 'inactive'}
+                      onChange={(e) => {
+                        const val = e.target.value === 'active';
+                        if (onFieldChange) {
+                          onFieldChange(item.id, 'isActive', !!item.isActive, val);
+                        }
+                      }}
+                      className="input"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.75rem',
+                        height: '30px',
+                        width: '100px',
+                        fontWeight: 600,
+                        color: currentIsActive ? 'var(--success, #16a34a)' : 'var(--text-tertiary, #94a3b8)',
+                        borderColor: isEdited('isActive') ? 'var(--accent, #0d9488)' : undefined,
+                        backgroundColor: isEdited('isActive')
+                          ? 'rgba(13, 148, 136, 0.12)'
+                          : undefined,
+                      }}
+                    >
+                      <option value="active">● Active</option>
+                      <option value="inactive">○ Inactive</option>
+                    </select>
+                  </td>
+
+                  {/* Actions */}
                   <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                      <button type="button" onClick={() => onEdit(item)} className="btn btn-secondary btn-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(item)}
+                        className="btn btn-secondary btn-sm"
+                        title="Edit Full Product Details"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          style={{ width: 12, height: 12 }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                          />
+                        </svg>
                         Edit
                       </button>
-                      <button type="button" onClick={() => onDelete(item.id, item.displayName, item.activeLocationCount ?? item.locationItems?.length)} className="btn btn-secondary btn-sm" style={{ color: '#ef4444', borderColor: '#fca5a5' }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onDelete(
+                            item.id,
+                            item.displayName,
+                            item.activeLocationCount ?? item.locationItems?.length
+                          )
+                        }
+                        className="btn btn-secondary btn-sm"
+                        style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+                        title="Delete Product"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          style={{ width: 12, height: 12 }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                          />
+                        </svg>
                         Delete
                       </button>
                     </div>

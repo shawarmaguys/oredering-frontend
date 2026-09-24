@@ -9,6 +9,7 @@ import { Item, SortColumn, SortDir } from './types';
 const BATCH_SIZE = 25;
 const LS_VENDOR_KEY = 'items_vendor_filter';
 const LS_CATEGORY_KEY = 'items_category_filter';
+const LS_STATUS_KEY = 'items_status_filter';
 
 export function useItemsStore(_initialContextVendors?: Vendor[]) {
   const { vendors } = useVendors();
@@ -28,6 +29,13 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
   const [productTypeFilter, setProductTypeFilterState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem(LS_CATEGORY_KEY) || 'all';
+    }
+    return 'all';
+  });
+
+  const [statusFilter, setStatusFilterState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(LS_STATUS_KEY) || 'all';
     }
     return 'all';
   });
@@ -75,10 +83,19 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     }
   }, []);
 
+  // Status filter change
+  const setStatusFilter = useCallback((val: string) => {
+    setStatusFilterState(val);
+    setVisibleCount(BATCH_SIZE);
+    if (typeof window !== 'undefined') {
+      if (val !== 'all') localStorage.setItem(LS_STATUS_KEY, val);
+      else localStorage.removeItem(LS_STATUS_KEY);
+    }
+  }, []);
+
   // Filtered & Sorted items computed in-memory from context
   const filteredAndSortedItems = useMemo(() => {
     let result = [...allItems];
-
     // 1. Vendor Filter
     if (vendorFilter !== 'all') {
       result = result.filter((item) => 
@@ -86,7 +103,6 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
         (item.backupVendors && item.backupVendors.some(bv => bv.vendor.id === vendorFilter))
       );
     }
-
     // 2. Product Type Filter
     if (productTypeFilter !== 'all') {
       if (productTypeFilter === 'none') {
@@ -96,7 +112,16 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
       }
     }
 
-    // 3. Search Filter (searches displayName, spanishName, productCode, notes, vendor name, category name)
+    // 3. Status Filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'active') {
+        result = result.filter((item) => item.isActive);
+      } else if (statusFilter === 'inactive') {
+        result = result.filter((item) => !item.isActive);
+      }
+    }
+
+    // 4. Search Filter (searches displayName, spanishName, productCode, notes, vendor name, category name)
     const q = search.trim().toLowerCase();
     if (q) {
       result = result.filter((item) => {
@@ -180,7 +205,7 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     });
 
     return result;
-  }, [allItems, vendorFilter, productTypeFilter, search, sortCol, sortDir]);
+  }, [allItems, vendorFilter, productTypeFilter, statusFilter, search, sortCol, sortDir]);
 
   const totalItems = filteredAndSortedItems.length;
   const hasMore = visibleCount < totalItems;
@@ -221,6 +246,8 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     setVendorFilter,
     productTypeFilter,
     setProductTypeFilter,
+    statusFilter,
+    setStatusFilter,
     search,
     handleSearchChange,
     // Sort

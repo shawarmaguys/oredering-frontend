@@ -135,7 +135,7 @@ export const api = {
     delete: (id: string) => request<any>(`/product-types/${id}`, { method: 'DELETE' }),
   },
   items: {
-    list: (params?: { vendorId?: string; productTypeId?: string; locationId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string }) => {
+    list: (params?: { vendorId?: string; productTypeId?: string; locationId?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: string; includeInactive?: boolean; status?: string }) => {
       const q = new URLSearchParams();
       if (params?.vendorId) q.set('vendor_id', params.vendorId);
       if (params?.productTypeId) q.set('product_type_id', params.productTypeId);
@@ -145,6 +145,8 @@ export const api = {
       if (params?.limit != null) q.set('limit', String(params.limit));
       if (params?.sortBy) q.set('sortBy', params.sortBy);
       if (params?.sortOrder) q.set('sortOrder', params.sortOrder);
+      if (params?.includeInactive) q.set('includeInactive', 'true');
+      if (params?.status) q.set('status', params.status);
       const query = q.toString() ? `?${q.toString()}` : '';
       return request<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(`/items${query}`);
     },

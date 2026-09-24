@@ -284,7 +284,13 @@ interface EditItemModalProps {
 export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemModalProps) {
   const { productTypes } = useProductTypes();
   const { selectedLocationId } = useLocationFilter();
-  const isSecondaryConfigured = !!(item.displayUnitName && item.multiplier && Number(item.multiplier) > 1);
+  const isSecondaryConfigured = !!(
+    item.displayUnitName &&
+    item.displayUnitName.trim() !== '' &&
+    item.displayUnitName.trim().toLowerCase() !== (item.baseUnitName || '').trim().toLowerCase() &&
+    item.multiplier &&
+    Number(item.multiplier) > 1
+  );
   const initialMult = isSecondaryConfigured ? Number(item.multiplier) : 1;
   const initialParInInput = isSecondaryConfigured ? (item.parLevel ?? 0) / initialMult : (item.parLevel ?? 0);
 
@@ -313,7 +319,9 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorId) { setError('Please select a vendor first.'); return; }
-    const hasSecondary = displayUnitName.trim() !== '';
+    const hasSecondary =
+      displayUnitName.trim() !== '' &&
+      displayUnitName.trim().toLowerCase() !== baseUnitName.trim().toLowerCase();
     if (hasSecondary && (multiplier === '' || Number(multiplier) <= 0)) {
       setError('Enter a valid multiplier for the pack size.');
       return;
@@ -331,7 +339,7 @@ export function EditItemModal({ item, vendors, onClose, onUpdated }: EditItemMod
         vendorId,
         productTypeId: productTypeId || null,
         baseUnitName,
-        displayUnitName: displayUnitName || '',
+        displayUnitName: hasSecondary ? displayUnitName.trim() : '',
         multiplier: hasSecondary ? Number(multiplier) : 1,
         productCode: productCode || undefined,
         note: note || undefined,
