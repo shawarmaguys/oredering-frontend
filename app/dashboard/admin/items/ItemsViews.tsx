@@ -110,13 +110,47 @@ export function ItemTileCard({ item, onEdit, onDelete }: ItemTileCardProps) {
             )}
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <button type="button" onClick={() => onEdit(item)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)' }} title="Edit">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
-              Edit
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              className="btn btn-secondary btn-sm"
+              style={{
+                width: '28px',
+                height: '28px',
+                padding: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 'var(--radius-sm)',
+              }}
+              aria-label={`Edit ${item.displayName}`}
+              title="Edit Product Details"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 13, height: 13 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+              </svg>
             </button>
-            <button type="button" onClick={() => onDelete(item.id, item.displayName, item.activeLocationCount ?? item.locationItems?.length)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', color: '#ef4444', borderColor: '#fca5a5' }} title="Delete">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 12, height: 12 }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-              Delete
+            <button
+              type="button"
+              onClick={() => onDelete(item.id, item.displayName, item.activeLocationCount ?? item.locationItems?.length)}
+              className="btn btn-secondary btn-sm"
+              style={{
+                width: '28px',
+                height: '28px',
+                padding: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 'var(--radius-sm)',
+                color: '#ef4444',
+                borderColor: '#fca5a5',
+              }}
+              aria-label={`Delete ${item.displayName}`}
+              title="Remove / Delete Product"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 13, height: 13 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
             </button>
           </div>
         </div>
@@ -254,20 +288,20 @@ export function ItemsTableView({
   return (
     <div className="table-scroll-container">
       <div className="table-responsive-wrap">
-        <table className="data-table">
+        <table className="data-table items-table">
           <thead>
             <tr>
               {th('name', 'Display Name', { paddingLeft: '24px', minWidth: '180px' })}
               {th('category', 'Category', { minWidth: '140px' })}
               {th('vendor', 'Assigned Vendor', { minWidth: '140px' })}
               {th('code', 'Product Code', { width: '120px' })}
-              {th('parLevel', 'PAR Level', { width: '150px' })}
+              {th('parLevel', 'PAR Level', { width: '120px' })}
               {th('note', 'Notes', { minWidth: '160px' })}
               {th('pack', 'Pack Size', { width: '110px' })}
               {th('baseUnit', 'Stock Unit', { width: '110px' })}
               {th('multiplier', 'Multiplier', { textAlign: 'center', width: '85px' })}
-              {th('status', 'Status', { textAlign: 'center', width: '115px' })}
-              <th style={{ textAlign: 'right', paddingRight: '24px', width: '130px' }}>Actions</th>
+              {th('status', 'Status', { textAlign: 'center', width: '85px' })}
+              <th style={{ textAlign: 'right', paddingRight: '24px', width: '90px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -283,7 +317,7 @@ export function ItemsTableView({
               const currentProductTypeId =
                 itemEdits.productTypeId !== undefined
                   ? itemEdits.productTypeId
-                  : (item.productTypeId || null);
+                  : (item.productTypeId || item.productType?.id || null);
               const currentProductCode =
                 itemEdits.productCode !== undefined
                   ? itemEdits.productCode
@@ -345,6 +379,7 @@ export function ItemsTableView({
                 <tr
                   key={item.id}
                   style={{
+                    verticalAlign: 'top',
                     backgroundColor: hasAnyEdits
                       ? 'rgba(13, 148, 136, 0.05)'
                       : undefined,
@@ -376,21 +411,22 @@ export function ItemsTableView({
                       onChange={(e) => {
                         const val = e.target.value || null;
                         if (onFieldChange) {
-                          onFieldChange(item.id, 'productTypeId', item.productTypeId || null, val);
+                          onFieldChange(item.id, 'productTypeId', item.productTypeId || item.productType?.id || null, val);
                         }
                       }}
                       className="input"
                       style={{
-                        padding: '4px 8px',
+                        padding: '4px 24px 4px 8px',
                         fontSize: '0.8125rem',
                         height: '30px',
                         width: '100%',
-                        minWidth: '125px',
+                        minWidth: '135px',
                         borderColor: isEdited('productTypeId') ? 'var(--accent, #0d9488)' : undefined,
                         backgroundColor: isEdited('productTypeId')
                           ? 'rgba(13, 148, 136, 0.12)'
                           : undefined,
                         fontWeight: isEdited('productTypeId') ? 600 : undefined,
+                        cursor: canEdit ? 'pointer' : 'default',
                       }}
                     >
                       <option value="">Uncategorized</option>
@@ -399,6 +435,9 @@ export function ItemsTableView({
                           {pt.name}
                         </option>
                       ))}
+                      {item.productType && !productTypes.some((pt) => pt.id === (item.productTypeId || item.productType?.id)) && (
+                        <option value={item.productType.id}>{item.productType.name}</option>
+                      )}
                     </select>
                   </td>
 
@@ -448,48 +487,63 @@ export function ItemsTableView({
 
                   {/* PAR Level */}
                   <td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0"
-                          disabled={!canEdit}
-                          aria-label={`PAR level for ${item.displayName}`}
-                          value={formattedParVal}
-                          onChange={(e) => {
-                            const valInInput = e.target.value === '' ? 0 : Number(e.target.value);
-                            const valInBase = isPackDefined ? valInInput * mult : valInInput;
-                            if (onFieldChange) {
-                              onFieldChange(item.id, 'parLevel', originalParBase, valInBase);
-                            } else if (onParChange) {
-                              onParChange(item.id, originalParBase, valInBase);
-                            } else if (onUpdatePar && valInBase !== originalParBase) {
-                              onUpdatePar(item.id, valInBase);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              (e.target as HTMLInputElement).blur();
-                            }
-                          }}
-                          className="input mono"
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '0.8125rem',
-                            height: '30px',
-                            width: '75px',
-                            textAlign: 'right',
-                            borderColor: isEdited('parLevel') ? 'var(--accent, #0d9488)' : undefined,
-                            backgroundColor: isEdited('parLevel')
-                              ? 'rgba(13, 148, 136, 0.12)'
-                              : undefined,
-                            fontWeight: isEdited('parLevel') ? 600 : undefined,
-                          }}
-                        />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-                          {unitLabel || 'units'}
-                        </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '85px' }}>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        disabled={!canEdit}
+                        aria-label={`PAR level for ${item.displayName}`}
+                        value={formattedParVal}
+                        onChange={(e) => {
+                          const valInInput = e.target.value === '' ? 0 : Number(e.target.value);
+                          const valInBase = isPackDefined ? valInInput * mult : valInInput;
+                          if (onFieldChange) {
+                            onFieldChange(item.id, 'parLevel', originalParBase, valInBase);
+                          } else if (onParChange) {
+                            onParChange(item.id, originalParBase, valInBase);
+                          } else if (onUpdatePar && valInBase !== originalParBase) {
+                            onUpdatePar(item.id, valInBase);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        className="input mono"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.8125rem',
+                          height: '30px',
+                          width: '100%',
+                          textAlign: 'right',
+                          borderColor: isEdited('parLevel') ? 'var(--accent, #0d9488)' : undefined,
+                          backgroundColor: isEdited('parLevel')
+                            ? 'rgba(13, 148, 136, 0.12)'
+                            : undefined,
+                          fontWeight: isEdited('parLevel') ? 600 : undefined,
+                        }}
+                      />
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--text-tertiary)',
+                          textAlign: 'right',
+                          lineHeight: 1.2,
+                          paddingRight: '2px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                        title={unitLabel || 'units'}
+                      >
+                        {unitLabel || 'units'}
+                        {isPackDefined && currentParBase > 0 && (
+                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', opacity: 0.85, marginLeft: '4px' }}>
+                            ({currentParBase} {currentBaseUnitName})
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -629,43 +683,83 @@ export function ItemsTableView({
 
                   {/* Status */}
                   <td style={{ textAlign: 'center' }}>
-                    <select
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={currentIsActive}
+                      aria-label={`Toggle active status for ${item.displayName}`}
                       disabled={!canEdit}
-                      aria-label={`Status for ${item.displayName}`}
-                      value={currentIsActive ? 'active' : 'inactive'}
-                      onChange={(e) => {
-                        const val = e.target.value === 'active';
-                        if (onFieldChange) {
-                          onFieldChange(item.id, 'isActive', !!item.isActive, val);
-                        }
+                      onClick={() => {
+                        if (!canEdit || !onFieldChange) return;
+                        onFieldChange(item.id, 'isActive', !!item.isActive, !currentIsActive);
                       }}
-                      className="input"
                       style={{
-                        padding: '4px 8px',
-                        fontSize: '0.75rem',
-                        height: '30px',
-                        width: '100px',
-                        fontWeight: 600,
-                        color: currentIsActive ? 'var(--success, #16a34a)' : 'var(--text-tertiary, #94a3b8)',
-                        borderColor: isEdited('isActive') ? 'var(--accent, #0d9488)' : undefined,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '3px',
+                        borderRadius: '9999px',
+                        border: isEdited('isActive')
+                          ? '1.5px solid var(--accent, #0d9488)'
+                          : '1.5px solid transparent',
                         backgroundColor: isEdited('isActive')
-                          ? 'rgba(13, 148, 136, 0.12)'
-                          : undefined,
+                          ? 'rgba(13, 148, 136, 0.15)'
+                          : 'transparent',
+                        cursor: canEdit ? 'pointer' : 'default',
+                        transition: 'all 0.15s ease',
+                        userSelect: 'none',
+                        lineHeight: 0,
                       }}
+                      title={canEdit ? `Click to toggle status (currently ${currentIsActive ? 'Active' : 'Inactive'})` : undefined}
                     >
-                      <option value="active">● Active</option>
-                      <option value="inactive">○ Inactive</option>
-                    </select>
+                      <span
+                        style={{
+                          width: '34px',
+                          height: '18px',
+                          borderRadius: '9999px',
+                          backgroundColor: currentIsActive ? 'var(--success, #16a34a)' : 'var(--border-default, #475569)',
+                          position: 'relative',
+                          display: 'inline-block',
+                          transition: 'background-color 0.2s',
+                          flexShrink: 0,
+                          boxShadow: currentIsActive ? '0 0 6px rgba(22, 163, 74, 0.35)' : 'none',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '14px',
+                            height: '14px',
+                            borderRadius: '50%',
+                            backgroundColor: '#ffffff',
+                            position: 'absolute',
+                            top: '2px',
+                            left: currentIsActive ? '18px' : '2px',
+                            transition: 'left 0.2s ease',
+                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                          }}
+                        />
+                      </span>
+                    </button>
                   </td>
 
                   {/* Actions */}
                   <td style={{ textAlign: 'right', paddingRight: '24px' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                       <button
                         type="button"
                         onClick={() => onEdit(item)}
                         className="btn btn-secondary btn-sm"
-                        title="Edit Full Product Details"
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          padding: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 'var(--radius-md, 6px)',
+                        }}
+                        aria-label={`Edit ${item.displayName}`}
+                        title="Edit Product Details"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -673,7 +767,7 @@ export function ItemsTableView({
                           viewBox="0 0 24 24"
                           strokeWidth={2}
                           stroke="currentColor"
-                          style={{ width: 12, height: 12 }}
+                          style={{ width: 14, height: 14 }}
                         >
                           <path
                             strokeLinecap="round"
@@ -681,7 +775,6 @@ export function ItemsTableView({
                             d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
                           />
                         </svg>
-                        Edit
                       </button>
                       <button
                         type="button"
@@ -693,8 +786,19 @@ export function ItemsTableView({
                           )
                         }
                         className="btn btn-secondary btn-sm"
-                        style={{ color: '#ef4444', borderColor: '#fca5a5' }}
-                        title="Delete Product"
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          padding: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 'var(--radius-md, 6px)',
+                          color: '#ef4444',
+                          borderColor: '#fca5a5',
+                        }}
+                        aria-label={`Delete ${item.displayName}`}
+                        title="Remove / Delete Product"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -702,7 +806,7 @@ export function ItemsTableView({
                           viewBox="0 0 24 24"
                           strokeWidth={2}
                           stroke="currentColor"
-                          style={{ width: 12, height: 12 }}
+                          style={{ width: 14, height: 14 }}
                         >
                           <path
                             strokeLinecap="round"
@@ -710,7 +814,6 @@ export function ItemsTableView({
                             d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                           />
                         </svg>
-                        Delete
                       </button>
                     </div>
                   </td>
