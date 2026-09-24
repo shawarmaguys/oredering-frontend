@@ -35,7 +35,7 @@ export default function ItemsPage() {
     statusFilter, setStatusFilter,
     search, handleSearchChange,
     sortCol, sortDir, toggleSort,
-    refreshItems, invalidateCache,
+    refreshItems, invalidateCache, removeItemFromCache,
   } = store;
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -209,25 +209,23 @@ export default function ItemsPage() {
     const { id } = itemToDelete;
     setDeleteConfirmOpen(false);
     setItemToDelete(null);
-    invalidateCache();
     try {
       await api.items.delete(id, selectedLocationId);
-      refreshItems();
+      removeItemFromCache(id);
+      await refreshItems();
     } catch (err: any) {
       setError(err.message || 'Failed to delete product.');
     }
   };
 
-  const handleCreated = () => {
+  const handleCreated = async () => {
     setShowCreate(false);
-    invalidateCache();
-    refreshItems();
+    await refreshItems();
   };
 
-  const handleUpdated = () => {
+  const handleUpdated = async () => {
     setEditItem(null);
-    invalidateCache();
-    refreshItems();
+    await refreshItems();
   };
 
   // ─── Loading skeleton ──────────────────────────────────────────────────────

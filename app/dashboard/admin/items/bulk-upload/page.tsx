@@ -8,6 +8,8 @@ import { api } from '../../../../utils/api';
 import { useLocationFilter } from '../../../../context/LocationFilterContext';
 import { LocationBadge } from '../../../components/LocationBadge';
 import { useLocations } from '../../../../context/LocationsContext';
+import { useItems } from '../../../../context/ItemsContext';
+import { useProductTypes } from '../../../../context/ProductTypesContext';
 import {
   parseCSV,
   generateProductsCsvTemplate,
@@ -56,6 +58,8 @@ export default function BulkUploadItemsPage() {
   const router = useRouter();
   const { locations } = useLocations();
   const { selectedLocationId } = useLocationFilter();
+  const { refreshAllItems } = useItems();
+  const { refreshProductTypes } = useProductTypes();
 
   const [vendors, setVendors] = useState<any[]>([]);
   const [selectedVendorId, setSelectedVendorId] = useState<string>('all');
@@ -234,6 +238,12 @@ export default function BulkUploadItemsPage() {
         locationId: activeLocationId,
       });
 
+      // Refresh items and product types cache so changes are immediately visible in catalog
+      await Promise.allSettled([
+        refreshAllItems(),
+        refreshProductTypes(),
+      ]);
+
       setUploadSuccess(res);
     } catch (err: any) {
       setError(err?.message || 'Bulk product process failed.');
@@ -271,7 +281,14 @@ export default function BulkUploadItemsPage() {
           <div className="breadcrumb">
             <Link href="/dashboard">Dashboard</Link>
             <span className="breadcrumb-sep">/</span>
-            <Link href="/dashboard/admin/items">Product Catalog</Link>
+            <Link
+              href="/dashboard/admin/items"
+              onClick={() => {
+                refreshAllItems().catch(console.error);
+              }}
+            >
+              Product Catalog
+            </Link>
             <span className="breadcrumb-sep">/</span>
             <span className="breadcrumb-current">Bulk CSV Maintenance</span>
           </div>
@@ -286,7 +303,13 @@ export default function BulkUploadItemsPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <Link href="/dashboard/admin/items" className="btn btn-secondary">
+              <Link
+                href="/dashboard/admin/items"
+                className="btn btn-secondary"
+                onClick={() => {
+                  refreshAllItems().catch(console.error);
+                }}
+              >
                 Back to Catalog
               </Link>
             </div>
@@ -334,7 +357,13 @@ export default function BulkUploadItemsPage() {
               </p>
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <Link href="/dashboard/admin/items" className="btn btn-primary">
+                <Link
+                  href="/dashboard/admin/items"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    refreshAllItems().catch(console.error);
+                  }}
+                >
                   View Product Catalog
                 </Link>
                 <button type="button" onClick={handleReset} className="btn btn-secondary">

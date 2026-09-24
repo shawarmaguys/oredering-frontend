@@ -14,7 +14,7 @@ const LS_STATUS_KEY = 'items_status_filter';
 export function useItemsStore(_initialContextVendors?: Vendor[]) {
   const { vendors } = useVendors();
   const { productTypes } = useProductTypes();
-  const { allItems, itemsLoading, refreshAllItems } = useItems();
+  const { allItems, itemsLoading, refreshAllItems, removeItemFromCache } = useItems();
 
   const [error, setError] = useState('');
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
@@ -219,12 +219,12 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filteredAndSortedItems.length));
   }, [filteredAndSortedItems.length]);
 
-  const refreshItems = useCallback(() => {
-    refreshAllItems();
+  const refreshItems = useCallback(async () => {
+    return refreshAllItems();
   }, [refreshAllItems]);
 
-  const invalidateCache = useCallback(() => {
-    refreshAllItems();
+  const invalidateCache = useCallback(async () => {
+    return refreshAllItems();
   }, [refreshAllItems]);
 
   return {
@@ -257,5 +257,6 @@ export function useItemsStore(_initialContextVendors?: Vendor[]) {
     // Actions
     refreshItems,
     invalidateCache,
+    removeItemFromCache,
   };
 }

@@ -22,6 +22,7 @@ interface ItemsContextType {
   initialized: boolean;
   refreshAllItems: () => Promise<void>;
   ensureLoaded: () => Promise<void>;
+  removeItemFromCache: (itemId: string) => void;
 }
 
 const ItemsContext = createContext<ItemsContextType | undefined>(undefined);
@@ -129,14 +130,27 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAllItems = useCallback(async () => {
     if (!isAuthenticated) return;
-    if (!selectedLocationId || selectedLocationId === 'all') return;
-    const locKey = selectedLocationId;
-    cacheMap.current.delete(locKey);
+    cacheMap.current.clear();
     initializedRef.current = false;
     setIsInitialized(false);
     setItemsReady(false);
+    if (!selectedLocationId || selectedLocationId === 'all') return;
+    const locKey = selectedLocationId;
     await fetchAllForLocation(locKey, true);
   }, [isAuthenticated, selectedLocationId, fetchAllForLocation]);
+
+  const removeItemFromCache = useCallback((itemId: string) => {
+    setAllItems((prev) => prev.filter((i) => i.id !== itemId));
+    if (selectedLocationId) {
+      const cached = cacheMap.current.get(selectedLocationId);
+      if (cached) {
+        cacheMap.current.set(
+          selectedLocationId,
+          cached.filter((i) => i.id !== itemId)
+        );
+      }
+    }
+  }, [selectedLocationId]);
 
   return (
     <ItemsContext.Provider
@@ -147,6 +161,7 @@ export function ItemsProvider({ children }: { children: React.ReactNode }) {
         initialized: isInitialized,
         refreshAllItems,
         ensureLoaded,
+        removeItemFromCache,
       }}
     >
       {children}
